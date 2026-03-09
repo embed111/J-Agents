@@ -1,0 +1,5 @@
+﻿capability_summary: 能做角色画像发布判定
+knowledge_scope: 发布字段完整性与预发布规则
+skills: 发布校验, 预发布判定, 证据回传
+applicable_scenarios: 训练中心发布治理
+version_notes: 首个发布版本

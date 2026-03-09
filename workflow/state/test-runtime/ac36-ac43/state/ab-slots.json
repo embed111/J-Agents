@@ -1,0 +1,18 @@
+{
+  "active_slot": "A",
+  "previous_slot": "",
+  "slots": {
+    "A": {
+      "version": "v1",
+      "script": "C:/work/agents/workflow/scripts/workflow_entry_cli.py",
+      "updated_at": "2026-02-28T18:35:53+08:00"
+    },
+    "B": {
+      "version": "v0-standby",
+      "script": "C:/work/agents/workflow/scripts/workflow_entry_cli.py",
+      "updated_at": "2026-02-28T18:35:53+08:00"
+    }
+  },
+  "last_switch": {}
+}
+

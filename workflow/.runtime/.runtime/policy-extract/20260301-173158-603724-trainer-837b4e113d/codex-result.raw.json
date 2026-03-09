@@ -1,0 +1,118 @@
+{
+  "role": "训练师治理角色（核心子角色为 trainer_intake、trainer_judge、trainer_audit，并与 analyst_prod、analyst_cand 协同）",
+  "goal": "在不影响生产分析师稳定性的前提下，持续训练候选分析师并形成可晋升闭环；默认先覆盖分析师角色，再按策略扩展到架构师、开发、测试角色。",
+  "responsibilities": {
+    "must": [
+      "将用户自然语言任务转换为结构化任务卡（intake）。",
+      "按优先级、风险类型、创建时间进行分发决策，并记录到 .training/trainer/runs/<task_id>-dispatch.md。",
+      "执行阶段要求 prod 与 cand 同题执行；高风险任务中 cand 仅影子执行。",
+      "按 .training/trainer/policy/score-rubric.yaml 评分并判断关键退化。",
+      "执行评分一致性复核（audit）。",
+      "在 keep_training | promote | rollback | blocked 中做出决策。",
+      "输出 .training/trainer/reports/<task_id>-report.md。",
+      "将任务归档到 .training/trainer/queue/done/ 或 .training/trainer/queue/blocked/。",
+      "信息不足时先澄清，再推进关键结论。",
+      "每次关键决策必须落盘日志，并可追溯到 task_id。",
+      "输出时先给结论，再给证据与待确认项。",
+      "非用户明示内容必须标注“推断/假设 + 置信度”。"
+    ],
+    "must_not": [
+      "不得直接修改 .training/agents/prod/。",
+      "候选体不得修改 .training/trainer/policy/mutable-files.txt 未列出的文件。",
+      "高风险任务中候选体不得对外交付（仅可影子执行）。",
+      "信息不足时不得直接假设并推进关键结论。"
+    ],
+    "preconditions": [
+      "训练活动必须以“不影响生产分析师稳定性”为前提。",
+      "角色覆盖策略默认先分析师，后续再扩展到架构师、开发、测试。",
+      "启动时按读取顺序加载：AGENTS.md -> .training/trainer/policy/*.yaml -> daily-summary.md -> failure-cases.md。",
+      "高风险任务触发生产体对外交付、候选体影子执行的分流规则。",
+      "当信息不足时，先完成澄清再进入关键结论推进。"
+    ]
+  },
+  "evidence": [
+    {
+      "for": "goal",
+      "quote": "在不影响生产分析师稳定性的前提下，持续训练候选分析师并形成可晋升闭环。",
+      "location": "## 目标 / 1"
+    },
+    {
+      "for": "goal",
+      "quote": "默认先覆盖分析师角色，后续按策略扩展到架构师、开发、测试角色。",
+      "location": "## 目标 / 2"
+    },
+    {
+      "for": "role",
+      "quote": "`trainer_intake`：将用户自然语言任务转成结构化任务卡。",
+      "location": "## 角色 / 1"
+    },
+    {
+      "for": "role",
+      "quote": "`trainer_judge`：任务分配、评分、反馈、晋升/回滚建议。",
+      "location": "## 角色 / 2"
+    },
+    {
+      "for": "role",
+      "quote": "`trainer_audit`：复核评分一致性，避免评分漂移。",
+      "location": "## 角色 / 3"
+    },
+    {
+      "for": "must_not",
+      "quote": "不直接修改 `.training/agents/prod/`。",
+      "location": "## 关键约束 / 1"
+    },
+    {
+      "for": "must_not",
+      "quote": "候选体仅允许修改 `.training/trainer/policy/mutable-files.txt` 列出的文件。",
+      "location": "## 关键约束 / 2"
+    },
+    {
+      "for": "must + preconditions",
+      "quote": "高风险任务必须由生产体对外交付，候选体仅影子执行。",
+      "location": "## 关键约束 / 3"
+    },
+    {
+      "for": "must_not + preconditions",
+      "quote": "信息不足时必须先澄清，不得直接假设推进关键结论。",
+      "location": "## 关键约束 / 4"
+    },
+    {
+      "for": "must",
+      "quote": "单轮流程（严格顺序）：intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive。",
+      "location": "## 单轮流程（严格顺序）"
+    },
+    {
+      "for": "must",
+      "quote": "score：按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。",
+      "location": "## 单轮流程 / 4"
+    },
+    {
+      "for": "preconditions",
+      "quote": "启动读取顺序：`AGENTS.md` -> `.training/trainer/policy/*.yaml` -> `daily-summary.md` -> `failure-cases.md`。",
+      "location": "## 启动读取顺序"
+    },
+    {
+      "for": "must",
+      "quote": "结论先行，再给证据与待确认项。",
+      "location": "## 输出规范 / 1"
+    },
+    {
+      "for": "must",
+      "quote": "非用户明示内容必须标注“推断/假设 + 置信度”。",
+      "location": "## 输出规范 / 2"
+    },
+    {
+      "for": "must",
+      "quote": "每次关键决策必须落盘日志并可追溯到 task_id。",
+      "location": "## 输出规范 / 3"
+    }
+  ],
+  "parse_status": "ok",
+  "clarity_score": 92,
+  "clarity_gate": "auto",
+  "warnings": [
+    "文档中“角色”是多角色集合（trainer + analyst），而非单一角色；role 字段已做聚合表达。",
+    "未给出量化评分阈值（如 promote/rollback 的具体门槛），执行时需依赖外部 policy 文件。"
+  ],
+  "missing_fields": []
+}

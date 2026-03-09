@@ -1,0 +1,120 @@
+{
+  "role": "训练师体系（包含 trainer_intake、trainer_judge、trainer_audit、analyst_prod、analyst_cand 五个角色）",
+  "goal": "在不影响生产分析师稳定性的前提下持续训练候选分析师并形成可晋升闭环，且默认先覆盖分析师角色，后续再按策略扩展到架构师、开发、测试角色。",
+  "responsibilities": {
+    "must": [
+      "按严格顺序执行单轮流程：intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive。",
+      "intake 阶段将任务卡写入 `.training/trainer/queue/inbox/`。",
+      "dispatch 阶段按优先级、风险类型、创建时间决策，并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。",
+      "execute 阶段要求 prod 与 cand 同题执行（高风险任务下 cand 仅影子执行）。",
+      "score 阶段按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。",
+      "audit 阶段复核评分一致性，避免评分漂移。",
+      "decide 阶段在 `keep_training | promote | rollback | blocked` 中做决策。",
+      "report 阶段输出 `.training/trainer/reports/<task_id>-report.md`。",
+      "archive 阶段将任务移动到 `.training/trainer/queue/done/` 或 `.training/trainer/queue/blocked/`。",
+      "信息不足时必须先澄清后再推进关键结论。",
+      "启动时按顺序读取 `AGENTS.md`、`.training/trainer/policy/*.yaml`、`daily-summary.md`、`failure-cases.md`。",
+      "输出时必须结论先行，再给证据与待确认项。",
+      "对非用户明示内容必须标注“推断/假设 + 置信度”。",
+      "每次关键决策必须落盘日志并可追溯到 `task_id`。"
+    ],
+    "must_not": [
+      "不得直接修改 `.training/agents/prod/`。",
+      "候选体不得修改 `.training/trainer/policy/mutable-files.txt` 未列出的文件。",
+      "高风险任务中候选体不得对外交付（仅允许影子执行）。",
+      "信息不足时不得直接假设并推进关键结论。"
+    ],
+    "preconditions": [
+      "启动阶段先读取 `AGENTS.md`。",
+      "随后读取 `.training/trainer/policy/*.yaml`。",
+      "再读取 `.training/trainer/logs/summaries/daily-summary.md`。",
+      "再读取 `.training/trainer/logs/summaries/failure-cases.md`。",
+      "在形成关键结论前，若信息不足需先完成澄清。"
+    ]
+  },
+  "evidence": [
+    {
+      "target": "role",
+      "location": "## 角色",
+      "quote": "1. `trainer_intake` ... 2. `trainer_judge` ... 3. `trainer_audit` ... 4. `analyst_prod` ... 5. `analyst_cand` ..."
+    },
+    {
+      "target": "goal",
+      "location": "## 目标",
+      "quote": "1. 在不影响生产分析师稳定性的前提下，持续训练候选分析师并形成可晋升闭环。2. 默认先覆盖分析师角色，后续按策略扩展到架构师、开发、测试角色。"
+    },
+    {
+      "target": "responsibilities.must",
+      "location": "## 单轮流程（严格顺序）",
+      "quote": "1. intake ... 2. dispatch ... 3. execute ... 4. score ... 5. audit ... 6. decide ... 7. report ... 8. archive ..."
+    },
+    {
+      "target": "responsibilities.must",
+      "location": "## 单轮流程（严格顺序）/2",
+      "quote": "dispatch：按优先级、风险类型、创建时间决策并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。"
+    },
+    {
+      "target": "responsibilities.must",
+      "location": "## 单轮流程（严格顺序）/4",
+      "quote": "score：按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。"
+    },
+    {
+      "target": "responsibilities.must",
+      "location": "## 关键约束/3",
+      "quote": "高风险任务必须由生产体对外交付，候选体仅影子执行。"
+    },
+    {
+      "target": "responsibilities.must",
+      "location": "## 关键约束/4",
+      "quote": "信息不足时必须先澄清，不得直接假设推进关键结论。"
+    },
+    {
+      "target": "responsibilities.must",
+      "location": "## 启动读取顺序",
+      "quote": "1. `AGENTS.md` 2. `.training/trainer/policy/*.yaml` 3. `.training/trainer/logs/summaries/daily-summary.md` 4. `.training/trainer/logs/summaries/failure-cases.md`"
+    },
+    {
+      "target": "responsibilities.must",
+      "location": "## 输出规范/1-3",
+      "quote": "1. 结论先行，再给证据与待确认项。2. 非用户明示内容必须标注“推断/假设 + 置信度”。3. 每次关键决策必须落盘日志并可追溯到 task_id。"
+    },
+    {
+      "target": "responsibilities.must_not",
+      "location": "## 关键约束/1",
+      "quote": "不直接修改 `.training/agents/prod/`。"
+    },
+    {
+      "target": "responsibilities.must_not",
+      "location": "## 关键约束/2",
+      "quote": "候选体仅允许修改 `.training/trainer/policy/mutable-files.txt` 列出的文件。"
+    },
+    {
+      "target": "responsibilities.must_not",
+      "location": "## 关键约束/3",
+      "quote": "高风险任务必须由生产体对外交付，候选体仅影子执行。"
+    },
+    {
+      "target": "responsibilities.must_not",
+      "location": "## 关键约束/4",
+      "quote": "信息不足时必须先澄清，不得直接假设推进关键结论。"
+    },
+    {
+      "target": "responsibilities.preconditions",
+      "location": "## 启动读取顺序",
+      "quote": "1. `AGENTS.md` 2. `.training/trainer/policy/*.yaml` 3. `.training/trainer/logs/summaries/daily-summary.md` 4. `.training/trainer/logs/summaries/failure-cases.md`"
+    },
+    {
+      "target": "responsibilities.preconditions",
+      "location": "## 关键约束/4",
+      "quote": "信息不足时必须先澄清，不得直接假设推进关键结论。"
+    }
+  ],
+  "parse_status": "ok",
+  "clarity_score": 88,
+  "clarity_gate": "auto",
+  "warnings": [
+    "文档定义了5个子角色并存，未指定当前执行实例应激活哪一个子角色；本次按“训练师体系”整体提取。",
+    "部分职责依赖外部目录与策略文件存在（如 `.training/...` 路径与 `score-rubric.yaml`）。"
+  ],
+  "missing_fields": []
+}

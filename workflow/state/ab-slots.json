@@ -1,0 +1,26 @@
+{
+  "active_slot": "A",
+  "previous_slot": "B",
+  "slots": {
+    "A": {
+      "version": "v1",
+      "script": "scripts/workflow_entry_cli.py",
+      "updated_at": "2026-02-24T17:27:14+08:00"
+    },
+    "B": {
+      "version": "v-gate-2",
+      "script": "state/slots/B/workflow_entry_cli-v-gate-2.py",
+      "updated_at": "2026-02-24T17:30:14+08:00"
+    }
+  },
+  "last_switch": {
+    "timestamp": "2026-02-24T17:30:14+08:00",
+    "trigger": "web",
+    "version": "v1",
+    "from_slot": "B",
+    "to_slot": "A",
+    "result": "rollback_success"
+  }
+}
+
+

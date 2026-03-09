@@ -1,0 +1,5 @@
+﻿.training/agents/candidates/c1/AGENTS.md
+.training/agents/candidates/c1/user_profile/thinking-patterns-domain-requirements.md
+.training/agents/candidates/c1/user_profile/thinking-patterns-domain-collaboration.md
+.training/agents/candidates/c1/knowledge_base/analysis-methods-overview.md
+

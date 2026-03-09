@@ -1,0 +1,150 @@
+{
+  "role": "workflow 仓库协作者（开发/测试/提交流程执行者，含 PM 持续维护职责）",
+  "goal": "按仓库规范安全地开发、验证并留痕，维护 workflow 系统的可用性、可审计性与连续复盘机制。",
+  "responsibilities": {
+    "must": [
+      "验收结果必须写入 logs/runs/，并在必要时更新 docs/workflow/验收证据矩阵-Phase0.md。",
+      "所有写入路径必须限制在 agent_search_root 内，并保持 $root 越界拦截行为不回退。",
+      "用户偏好与需求假设必须统一维护在 state/user-preferences.md（单一事实源）。",
+      "每次更新执行快照（如 state/session-snapshot.md、logs/runs/*.md）时，必须仅追加引用 preference_ref 与本次增量观察，不重复粘贴全文。",
+      "Need Hypotheses 必须使用固定格式：Observation -> Inference -> Validation Action -> Confidence(High/Med/Low)。",
+      "任何心理层推断都必须在后续对话中显式求证，并允许用户否定。"
+    ],
+    "must_not": [
+      "当 DIALOGUE_RETRO_SWITCH 为 OFF 时，禁止自动更新复盘相关文件。",
+      "严禁提交密钥或包含敏感信息的 trace。",
+      "禁止把推测当事实。",
+      "在 User Preferences 中不得记录无关隐私。"
+    ],
+    "preconditions": [
+      "仅当 DIALOGUE_RETRO_SWITCH 为 ON 时，才可自动写入每轮复盘增量。",
+      "当 DIALOGUE_RETRO_SWITCH 为 OFF 时，除非用户明确要求，否则对 state/session-snapshot.md、state/user-preferences.md、logs/runs/*.md 只读不写。",
+      "提交前需要检查 logs/ 与 state/ 下新增文件，避免敏感信息被提交。",
+      "改动 API/流程时，应优先补充 run_phase0_gate_acceptance.py 对应 case（流程前置验证条件）。"
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E1",
+      "conclusion": "role",
+      "location": "# Repository Guidelines",
+      "quote": "# Repository Guidelines"
+    },
+    {
+      "id": "E2",
+      "conclusion": "role",
+      "location": "## Commit & Pull Request Guidelines",
+      "quote": "PR 至少包含：变更目的、影响范围、验证命令、关键日志路径"
+    },
+    {
+      "id": "E3",
+      "conclusion": "goal",
+      "location": "## Testing Guidelines",
+      "quote": "验收结果需落盘到 logs/runs/"
+    },
+    {
+      "id": "E4",
+      "conclusion": "goal",
+      "location": "## Security & Configuration Tips",
+      "quote": "严禁提交密钥或包含敏感信息的 trace；提交前检查 logs/ 与 state/ 新增文件"
+    },
+    {
+      "id": "E5",
+      "conclusion": "goal",
+      "location": "## PM Continuous Maintenance",
+      "quote": "用户偏好与需求假设统一维护在 state/user-preferences.md（单一事实源）"
+    },
+    {
+      "id": "E6",
+      "conclusion": "responsibilities.must[0]",
+      "location": "## Testing Guidelines",
+      "quote": "验收结果需落盘到 logs/runs/，并在必要时更新 docs/workflow/验收证据矩阵-Phase0.md"
+    },
+    {
+      "id": "E7",
+      "conclusion": "responsibilities.must[1]",
+      "location": "## Security & Configuration Tips",
+      "quote": "所有写入路径必须限制在 agent_search_root 内，保持 $root 越界拦截行为不回退"
+    },
+    {
+      "id": "E8",
+      "conclusion": "responsibilities.must[2]",
+      "location": "## PM Continuous Maintenance",
+      "quote": "用户偏好与需求假设统一维护在 state/user-preferences.md（单一事实源）"
+    },
+    {
+      "id": "E9",
+      "conclusion": "responsibilities.must[3]",
+      "location": "## PM Continuous Maintenance",
+      "quote": "每次更新执行快照...不重复粘贴全文，只追加引用：preference_ref: state/user-preferences.md 与本次增量观察"
+    },
+    {
+      "id": "E10",
+      "conclusion": "responsibilities.must[4]",
+      "location": "## PM Continuous Maintenance",
+      "quote": "Need Hypotheses 使用固定格式：Observation -> Inference -> Validation Action -> Confidence(High/Med/Low)"
+    },
+    {
+      "id": "E11",
+      "conclusion": "responsibilities.must[5]",
+      "location": "## PM Continuous Maintenance",
+      "quote": "任何心理层推断都要在后续对话中显式求证并允许用户否定"
+    },
+    {
+      "id": "E12",
+      "conclusion": "responsibilities.must_not[0]",
+      "location": "## 运行开关（顶部手动切换）",
+      "quote": "OFF: 禁止自动更新复盘相关文件"
+    },
+    {
+      "id": "E13",
+      "conclusion": "responsibilities.must_not[1]",
+      "location": "## Security & Configuration Tips",
+      "quote": "严禁提交密钥或包含敏感信息的 trace"
+    },
+    {
+      "id": "E14",
+      "conclusion": "responsibilities.must_not[2]",
+      "location": "## PM Continuous Maintenance",
+      "quote": "禁止把推测当事实"
+    },
+    {
+      "id": "E15",
+      "conclusion": "responsibilities.must_not[3]",
+      "location": "## PM Continuous Maintenance",
+      "quote": "User Preferences 只记录可观察偏好...避免记录无关隐私"
+    },
+    {
+      "id": "E16",
+      "conclusion": "responsibilities.preconditions[0]",
+      "location": "## PM Continuous Maintenance",
+      "quote": "仅当 DIALOGUE_RETRO_SWITCH: ON 时，才自动写入每轮复盘增量"
+    },
+    {
+      "id": "E17",
+      "conclusion": "responsibilities.preconditions[1]",
+      "location": "## 运行开关（顶部手动切换）",
+      "quote": "OFF: ... 仅在用户明确指令时更新：state/session-snapshot.md、state/user-preferences.md、logs/runs/*.md"
+    },
+    {
+      "id": "E18",
+      "conclusion": "responsibilities.preconditions[2]",
+      "location": "## Security & Configuration Tips",
+      "quote": "提交前检查 logs/ 与 state/ 新增文件"
+    },
+    {
+      "id": "E19",
+      "conclusion": "responsibilities.preconditions[3]",
+      "location": "## Testing Guidelines",
+      "quote": "改动 API/流程时，优先补充 run_phase0_gate_acceptance.py 对应 case"
+    }
+  ],
+  "parse_status": "ok",
+  "clarity_score": 84,
+  "clarity_gate": "confirm",
+  "warnings": [
+    "role 与 goal 未在文档中以显式“你是/目标是”句式声明，当前为基于章节与约束语句的归纳。",
+    "文档含“优先/建议”类软约束，已尽量只提取为前置条件或未纳入 must。"
+  ],
+  "missing_fields": []
+}

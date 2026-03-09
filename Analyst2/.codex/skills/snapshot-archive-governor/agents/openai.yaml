@@ -1,0 +1,4 @@
+interface:
+  display_name: "Snapshot Archive Governor"
+  short_description: "Archive session snapshots by workload with index references."
+  default_prompt: "Use this skill to archive session snapshots by workload thresholds and keep top-level state concise with summary links."

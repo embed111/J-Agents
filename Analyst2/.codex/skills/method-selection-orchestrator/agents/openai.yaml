@@ -1,0 +1,4 @@
+interface:
+  display_name: "Method Selection Orchestrator"
+  short_description: "Select and combine thinking methods"
+  default_prompt: "Analyze this task using the best-fit method and explain why."

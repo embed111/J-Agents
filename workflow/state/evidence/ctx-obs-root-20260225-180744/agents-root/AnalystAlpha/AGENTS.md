@@ -1,0 +1,3 @@
+# AnalystAlpha
+
+version: v2

@@ -1,0 +1,118 @@
+{
+  "role": "",
+  "goal": "",
+  "responsibilities": {
+    "must": [
+      "修改流程前先阅读 docs/workflow/ 下的需求、门禁和证据矩阵文档。",
+      "当改动 API 或流程时，优先补充 run_phase0_gate_acceptance.py 对应验收用例。",
+      "将验收结果落盘到 logs/runs/，并在必要时更新 docs/workflow/验收证据矩阵-Phase0.md。",
+      "修改 UI 时同步检查 API 字段兼容性（前端脚本位于 scripts/workflow_web_client.js）。",
+      "提交前检查 logs/ 与 state/ 的新增文件，避免带入敏感内容。",
+      "所有写入路径必须限制在 agent_search_root 内，并保持 $root 越界拦截能力不回退。",
+      "用户偏好与需求假设统一维护在 state/user-preferences.md（单一事实源）。",
+      "更新 state/session-snapshot.md 或 logs/runs/*.md 时只追加增量引用（preference_ref 与本次观察/验证），不重复粘贴全文。",
+      "Need Hypotheses 必须使用固定格式：Observation -> Inference -> Validation Action -> Confidence(High/Med/Low)。",
+      "任何心理层推断都要在后续对话中显式求证，并允许用户否定。"
+    ],
+    "must_not": [
+      "当 DIALOGUE_RETRO_SWITCH 为 OFF 时，不得自动更新复盘相关文件；仅可在用户明确指令时更新。",
+      "不得提交密钥或包含敏感信息的 trace。",
+      "不得在 User Preferences 中记录无关隐私信息。",
+      "不得把推测当作事实输出。"
+    ],
+    "preconditions": [
+      "自动执行每轮“复盘增量记录”的前置条件是 DIALOGUE_RETRO_SWITCH=ON；若为 OFF，需用户明确指令。",
+      "真实模型调用前需配置环境变量：WORKFLOW_AGENT_BASE_URL、WORKFLOW_AGENT_API_KEY、WORKFLOW_AGENT_MODEL。",
+      "执行任何写入操作前，目标路径必须位于 agent_search_root 内，并启用/保持 $root 越界拦截。",
+      "准备修改流程前，需先阅读 docs/workflow/ 文档。",
+      "涉及 UI 改动时，需先确认后端 API 字段兼容性。"
+    ]
+  },
+  "evidence": [
+    {
+      "id": "E1",
+      "field": "responsibilities.must[0], responsibilities.preconditions[3]",
+      "location": "## Project Structure & Module Organization",
+      "quote": "docs/workflow/：需求、门禁和证据矩阵文档，先读这里再改流程。"
+    },
+    {
+      "id": "E2",
+      "field": "responsibilities.must[1]",
+      "location": "## Testing Guidelines",
+      "quote": "当前主测试入口是门禁脚本（非 pytest 套件）。改动 API/流程时，优先补充 run_phase0_gate_acceptance.py 对应 case。"
+    },
+    {
+      "id": "E3",
+      "field": "responsibilities.must[2]",
+      "location": "## Testing Guidelines",
+      "quote": "验收结果需落盘到 logs/runs/，并在必要时更新 docs/workflow/验收证据矩阵-Phase0.md。"
+    },
+    {
+      "id": "E4",
+      "field": "responsibilities.must[3], responsibilities.preconditions[4]",
+      "location": "## Architecture & Workflow Notes",
+      "quote": "核心交互脚本位于 scripts/workflow_web_client.js，修改 UI 时需同步检查 API 字段兼容性。"
+    },
+    {
+      "id": "E5",
+      "field": "responsibilities.must[5], responsibilities.preconditions[2]",
+      "location": "## Security & Configuration Tips",
+      "quote": "所有写入路径必须限制在 agent_search_root 内，保持 $root 越界拦截行为不回退。"
+    },
+    {
+      "id": "E6",
+      "field": "responsibilities.must_not[1], responsibilities.must[4]",
+      "location": "## Security & Configuration Tips",
+      "quote": "严禁提交密钥或包含敏感信息的 trace；提交前检查 logs/ 与 state/ 新增文件。"
+    },
+    {
+      "id": "E7",
+      "field": "responsibilities.preconditions[0], responsibilities.must_not[0]",
+      "location": "## 运行开关（顶部手动切换）",
+      "quote": "ON: 每轮对话结束后允许自动执行“复盘增量记录”… OFF: 禁止自动更新复盘相关文件；仅在用户明确指令时更新。"
+    },
+    {
+      "id": "E8",
+      "field": "responsibilities.must[6]",
+      "location": "## PM Continuous Maintenance",
+      "quote": "用户偏好与需求假设统一维护在 state/user-preferences.md（单一事实源）。"
+    },
+    {
+      "id": "E9",
+      "field": "responsibilities.must[7]",
+      "location": "## PM Continuous Maintenance",
+      "quote": "每次更新执行快照…不重复粘贴全文，只追加引用：preference_ref: state/user-preferences.md 与本次增量观察。"
+    },
+    {
+      "id": "E10",
+      "field": "responsibilities.must[8], responsibilities.must[9], responsibilities.must_not[2], responsibilities.must_not[3]",
+      "location": "## PM Continuous Maintenance",
+      "quote": "User Preferences 只记录可观察偏好…避免记录无关隐私。Need Hypotheses 使用固定格式…禁止把推测当事实；任何心理层推断都要在后续对话中显式求证并允许用户否定。"
+    },
+    {
+      "id": "E11",
+      "field": "responsibilities.preconditions[1]",
+      "location": "## Security & Configuration Tips",
+      "quote": "真实模型调用依赖环境变量：WORKFLOW_AGENT_BASE_URL、WORKFLOW_AGENT_API_KEY、WORKFLOW_AGENT_MODEL。"
+    },
+    {
+      "id": "E12",
+      "field": "missing_fields(role, goal)",
+      "location": "文档整体结构（Repository Guidelines 各章节）",
+      "quote": "文档以“Repository Guidelines”为主，章节聚焦结构、命令、测试、安全与维护规范，未出现显式“role/goal”字段定义。"
+    }
+  ],
+  "parse_status": "incomplete",
+  "clarity_score": 78,
+  "clarity_gate": "confirm",
+  "warnings": [
+    "AGENTS.md 未显式声明 role 与 goal，本次未进行臆测填充。",
+    "部分职责语句包含“建议/优先”等规范强度差异，已按执行约束提取并建议后续人工确认优先级。",
+    "该文档同时包含仓库工程规范与对话复盘维护规范，角色边界可能在实际执行中需要二次澄清。"
+  ],
+  "missing_fields": [
+    "role",
+    "goal"
+  ]
+}
+

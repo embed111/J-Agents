@@ -1,0 +1,8 @@
+﻿score_scale: "0-10"
+dimensions:
+  - name: architecture_fit
+    weight: 0.40
+  - name: contract_clarity
+    weight: 0.30
+  - name: risk_isolation
+    weight: 0.30

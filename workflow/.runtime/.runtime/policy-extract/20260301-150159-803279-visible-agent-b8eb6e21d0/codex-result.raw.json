@@ -1,0 +1,54 @@
+{
+  "role": "visible",
+  "goal": "",
+  "responsibilities": {
+    "must": [],
+    "must_not": [],
+    "preconditions": []
+  },
+  "evidence": [
+    {
+      "field": "role",
+      "snippet": "# visible",
+      "location": "D:/code/AI/workspace/agents/workflow/state/agent-discovery-filter-test/visible-agent/AGENTS.md:1",
+      "inference": "文件标题可作为角色名的唯一可解析线索。"
+    },
+    {
+      "field": "goal",
+      "snippet": "# visible",
+      "location": "D:/code/AI/workspace/agents/workflow/state/agent-discovery-filter-test/visible-agent/AGENTS.md:1",
+      "inference": "未发现目标描述段落。"
+    },
+    {
+      "field": "responsibilities.must",
+      "snippet": "# visible",
+      "location": "D:/code/AI/workspace/agents/workflow/state/agent-discovery-filter-test/visible-agent/AGENTS.md:1",
+      "inference": "未发现必须执行事项。"
+    },
+    {
+      "field": "responsibilities.must_not",
+      "snippet": "# visible",
+      "location": "D:/code/AI/workspace/agents/workflow/state/agent-discovery-filter-test/visible-agent/AGENTS.md:1",
+      "inference": "未发现禁止事项。"
+    },
+    {
+      "field": "responsibilities.preconditions",
+      "snippet": "# visible",
+      "location": "D:/code/AI/workspace/agents/workflow/state/agent-discovery-filter-test/visible-agent/AGENTS.md:1",
+      "inference": "未发现前置条件描述。"
+    }
+  ],
+  "parse_status": "incomplete",
+  "clarity_score": 8,
+  "clarity_gate": "block",
+  "warnings": [
+    "AGENTS.md 仅包含单行标题，缺少结构化职责与目标信息。",
+    "role 由标题推断，非显式字段声明。"
+  ],
+  "missing_fields": [
+    "goal",
+    "responsibilities.must",
+    "responsibilities.must_not",
+    "responsibilities.preconditions"
+  ]
+}

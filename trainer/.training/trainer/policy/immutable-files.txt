@@ -1,0 +1,6 @@
+﻿AGENTS.md
+.training/trainer/policy/immutable-files.txt
+.training/trainer/policy/risk-policy.yaml
+.training/trainer/policy/pass-gate.yaml
+.training/trainer/policy/score-rubric.yaml
+

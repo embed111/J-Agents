@@ -1,0 +1,8 @@
+﻿score_scale: "0-10"
+dimensions:
+  - name: coverage_quality
+    weight: 0.40
+  - name: defect_detection
+    weight: 0.35
+  - name: report_actionability
+    weight: 0.25

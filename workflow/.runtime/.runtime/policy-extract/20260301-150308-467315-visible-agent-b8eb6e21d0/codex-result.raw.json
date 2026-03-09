@@ -1,0 +1,54 @@
+{
+  "role": "visible",
+  "goal": "",
+  "responsibilities": {
+    "must": [],
+    "must_not": [],
+    "preconditions": []
+  },
+  "evidence": [
+    {
+      "field": "role",
+      "conclusion": "角色名可弱推断为“visible”。",
+      "quote": "# visible",
+      "location": "AGENTS.md:1"
+    },
+    {
+      "field": "goal",
+      "conclusion": "未找到目标描述。",
+      "quote": "# visible",
+      "location": "AGENTS.md:1"
+    },
+    {
+      "field": "responsibilities.must",
+      "conclusion": "未找到必须执行事项。",
+      "quote": "# visible",
+      "location": "AGENTS.md:1"
+    },
+    {
+      "field": "responsibilities.must_not",
+      "conclusion": "未找到禁止事项。",
+      "quote": "# visible",
+      "location": "AGENTS.md:1"
+    },
+    {
+      "field": "responsibilities.preconditions",
+      "conclusion": "未找到前置条件。",
+      "quote": "# visible",
+      "location": "AGENTS.md:1"
+    }
+  ],
+  "parse_status": "incomplete",
+  "clarity_score": 12,
+  "clarity_gate": "block",
+  "warnings": [
+    "AGENTS.md 仅包含一级标题，缺少可操作策略信息。",
+    "role 由标题弱推断，置信度有限。"
+  ],
+  "missing_fields": [
+    "goal",
+    "responsibilities.must",
+    "responsibilities.must_not",
+    "responsibilities.preconditions"
+  ]
+}

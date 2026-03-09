@@ -1,0 +1,378 @@
+{
+  "duty_title": "职责边界",
+  "duty_excerpt": "按严格顺序执行单轮流程：`intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive`。",
+  "duty_text": "按严格顺序执行单轮流程：`intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive`。\n在 intake 阶段将任务卡写入 `.training/trainer/queue/inbox/`。\n在 dispatch 阶段按优先级、风险类型、创建时间进行决策，并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\n在 execute 阶段安排 prod 与 cand 同题执行（高风险任务下 cand 仅影子执行）。\n在 score 阶段按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。\n在 audit 阶段复核评分一致性，避免评分漂移。\n在 decide 阶段输出 `keep_training | promote | rollback | blocked` 之一。\n在 report 阶段输出 `.training/trainer/reports/<task_id>-report.md`，并在 archive 阶段将任务移动到 done 或 blocked 队列。\n按启动读取顺序读取：`AGENTS.md`、`.training/trainer/policy/*.yaml`、`daily-summary.md`、`failure-cases.md`。\n输出遵循“结论先行，再给证据与待确认项”。\n对非用户明示内容标注“推断/假设 + 置信度”。\n每次关键决策必须落盘日志并可追溯到 `task_id`。\n不得直接修改 `.training/agents/prod/`。\n候选体不得修改 `.training/trainer/policy/mutable-files.txt` 未列出的文件。\n高风险任务中候选体不得对外交付（仅允许影子执行）。\n信息不足时不得直接假设推进关键结论。\n训练与晋升闭环必须以“不影响生产分析师稳定性”为前提。\n角色覆盖范围默认先分析师，再按策略扩展到架构师、开发、测试。\n当信息不足时，必须先澄清后再推进关键结论。",
+  "duty_truncated": false,
+  "role_profile": "训练师协同体系（`trainer_intake`、`trainer_judge`、`trainer_audit`）并与 `analyst_prod`、`analyst_cand` 联动执行训练与交付控制。",
+  "session_goal": "在不影响生产分析师稳定性的前提下，持续训练候选分析师并形成可晋升闭环；默认先覆盖分析师角色，后续按策略扩展到架构师、开发、测试角色。",
+  "duty_constraints": [
+    "按严格顺序执行单轮流程：`intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive`。",
+    "在 intake 阶段将任务卡写入 `.training/trainer/queue/inbox/`。",
+    "在 dispatch 阶段按优先级、风险类型、创建时间进行决策，并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。",
+    "在 execute 阶段安排 prod 与 cand 同题执行（高风险任务下 cand 仅影子执行）。",
+    "在 score 阶段按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。",
+    "在 audit 阶段复核评分一致性，避免评分漂移。",
+    "在 decide 阶段输出 `keep_training | promote | rollback | blocked` 之一。",
+    "在 report 阶段输出 `.training/trainer/reports/<task_id>-report.md`，并在 archive 阶段将任务移动到 done 或 blocked 队列。",
+    "按启动读取顺序读取：`AGENTS.md`、`.training/trainer/policy/*.yaml`、`daily-summary.md`、`failure-cases.md`。",
+    "输出遵循“结论先行，再给证据与待确认项”。",
+    "对非用户明示内容标注“推断/假设 + 置信度”。",
+    "每次关键决策必须落盘日志并可追溯到 `task_id`。",
+    "不得直接修改 `.training/agents/prod/`。",
+    "候选体不得修改 `.training/trainer/policy/mutable-files.txt` 未列出的文件。",
+    "高风险任务中候选体不得对外交付（仅允许影子执行）。",
+    "信息不足时不得直接假设推进关键结论。",
+    "训练与晋升闭环必须以“不影响生产分析师稳定性”为前提。",
+    "角色覆盖范围默认先分析师，再按策略扩展到架构师、开发、测试。",
+    "当信息不足时，必须先澄清后再推进关键结论。"
+  ],
+  "duty_constraints_text": "按严格顺序执行单轮流程：`intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive`。\n在 intake 阶段将任务卡写入 `.training/trainer/queue/inbox/`。\n在 dispatch 阶段按优先级、风险类型、创建时间进行决策，并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\n在 execute 阶段安排 prod 与 cand 同题执行（高风险任务下 cand 仅影子执行）。\n在 score 阶段按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。\n在 audit 阶段复核评分一致性，避免评分漂移。\n在 decide 阶段输出 `keep_training | promote | rollback | blocked` 之一。\n在 report 阶段输出 `.training/trainer/reports/<task_id>-report.md`，并在 archive 阶段将任务移动到 done 或 blocked 队列。\n按启动读取顺序读取：`AGENTS.md`、`.training/trainer/policy/*.yaml`、`daily-summary.md`、`failure-cases.md`。\n输出遵循“结论先行，再给证据与待确认项”。\n对非用户明示内容标注“推断/假设 + 置信度”。\n每次关键决策必须落盘日志并可追溯到 `task_id`。\n不得直接修改 `.training/agents/prod/`。\n候选体不得修改 `.training/trainer/policy/mutable-files.txt` 未列出的文件。\n高风险任务中候选体不得对外交付（仅允许影子执行）。\n信息不足时不得直接假设推进关键结论。\n训练与晋升闭环必须以“不影响生产分析师稳定性”为前提。\n角色覆盖范围默认先分析师，再按策略扩展到架构师、开发、测试。\n当信息不足时，必须先澄清后再推进关键结论。",
+  "constraints": {
+    "must": [
+      {
+        "text": "按严格顺序执行单轮流程：`intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive`。",
+        "evidence": "",
+        "source_title": "must"
+      },
+      {
+        "text": "在 intake 阶段将任务卡写入 `.training/trainer/queue/inbox/`。",
+        "evidence": "",
+        "source_title": "must"
+      },
+      {
+        "text": "在 dispatch 阶段按优先级、风险类型、创建时间进行决策，并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。",
+        "evidence": "",
+        "source_title": "must"
+      },
+      {
+        "text": "在 execute 阶段安排 prod 与 cand 同题执行（高风险任务下 cand 仅影子执行）。",
+        "evidence": "",
+        "source_title": "must"
+      },
+      {
+        "text": "在 score 阶段按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。",
+        "evidence": "",
+        "source_title": "must"
+      },
+      {
+        "text": "在 audit 阶段复核评分一致性，避免评分漂移。",
+        "evidence": "",
+        "source_title": "must"
+      },
+      {
+        "text": "在 decide 阶段输出 `keep_training | promote | rollback | blocked` 之一。",
+        "evidence": "",
+        "source_title": "must"
+      },
+      {
+        "text": "在 report 阶段输出 `.training/trainer/reports/<task_id>-report.md`，并在 archive 阶段将任务移动到 done 或 blocked 队列。",
+        "evidence": "",
+        "source_title": "must"
+      },
+      {
+        "text": "按启动读取顺序读取：`AGENTS.md`、`.training/trainer/policy/*.yaml`、`daily-summary.md`、`failure-cases.md`。",
+        "evidence": "",
+        "source_title": "must"
+      },
+      {
+        "text": "输出遵循“结论先行，再给证据与待确认项”。",
+        "evidence": "",
+        "source_title": "must"
+      },
+      {
+        "text": "对非用户明示内容标注“推断/假设 + 置信度”。",
+        "evidence": "",
+        "source_title": "must"
+      },
+      {
+        "text": "每次关键决策必须落盘日志并可追溯到 `task_id`。",
+        "evidence": "",
+        "source_title": "must"
+      }
+    ],
+    "must_not": [
+      {
+        "text": "不得直接修改 `.training/agents/prod/`。",
+        "evidence": "",
+        "source_title": "must_not"
+      },
+      {
+        "text": "候选体不得修改 `.training/trainer/policy/mutable-files.txt` 未列出的文件。",
+        "evidence": "",
+        "source_title": "must_not"
+      },
+      {
+        "text": "高风险任务中候选体不得对外交付（仅允许影子执行）。",
+        "evidence": "",
+        "source_title": "must_not"
+      },
+      {
+        "text": "信息不足时不得直接假设推进关键结论。",
+        "evidence": "",
+        "source_title": "must_not"
+      }
+    ],
+    "preconditions": [
+      {
+        "text": "训练与晋升闭环必须以“不影响生产分析师稳定性”为前提。",
+        "evidence": "",
+        "source_title": "preconditions"
+      },
+      {
+        "text": "角色覆盖范围默认先分析师，再按策略扩展到架构师、开发、测试。",
+        "evidence": "",
+        "source_title": "preconditions"
+      },
+      {
+        "text": "当信息不足时，必须先澄清后再推进关键结论。",
+        "evidence": "",
+        "source_title": "preconditions"
+      }
+    ],
+    "issues": [
+      {
+        "code": "constraints_evidence_missing",
+        "message": "职责边界存在无证据条目"
+      }
+    ],
+    "conflicts": [],
+    "missing_evidence_count": 19,
+    "total": 19
+  },
+  "parse_status": "ok",
+  "parse_warnings": [
+    "文档描述的是多角色协同体系，不是单一执行体；`role` 字段已做聚合表达。",
+    "`responsibilities.preconditions` 中部分条目来自“目标/关键约束”的前提化重述，属于结构化映射而非新增规则。",
+    "constraints_evidence_missing"
+  ],
+  "evidence_snippets": {
+    "role": "",
+    "goal": "",
+    "duty": ""
+  },
+  "score_model": "v2",
+  "score_total": 78,
+  "score_weights": {
+    "completeness": 0.2,
+    "executability": 0.2,
+    "consistency": 0.2,
+    "traceability": 0.15,
+    "risk_coverage": 0.15,
+    "operability": 0.1
+  },
+  "score_dimensions": {
+    "completeness": {
+      "label": "完整性",
+      "score": 100,
+      "weight": 0.2,
+      "status": "ok",
+      "has_evidence": true,
+      "manual_review_required": false,
+      "deduction_reason": "",
+      "evidence_map": [
+        {
+          "ref": "role",
+          "snippet": ""
+        },
+        {
+          "ref": "goal",
+          "snippet": ""
+        },
+        {
+          "ref": "duty",
+          "snippet": ""
+        }
+      ],
+      "repair_suggestion": "补充 AGENTS.md 中“角色定位 / 会话目标 / 职责边界”三段基础内容。",
+      "threshold": 80
+    },
+    "executability": {
+      "label": "可执行边界",
+      "score": 100,
+      "weight": 0.2,
+      "status": "ok",
+      "has_evidence": true,
+      "manual_review_required": false,
+      "deduction_reason": "",
+      "evidence_map": [
+        {
+          "ref": "must",
+          "snippet": ""
+        },
+        {
+          "ref": "must_not",
+          "snippet": ""
+        },
+        {
+          "ref": "preconditions",
+          "snippet": ""
+        }
+      ],
+      "repair_suggestion": "在 AGENTS.md 新增/完善“职责边界（must/must_not/preconditions）”章节。",
+      "threshold": 80
+    },
+    "consistency": {
+      "label": "一致性",
+      "score": 88,
+      "weight": 0.2,
+      "status": "ok",
+      "has_evidence": true,
+      "manual_review_required": false,
+      "deduction_reason": "",
+      "evidence_map": [
+        {
+          "ref": "duty",
+          "snippet": ""
+        },
+        {
+          "ref": "constraints",
+          "snippet": ""
+        }
+      ],
+      "repair_suggestion": "统一 AGENTS.md 中角色目标和职责描述，删除互相矛盾条目。",
+      "threshold": 80
+    },
+    "traceability": {
+      "label": "可追溯性",
+      "score": 0,
+      "weight": 0.15,
+      "status": "low",
+      "has_evidence": true,
+      "manual_review_required": false,
+      "deduction_reason": "评分依据无法稳定映射到 AGENTS.md 原文证据。",
+      "evidence_map": [
+        {
+          "ref": "role",
+          "snippet": ""
+        },
+        {
+          "ref": "goal",
+          "snippet": ""
+        },
+        {
+          "ref": "duty",
+          "snippet": ""
+        }
+      ],
+      "repair_suggestion": "将关键限制条目改为清晰列表，并在同段补充可定位描述。",
+      "threshold": 80
+    },
+    "risk_coverage": {
+      "label": "风险覆盖度",
+      "score": 92,
+      "weight": 0.15,
+      "status": "ok",
+      "has_evidence": true,
+      "manual_review_required": false,
+      "deduction_reason": "",
+      "evidence_map": [
+        {
+          "ref": "must_not",
+          "snippet": ""
+        },
+        {
+          "ref": "duty",
+          "snippet": ""
+        }
+      ],
+      "repair_suggestion": "补充 AGENTS.md 中禁止项（must_not），明确高风险操作处理边界。",
+      "threshold": 80
+    },
+    "operability": {
+      "label": "可操作性",
+      "score": 92,
+      "weight": 0.1,
+      "status": "ok",
+      "has_evidence": true,
+      "manual_review_required": false,
+      "deduction_reason": "",
+      "evidence_map": [
+        {
+          "ref": "goal",
+          "snippet": ""
+        },
+        {
+          "ref": "duty",
+          "snippet": ""
+        }
+      ],
+      "repair_suggestion": "将职责边界改写为可执行动作列表（动词 + 条件 + 输出）。",
+      "threshold": 80
+    }
+  },
+  "clarity_score": 78,
+  "clarity_details": {
+    "completeness": 100,
+    "specificity": 96,
+    "consistency": 88,
+    "traceability": 0,
+    "executability": 100,
+    "risk_coverage": 92,
+    "operability": 92
+  },
+  "clarity_gate": "confirm",
+  "clarity_gate_reason": "constraints_evidence_missing",
+  "risk_tips": [
+    "清晰度不足或证据不充分，建议人工确认后再执行任务。",
+    "可追溯性偏低：评分依据无法稳定映射到 AGENTS.md 原文证据。",
+    "职责边界存在无证据条目",
+    "文档描述的是多角色协同体系，不是单一执行体；`role` 字段已做聚合表达。",
+    "`responsibilities.preconditions` 中部分条目来自“目标/关键约束”的前提化重述，属于结构化映射而非新增规则。"
+  ],
+  "policy_extract_ok": true,
+  "policy_error": "",
+  "policy_extract_source": "codex_exec",
+  "policy_prompt_version": "2026-03-01-codex-exec-v1",
+  "analysis_chain": {
+    "source": "codex_exec",
+    "prompt_version": "2026-03-01-codex-exec-v1",
+    "workspace_root": "D:/code/AI/workspace/agents",
+    "workspace_root_valid": true,
+    "workspace_root_error": "",
+    "target_agent_workspace": "D:/code/AI/workspace/agents/trainer",
+    "target_agents_path": "D:/code/AI/workspace/agents/trainer/AGENTS.md",
+    "target_in_scope": true,
+    "scope_hint": "workspace_root=D:/code/AI/workspace/agents ; target_agents_path=D:/code/AI/workspace/agents/trainer/AGENTS.md ; expect target path under workspace root and workspace root contains workflow/.",
+    "command_summary": "codex exec --json --skip-git-repo-check --sandbox workspace-write --add-dir <workspace_root> -C <workspace_root> -",
+    "command": [
+      "C:\\Users\\jmqj\\AppData\\Roaming\\npm\\codex.CMD",
+      "exec",
+      "--json",
+      "--skip-git-repo-check",
+      "--sandbox",
+      "workspace-write",
+      "--add-dir",
+      "D:/code/AI/workspace/agents",
+      "-C",
+      "D:/code/AI/workspace/agents",
+      "-"
+    ],
+    "codex_exit_code": 0,
+    "contract_status": "ok",
+    "contract_missing_fields": [],
+    "contract_issues": [],
+    "files": {
+      "trace_dir": ".runtime/policy-extract/20260301-162237-127297-trainer-837b4e113d",
+      "prompt": ".runtime/policy-extract/20260301-162237-127297-trainer-837b4e113d/prompt.txt",
+      "stdout": ".runtime/policy-extract/20260301-162237-127297-trainer-837b4e113d/stdout.txt",
+      "stderr": ".runtime/policy-extract/20260301-162237-127297-trainer-837b4e113d/stderr.txt",
+      "codex_result_raw": ".runtime/policy-extract/20260301-162237-127297-trainer-837b4e113d/codex-result.raw.json",
+      "parsed_result": ".runtime/policy-extract/20260301-162237-127297-trainer-837b4e113d/parsed-result.json",
+      "gate_decision": ".runtime/policy-extract/20260301-162237-127297-trainer-837b4e113d/gate-decision.json"
+    },
+    "content": {
+      "prompt": "你是“角色策略提取助手”。请读取指定 AGENTS.md 并输出结构化 JSON，不要输出与 JSON 无关的说明文字。\n\nprompt_version: 2026-03-01-codex-exec-v1\n\n输入:\n- workspace_root: D:/code/AI/workspace/agents\n- target_agent_workspace: D:/code/AI/workspace/agents/trainer\n- agents_md_path: D:/code/AI/workspace/agents/trainer/AGENTS.md\n\n任务:\n1) 仅基于 AGENTS.md 内容提取:\n   - role\n   - goal\n   - responsibilities.must\n   - responsibilities.must_not\n   - responsibilities.preconditions\n2) 对每个关键结论给 evidence（原文片段或段落定位）。\n3) 给出 parse_status、clarity_score(0-100)、clarity_gate(auto|confirm|block)、warnings[]。\n4) 若信息不足，必须显式标记 missing_fields[]，不要编造。\n\n输出要求:\n- 仅输出一个 JSON 对象。\n- 字段至少包含:\n{\n  \"role\": \"\",\n  \"goal\": \"\",\n  \"responsibilities\": {\n    \"must\": [],\n    \"must_not\": [],\n    \"preconditions\": []\n  },\n  \"evidence\": [],\n  \"parse_status\": \"ok|incomplete|failed\",\n  \"clarity_score\": 0,\n  \"clarity_gate\": \"auto|confirm|block\",\n  \"warnings\": [],\n  \"missing_fields\": []\n}",
+      "stdout": "{\"type\":\"thread.started\",\"thread_id\":\"019ca87e-05e6-7ef2-97db-32e5f5be4b7b\"}\n{\"type\":\"turn.started\"}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_0\",\"type\":\"reasoning\",\"text\":\"**Reading AGENTS.md for instructions**\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_1\",\"type\":\"command_execution\",\"command\":\"\\\"C:\\\\\\\\WINDOWS\\\\\\\\System32\\\\\\\\WindowsPowerShell\\\\\\\\v1.0\\\\\\\\powershell.exe\\\" -Command 'Get-Content -Raw \\\"D:/code/AI/workspace/agents/trainer/AGENTS.md\\\"'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_1\",\"type\":\"command_execution\",\"command\":\"\\\"C:\\\\\\\\WINDOWS\\\\\\\\System32\\\\\\\\WindowsPowerShell\\\\\\\\v1.0\\\\\\\\powershell.exe\\\" -Command 'Get-Content -Raw \\\"D:/code/AI/workspace/agents/trainer/AGENTS.md\\\"'\",\"aggregated_output\":\"# 训练师 AGENTS\\n\\n## 目标\\n1. 在不影响生产分析师稳定性的前提下，持续训练候选分析师并形成可晋升闭环。\\n2. 默认先覆盖分析师角色，后续按策略扩展到架构师、开发、测试角色。\\n\\n## 角色\\n1. `trainer_intake`：将用户自然语言任务转成结构化任务卡。\\n2. `trainer_judge`：任务分配、评分、反馈、晋升/回滚建议。\\n3. `trainer_audit`：复核评分一致性，避免评分漂移。\\n4. `analyst_prod`：生产分析师，对外交付。\\n5. `analyst_cand`：候选分析师，仅训练与影子执行。\\n\\n## 关键约束\\n1. 不直接修改 `.training/agents/prod/`。\\n2. 候选体仅允许修改 `.training/trainer/policy/mutable-files.txt` 列出的文件。\\n3. 高风险任务必须由生产体对外交付，候选体仅影子执行。\\n4. 信息不足时必须先澄清，不得直接假设推进关键结论。\\n\\n## 单轮流程（严格顺序）\\n1. intake：将任务卡写入 `.training/trainer/queue/inbox/`。\\n2. dispatch：按优先级、风险类型、创建时间决策并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\\n3. execute：prod 与 cand 同题执行（高风险任务 cand 仅影子）。\\n4. score：按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。\\n5. audit：复核评分一致性。\\n6. decide：`keep_training | promote | rollback | blocked`。\\n7. report：输出 `.training/trainer/reports/<task_id>-report.md`。\\n8. archive：任务移动到 `.training/trainer/queue/done/` 或 `.training/trainer/queue/blocked/`。\\n\\n## 启动读取顺序\\n1. `AGENTS.md`\\n2. `.training/trainer/policy/*.yaml`\\n3. `.training/trainer/logs/summaries/daily-summary.md`\\n4. `.training/trainer/logs/summaries/failure-cases.md`\\n\\n## 输出规范\\n1. 结论先行，再给证据与待确认项。\\n2. 非用户明示内容必须标注“推断/假设 + 置信度”。\\n3. 每次关键决策必须落盘日志并可追溯到 task_id。\\r\\n\\r\\n\\r\\n\\r\\n\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_2\",\"type\":\"reasoning\",\"text\":\"**Extracting structured role and responsibilities**\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_3\",\"type\":\"agent_message\",\"text\":\"{\\n  \\\"role\\\": \\\"训练师协同体系（`trainer_intake`、`trainer_judge`、`trainer_audit`）并与 `analyst_prod`、`analyst_cand` 联动执行训练与交付控制。\\\",\\n  \\\"goal\\\": \\\"在不影响生产分析师稳定性的前提下，持续训练候选分析师并形成可晋升闭环；默认先覆盖分析师角色，后续按策略扩展到架构师、开发、测试角色。\\\",\\n  \\\"responsibilities\\\": {\\n    \\\"must\\\": [\\n      \\\"按严格顺序执行单轮流程：`intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive`。\\\",\\n      \\\"在 intake 阶段将任务卡写入 `.training/trainer/queue/inbox/`。\\\",\\n      \\\"在 dispatch 阶段按优先级、风险类型、创建时间进行决策，并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\\\",\\n      \\\"在 execute 阶段安排 prod 与 cand 同题执行（高风险任务下 cand 仅影子执行）。\\\",\\n      \\\"在 score 阶段按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。\\\",\\n      \\\"在 audit 阶段复核评分一致性，避免评分漂移。\\\",\\n      \\\"在 decide 阶段输出 `keep_training | promote | rollback | blocked` 之一。\\\",\\n      \\\"在 report 阶段输出 `.training/trainer/reports/<task_id>-report.md`，并在 archive 阶段将任务移动到 done 或 blocked 队列。\\\",\\n      \\\"按启动读取顺序读取：`AGENTS.md`、`.training/trainer/policy/*.yaml`、`daily-summary.md`、`failure-cases.md`。\\\",\\n      \\\"输出遵循“结论先行，再给证据与待确认项”。\\\",\\n      \\\"对非用户明示内容标注“推断/假设 + 置信度”。\\\",\\n      \\\"每次关键决策必须落盘日志并可追溯到 `task_id`。\\\"\\n    ],\\n    \\\"must_not\\\": [\\n      \\\"不得直接修改 `.training/agents/prod/`。\\\",\\n      \\\"候选体不得修改 `.training/trainer/policy/mutable-files.txt` 未列出的文件。\\\",\\n      \\\"高风险任务中候选体不得对外交付（仅允许影子执行）。\\\",\\n      \\\"信息不足时不得直接假设推进关键结论。\\\"\\n    ],\\n    \\\"preconditions\\\": [\\n      \\\"训练与晋升闭环必须以“不影响生产分析师稳定性”为前提。\\\",\\n      \\\"角色覆盖范围默认先分析师，再按策略扩展到架构师、开发、测试。\\\",\\n      \\\"当信息不足时，必须先澄清后再推进关键结论。\\\"\\n    ]\\n  },\\n  \\\"evidence\\\": [\\n    {\\n      \\\"field\\\": \\\"role\\\",\\n      \\\"item\\\": \\\"训练师为多角色协同体系\\\",\\n      \\\"location\\\": \\\"标题 + `## 角色`\\\",\\n      \\\"excerpt\\\": \\\"# 训练师 AGENTS；1. `trainer_intake`... 2. `trainer_judge`... 3. `trainer_audit`... 4. `analyst_prod`... 5. `analyst_cand`...\\\"\\n    },\\n    {\\n      \\\"field\\\": \\\"goal\\\",\\n      \\\"item\\\": \\\"稳定生产前提下训练候选并形成晋升闭环\\\",\\n      \\\"location\\\": \\\"`## 目标` 第1条\\\",\\n      \\\"excerpt\\\": \\\"在不影响生产分析师稳定性的前提下，持续训练候选分析师并形成可晋升闭环。\\\"\\n    },\\n    {\\n      \\\"field\\\": \\\"goal\\\",\\n      \\\"item\\\": \\\"先分析师后扩展其他角色\\\",\\n      \\\"location\\\": \\\"`## 目标` 第2条\\\",\\n      \\\"excerpt\\\": \\\"默认先覆盖分析师角色，后续按策略扩展到架构师、开发、测试角色。\\\"\\n    },\\n    {\\n      \\\"field\\\": \\\"responsibilities.must_not\\\",\\n      \\\"item\\\": \\\"禁止修改生产体目录\\\",\\n      \\\"location\\\": \\\"`## 关键约束` 第1条\\\",\\n      \\\"excerpt\\\": \\\"不直接修改 `.training/agents/prod/`。\\\"\\n    },\\n    {\\n      \\\"field\\\": \\\"responsibilities.must_not\\\",\\n      \\\"item\\\": \\\"候选体修改范围受限\\\",\\n      \\\"location\\\": \\\"`## 关键约束` 第2条\\\",\\n      \\\"excerpt\\\": \\\"候选体仅允许修改 `.training/trainer/policy/mutable-files.txt` 列出的文件。\\\"\\n    },\\n    {\\n      \\\"field\\\": \\\"responsibilities.must_not\\\",\\n      \\\"item\\\": \\\"高风险任务候选体不能对外交付\\\",\\n      \\\"location\\\": \\\"`## 关键约束` 第3条\\\",\\n      \\\"excerpt\\\": \\\"高风险任务必须由生产体对外交付，候选体仅影子执行。\\\"\\n    },\\n    {\\n      \\\"field\\\": \\\"responsibilities.must_not\\\",\\n      \\\"item\\\": \\\"信息不足时禁止直接假设推进\\\",\\n      \\\"location\\\": \\\"`## 关键约束` 第4条\\\",\\n      \\\"excerpt\\\": \\\"信息不足时必须先澄清，不得直接假设推进关键结论。\\\"\\n    },\\n    {\\n      \\\"field\\\": \\\"responsibilities.must\\\",\\n      \\\"item\\\": \\\"流程必须严格顺序执行\\\",\\n      \\\"location\\\": \\\"`## 单轮流程（严格顺序）`\\\",\\n      \\\"excerpt\\\": \\\"1. intake ... 2. dispatch ... 3. execute ... 4. score ... 5. audit ... 6. decide ... 7. report ... 8. archive ...\\\"\\n    },\\n    {\\n      \\\"field\\\": \\\"responsibilities.must\\\",\\n      \\\"item\\\": \\\"intake 写入 inbox\\\",\\n      \\\"location\\\": \\\"`## 单轮流程` 第1条\\\",\\n      \\\"excerpt\\\": \\\"intake：将任务卡写入 `.training/trainer/queue/inbox/`。\\\"\\n    },\\n    {\\n      \\\"field\\\": \\\"responsibilities.must\\\",\\n      \\\"item\\\": \\\"dispatch 记录决策文件\\\",\\n      \\\"location\\\": \\\"`## 单轮流程` 第2条\\\",\\n      \\\"excerpt\\\": \\\"dispatch：按优先级、风险类型、创建时间决策并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\\\"\\n    },\\n    {\\n      \\\"field\\\": \\\"responsibilities.must\\\",\\n      \\\"item\\\": \\\"score 依据 rubric 并判断退化\\\",\\n      \\\"location\\\": \\\"`## 单轮流程` 第4条\\\",\\n      \\\"excerpt\\\": \\\"score：按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。\\\"\\n    },\\n    {\\n      \\\"field\\\": \\\"responsibilities.must\\\",\\n      \\\"item\\\": \\\"audit 复核一致性\\\",\\n      \\\"location\\\": \\\"`## 单轮流程` 第5条\\\",\\n      \\\"excerpt\\\": \\\"audit：复核评分一致性。\\\"\\n    },\\n    {\\n      \\\"field\\\": \\\"responsibilities.must\\\",\\n      \\\"item\\\": \\\"decide 输出固定决策集合\\\",\\n      \\\"location\\\": \\\"`## 单轮流程` 第6条\\\",\\n      \\\"excerpt\\\": \\\"decide：`keep_training | promote | rollback | blocked`。\\\"\\n    },\\n    {\\n      \\\"field\\\": \\\"responsibilities.must\\\",\\n      \\\"item\\\": \\\"report 与 archive 产物/归档要求\\\",\\n      \\\"location\\\": \\\"`## 单轮流程` 第7-8条\\\",\\n      \\\"excerpt\\\": \\\"report：输出 `.training/trainer/reports/<task_id>-report.md`。archive：任务移动到 `.training/trainer/queue/done/` 或 `.training/trainer/queue/blocked/`。\\\"\\n    },\\n    {\\n      \\\"field\\\": \\\"responsibilities.must\\\",\\n      \\\"item\\\": \\\"启动读取顺序\\\",\\n      \\\"location\\\": \\\"`## 启动读取顺序`\\\",\\n      \\\"excerpt\\\": \\\"1. `AGENTS.md` 2. `.training/trainer/policy/*.yaml` 3. `daily-summary.md` 4. `failure-cases.md`\\\"\\n    },\\n    {\\n      \\\"field\\\": \\\"responsibilities.must\\\",\\n      \\\"item\\\": \\\"输出规范：结论先行\\\",\\n      \\\"location\\\": \\\"`## 输出规范` 第1条\\\",\\n      \\\"excerpt\\\": \\\"结论先行，再给证据与待确认项。\\\"\\n    },\\n    {\\n      \\\"field\\\": \\\"responsibilities.must\\\",\\n      \\\"item\\\": \\\"输出规范：推断标注\\\",\\n      \\\"location\\\": \\\"`## 输出规范` 第2条\\\",\\n      \\\"excerpt\\\": \\\"非用户明示内容必须标注“推断/假设 + 置信度”。\\\"\\n    },\\n    {\\n      \\\"field\\\": \\\"responsibilities.must\\\",\\n      \\\"item\\\": \\\"输出规范：关键决策可追溯\\\",\\n      \\\"location\\\": \\\"`## 输出规范` 第3条\\\",\\n      \\\"excerpt\\\": \\\"每次关键决策必须落盘日志并可追溯到 task_id。\\\"\\n    }\\n  ],\\n  \\\"parse_status\\\": \\\"ok\\\",\\n  \\\"clarity_score\\\": 90,\\n  \\\"clarity_gate\\\": \\\"auto\\\",\\n  \\\"warnings\\\": [\\n    \\\"文档描述的是多角色协同体系，不是单一执行体；`role` 字段已做聚合表达。\\\",\\n    \\\"`responsibilities.preconditions` 中部分条目来自“目标/关键约束”的前提化重述，属于结构化映射而非新增规则。\\\"\\n  ],\\n  \\\"missing_fields\\\": []\\n}\"}}\n{\"type\":\"turn.completed\",\"usage\":{\"input_tokens\":14595,\"cached_input_tokens\":11136,\"output_tokens\":4115}}\n",
+      "stderr": "",
+      "codex_result_raw": "{\n  \"role\": \"训练师协同体系（`trainer_intake`、`trainer_judge`、`trainer_audit`）并与 `analyst_prod`、`analyst_cand` 联动执行训练与交付控制。\",\n  \"goal\": \"在不影响生产分析师稳定性的前提下，持续训练候选分析师并形成可晋升闭环；默认先覆盖分析师角色，后续按策略扩展到架构师、开发、测试角色。\",\n  \"responsibilities\": {\n    \"must\": [\n      \"按严格顺序执行单轮流程：`intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive`。\",\n      \"在 intake 阶段将任务卡写入 `.training/trainer/queue/inbox/`。\",\n      \"在 dispatch 阶段按优先级、风险类型、创建时间进行决策，并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\",\n      \"在 execute 阶段安排 prod 与 cand 同题执行（高风险任务下 cand 仅影子执行）。\",\n      \"在 score 阶段按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。\",\n      \"在 audit 阶段复核评分一致性，避免评分漂移。\",\n      \"在 decide 阶段输出 `keep_training | promote | rollback | blocked` 之一。\",\n      \"在 report 阶段输出 `.training/trainer/reports/<task_id>-report.md`，并在 archive 阶段将任务移动到 done 或 blocked 队列。\",\n      \"按启动读取顺序读取：`AGENTS.md`、`.training/trainer/policy/*.yaml`、`daily-summary.md`、`failure-cases.md`。\",\n      \"输出遵循“结论先行，再给证据与待确认项”。\",\n      \"对非用户明示内容标注“推断/假设 + 置信度”。\",\n      \"每次关键决策必须落盘日志并可追溯到 `task_id`。\"\n    ],\n    \"must_not\": [\n      \"不得直接修改 `.training/agents/prod/`。\",\n      \"候选体不得修改 `.training/trainer/policy/mutable-files.txt` 未列出的文件。\",\n      \"高风险任务中候选体不得对外交付（仅允许影子执行）。\",\n      \"信息不足时不得直接假设推进关键结论。\"\n    ],\n    \"preconditions\": [\n      \"训练与晋升闭环必须以“不影响生产分析师稳定性”为前提。\",\n      \"角色覆盖范围默认先分析师，再按策略扩展到架构师、开发、测试。\",\n      \"当信息不足时，必须先澄清后再推进关键结论。\"\n    ]\n  },\n  \"evidence\": [\n    {\n      \"field\": \"role\",\n      \"item\": \"训练师为多角色协同体系\",\n      \"location\": \"标题 + `## 角色`\",\n      \"excerpt\": \"# 训练师 AGENTS；1. `trainer_intake`... 2. `trainer_judge`... 3. `trainer_audit`... 4. `analyst_prod`... 5. `analyst_cand`...\"\n    },\n    {\n      \"field\": \"goal\",\n      \"item\": \"稳定生产前提下训练候选并形成晋升闭环\",\n      \"location\": \"`## 目标` 第1条\",\n      \"excerpt\": \"在不影响生产分析师稳定性的前提下，持续训练候选分析师并形成可晋升闭环。\"\n    },\n    {\n      \"field\": \"goal\",\n      \"item\": \"先分析师后扩展其他角色\",\n      \"location\": \"`## 目标` 第2条\",\n      \"excerpt\": \"默认先覆盖分析师角色，后续按策略扩展到架构师、开发、测试角色。\"\n    },\n    {\n      \"field\": \"responsibilities.must_not\",\n      \"item\": \"禁止修改生产体目录\",\n      \"location\": \"`## 关键约束` 第1条\",\n      \"excerpt\": \"不直接修改 `.training/agents/prod/`。\"\n    },\n    {\n      \"field\": \"responsibilities.must_not\",\n      \"item\": \"候选体修改范围受限\",\n      \"location\": \"`## 关键约束` 第2条\",\n      \"excerpt\": \"候选体仅允许修改 `.training/trainer/policy/mutable-files.txt` 列出的文件。\"\n    },\n    {\n      \"field\": \"responsibilities.must_not\",\n      \"item\": \"高风险任务候选体不能对外交付\",\n      \"location\": \"`## 关键约束` 第3条\",\n      \"excerpt\": \"高风险任务必须由生产体对外交付，候选体仅影子执行。\"\n    },\n    {\n      \"field\": \"responsibilities.must_not\",\n      \"item\": \"信息不足时禁止直接假设推进\",\n      \"location\": \"`## 关键约束` 第4条\",\n      \"excerpt\": \"信息不足时必须先澄清，不得直接假设推进关键结论。\"\n    },\n    {\n      \"field\": \"responsibilities.must\",\n      \"item\": \"流程必须严格顺序执行\",\n      \"location\": \"`## 单轮流程（严格顺序）`\",\n      \"excerpt\": \"1. intake ... 2. dispatch ... 3. execute ... 4. score ... 5. audit ... 6. decide ... 7. report ... 8. archive ...\"\n    },\n    {\n      \"field\": \"responsibilities.must\",\n      \"item\": \"intake 写入 inbox\",\n      \"location\": \"`## 单轮流程` 第1条\",\n      \"excerpt\": \"intake：将任务卡写入 `.training/trainer/queue/inbox/`。\"\n    },\n    {\n      \"field\": \"responsibilities.must\",\n      \"item\": \"dispatch 记录决策文件\",\n      \"location\": \"`## 单轮流程` 第2条\",\n      \"excerpt\": \"dispatch：按优先级、风险类型、创建时间决策并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\"\n    },\n    {\n      \"field\": \"responsibilities.must\",\n      \"item\": \"score 依据 rubric 并判断退化\",\n      \"location\": \"`## 单轮流程` 第4条\",\n      \"excerpt\": \"score：按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。\"\n    },\n    {\n      \"field\": \"responsibilities.must\",\n      \"item\": \"audit 复核一致性\",\n      \"location\": \"`## 单轮流程` 第5条\",\n      \"excerpt\": \"audit：复核评分一致性。\"\n    },\n    {\n      \"field\": \"responsibilities.must\",\n      \"item\": \"decide 输出固定决策集合\",\n      \"location\": \"`## 单轮流程` 第6条\",\n      \"excerpt\": \"decide：`keep_training | promote | rollback | blocked`。\"\n    },\n    {\n      \"field\": \"responsibilities.must\",\n      \"item\": \"report 与 archive 产物/归档要求\",\n      \"location\": \"`## 单轮流程` 第7-8条\",\n      \"excerpt\": \"report：输出 `.training/trainer/reports/<task_id>-report.md`。archive：任务移动到 `.training/trainer/queue/done/` 或 `.training/trainer/queue/blocked/`。\"\n    },\n    {\n      \"field\": \"responsibilities.must\",\n      \"item\": \"启动读取顺序\",\n      \"location\": \"`## 启动读取顺序`\",\n      \"excerpt\": \"1. `AGENTS.md` 2. `.training/trainer/policy/*.yaml` 3. `daily-summary.md` 4. `failure-cases.md`\"\n    },\n    {\n      \"field\": \"responsibilities.must\",\n      \"item\": \"输出规范：结论先行\",\n      \"location\": \"`## 输出规范` 第1条\",\n      \"excerpt\": \"结论先行，再给证据与待确认项。\"\n    },\n    {\n      \"field\": \"responsibilities.must\",\n      \"item\": \"输出规范：推断标注\",\n      \"location\": \"`## 输出规范` 第2条\",\n      \"excerpt\": \"非用户明示内容必须标注“推断/假设 + 置信度”。\"\n    },\n    {\n      \"field\": \"responsibilities.must\",\n      \"item\": \"输出规范：关键决策可追溯\",\n      \"location\": \"`## 输出规范` 第3条\",\n      \"excerpt\": \"每次关键决策必须落盘日志并可追溯到 task_id。\"\n    }\n  ],\n  \"parse_status\": \"ok\",\n  \"clarity_score\": 90,\n  \"clarity_gate\": \"auto\",\n  \"warnings\": [\n    \"文档描述的是多角色协同体系，不是单一执行体；`role` 字段已做聚合表达。\",\n    \"`responsibilities.preconditions` 中部分条目来自“目标/关键约束”的前提化重述，属于结构化映射而非新增规则。\"\n  ],\n  \"missing_fields\": []\n}",
+      "parsed_result": "{\n  \"duty_title\": \"职责边界\",\n  \"duty_excerpt\": \"按严格顺序执行单轮流程：`intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive`。\",\n  \"duty_text\": \"按严格顺序执行单轮流程：`intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive`。\\n在 intake 阶段将任务卡写入 `.training/trainer/queue/inbox/`。\\n在 dispatch 阶段按优先级、风险类型、创建时间进行决策，并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\\n在 execute 阶段安排 prod 与 cand 同题执行（高风险任务下 cand 仅影子执行）。\\n在 score 阶段按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。\\n在 audit 阶段复核评分一致性，避免评分漂移。\\n在 decide 阶段输出 `keep_training | promote | rollback | blocked` 之一。\\n在 report 阶段输出 `.training/trainer/reports/<task_id>-report.md`，并在 archive 阶段将任务移动到 done 或 blocked 队列。\\n按启动读取顺序读取：`AGENTS.md`、`.training/trainer/policy/*.yaml`、`daily-summary.md`、`failure-cases.md`。\\n输出遵循“结论先行，再给证据与待确认项”。\\n对非用户明示内容标注“推断/假设 + 置信度”。\\n每次关键决策必须落盘日志并可追溯到 `task_id`。\\n不得直接修改 `.training/agents/prod/`。\\n候选体不得修改 `.training/trainer/policy/mutable-files.txt` 未列出的文件。\\n高风险任务中候选体不得对外交付（仅允许影子执行）。\\n信息不足时不得直接假设推进关键结论。\\n训练与晋升闭环必须以“不影响生产分析师稳定性”为前提。\\n角色覆盖范围默认先分析师，再按策略扩展到架构师、开发、测试。\\n当信息不足时，必须先澄清后再推进关键结论。\",\n  \"duty_truncated\": false,\n  \"role_profile\": \"训练师协同体系（`trainer_intake`、`trainer_judge`、`trainer_audit`）并与 `analyst_prod`、`analyst_cand` 联动执行训练与交付控制。\",\n  \"session_goal\": \"在不影响生产分析师稳定性的前提下，持续训练候选分析师并形成可晋升闭环；默认先覆盖分析师角色，后续按策略扩展到架构师、开发、测试角色。\",\n  \"duty_constraints\": [\n    \"按严格顺序执行单轮流程：`intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive`。\",\n    \"在 intake 阶段将任务卡写入 `.training/trainer/queue/inbox/`。\",\n    \"在 dispatch 阶段按优先级、风险类型、创建时间进行决策，并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\",\n    \"在 execute 阶段安排 prod 与 cand 同题执行（高风险任务下 cand 仅影子执行）。\",\n    \"在 score 阶段按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。\",\n    \"在 audit 阶段复核评分一致性，避免评分漂移。\",\n    \"在 decide 阶段输出 `keep_training | promote | rollback | blocked` 之一。\",\n    \"在 report 阶段输出 `.training/trainer/reports/<task_id>-report.md`，并在 archive 阶段将任务移动到 done 或 blocked 队列。\",\n    \"按启动读取顺序读取：`AGENTS.md`、`.training/trainer/policy/*.yaml`、`daily-summary.md`、`failure-cases.md`。\",\n    \"输出遵循“结论先行，再给证据与待确认项”。\",\n    \"对非用户明示内容标注“推断/假设 + 置信度”。\",\n    \"每次关键决策必须落盘日志并可追溯到 `task_id`。\",\n    \"不得直接修改 `.training/agents/prod/`。\",\n    \"候选体不得修改 `.training/trainer/policy/mutable-files.txt` 未列出的文件。\",\n    \"高风险任务中候选体不得对外交付（仅允许影子执行）。\",\n    \"信息不足时不得直接假设推进关键结论。\",\n    \"训练与晋升闭环必须以“不影响生产分析师稳定性”为前提。\",\n    \"角色覆盖范围默认先分析师，再按策略扩展到架构师、开发、测试。\",\n    \"当信息不足时，必须先澄清后再推进关键结论。\"\n  ],\n  \"duty_constraints_text\": \"按严格顺序执行单轮流程：`intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive`。\\n在 intake 阶段将任务卡写入 `.training/trainer/queue/inbox/`。\\n在 dispatch 阶段按优先级、风险类型、创建时间进行决策，并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\\n在 execute 阶段安排 prod 与 cand 同题执行（高风险任务下 cand 仅影子执行）。\\n在 score 阶段按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。\\n在 audit 阶段复核评分一致性，避免评分漂移。\\n在 decide 阶段输出 `keep_training | promote | rollback | blocked` 之一。\\n在 report 阶段输出 `.training/trainer/reports/<task_id>-report.md`，并在 archive 阶段将任务移动到 done 或 blocked 队列。\\n按启动读取顺序读取：`AGENTS.md`、`.training/trainer/policy/*.yaml`、`daily-summary.md`、`failure-cases.md`。\\n输出遵循“结论先行，再给证据与待确认项”。\\n对非用户明示内容标注“推断/假设 + 置信度”。\\n每次关键决策必须落盘日志并可追溯到 `task_id`。\\n不得直接修改 `.training/agents/prod/`。\\n候选体不得修改 `.training/trainer/policy/mutable-files.txt` 未列出的文件。\\n高风险任务中候选体不得对外交付（仅允许影子执行）。\\n信息不足时不得直接假设推进关键结论。\\n训练与晋升闭环必须以“不影响生产分析师稳定性”为前提。\\n角色覆盖范围默认先分析师，再按策略扩展到架构师、开发、测试。\\n当信息不足时，必须先澄清后再推进关键结论。\",\n  \"constraints\": {\n    \"must\": [\n      {\n        \"text\": \"按严格顺序执行单轮流程：`intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive`。\",\n        \"evidence\": \"\",\n        \"source_title\": \"must\"\n      },\n      {\n        \"text\": \"在 intake 阶段将任务卡写入 `.training/trainer/queue/inbox/`。\",\n        \"evidence\": \"\",\n        \"source_title\": \"must\"\n      },\n      {\n        \"text\": \"在 dispatch 阶段按优先级、风险类型、创建时间进行决策，并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\",\n        \"evidence\": \"\",\n        \"source_title\": \"must\"\n      },\n      {\n        \"text\": \"在 execute 阶段安排 prod 与 cand 同题执行（高风险任务下 cand 仅影子执行）。\",\n        \"evidence\": \"\",\n        \"source_title\": \"must\"\n      },\n      {\n        \"text\": \"在 score 阶段按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。\",\n        \"evidence\": \"\",\n        \"source_title\": \"must\"\n      },\n      {\n        \"text\": \"在 audit 阶段复核评分一致性，避免评分漂移。\",\n        \"evidence\": \"\",\n        \"source_title\": \"must\"\n      },\n      {\n        \"text\": \"在 decide 阶段输出 `keep_training | promote | rollback | blocked` 之一。\",\n        \"evidence\": \"\",\n        \"source_title\": \"must\"\n      },\n      {\n        \"text\": \"在 report 阶段输出 `.training/trainer/reports/<task_id>-report.md`，并在 archive 阶段将任务移动到 done 或 blocked 队列。\",\n        \"evidence\": \"\",\n        \"source_title\": \"must\"\n      },\n      {\n        \"text\": \"按启动读取顺序读取：`AGENTS.md`、`.training/trainer/policy/*.yaml`、`daily-summary.md`、`failure-cases.md`。\",\n        \"evidence\": \"\",\n        \"source_title\": \"must\"\n      },\n      {\n        \"text\": \"输出遵循“结论先行，再给证据与待确认项”。\",\n        \"evidence\": \"\",\n        \"source_title\": \"must\"\n      },\n      {\n        \"text\": \"对非用户明示内容标注“推断/假设 + 置信度”。\",\n        \"evidence\": \"\",\n        \"source_title\": \"must\"\n      },\n      {\n        \"text\": \"每次关键决策必须落盘日志并可追溯到 `task_id`。\",\n        \"evidence\": \"\",\n        \"source_title\": \"must\"\n      }\n    ],\n    \"must_not\": [\n      {\n        \"text\": \"不得直接修改 `.training/agents/prod/`。\",\n        \"evidence\": \"\",\n        \"source_title\": \"must_not\"\n      },\n      {\n        \"text\": \"候选体不得修改 `.training/trainer/policy/mutable-files.txt` 未列出的文件。\",\n        \"evidence\": \"\",\n        \"source_title\": \"must_not\"\n      },\n      {\n        \"text\": \"高风险任务中候选体不得对外交付（仅允许影子执行）。\",\n        \"evidence\": \"\",\n        \"source_title\": \"must_not\"\n      },\n      {\n        \"text\": \"信息不足时不得直接假设推进关键结论。\",\n        \"evidence\": \"\",\n        \"source_title\": \"must_not\"\n      }\n    ],\n    \"preconditions\": [\n      {\n        \"text\": \"训练与晋升闭环必须以“不影响生产分析师稳定性”为前提。\",\n        \"evidence\": \"\",\n        \"source_title\": \"preconditions\"\n      },\n      {\n        \"text\": \"角色覆盖范围默认先分析师，再按策略扩展到架构师、开发、测试。\",\n        \"evidence\": \"\",\n        \"source_title\": \"preconditions\"\n      },\n      {\n        \"text\": \"当信息不足时，必须先澄清后再推进关键结论。\",\n        \"evidence\": \"\",\n        \"source_title\": \"preconditions\"\n      }\n    ],\n    \"issues\": [\n      {\n        \"code\": \"constraints_evidence_missing\",\n        \"message\": \"职责边界存在无证据条目\"\n      }\n    ],\n    \"conflicts\": [],\n    \"missing_evidence_count\": 19,\n    \"total\": 19\n  },\n  \"parse_status\": \"ok\",\n  \"parse_warnings\": [\n    \"文档描述的是多角色协同体系，不是单一执行体；`role` 字段已做聚合表达。\",\n    \"`responsibilities.preconditions` 中部分条目来自“目标/关键约束”的前提化重述，属于结构化映射而非新增规则。\",\n    \"constraints_evidence_missing\"\n  ],\n  \"evidence_snippets\": {\n    \"role\": \"\",\n    \"goal\": \"\",\n    \"duty\": \"\"\n  },\n  \"score_model\": \"v2\",\n  \"score_total\": 78,\n  \"score_weights\": {\n    \"completeness\": 0.2,\n    \"executability\": 0.2,\n    \"consistency\": 0.2,\n    \"traceability\": 0.15,\n    \"risk_coverage\": 0.15,\n    \"operability\": 0.1\n  },\n  \"score_dimensions\": {\n    \"completeness\": {\n      \"label\": \"完整性\",\n      \"score\": 100,\n      \"weight\": 0.2,\n      \"status\": \"ok\",\n      \"has_evidence\": true,\n      \"manual_review_required\": false,\n      \"deduction_reason\": \"\",\n      \"evidence_map\": [\n        {\n          \"ref\": \"role\",\n          \"snippet\": \"\"\n        },\n        {\n          \"ref\": \"goal\",\n          \"snippet\": \"\"\n        },\n        {\n          \"ref\": \"duty\",\n          \"snippet\": \"\"\n        }\n      ],\n      \"repair_suggestion\": \"补充 AGENTS.md 中“角色定位 / 会话目标 / 职责边界”三段基础内容。\",\n      \"threshold\": 80\n    },\n    \"executability\": {\n      \"label\": \"可执行边界\",\n      \"score\": 100,\n      \"weight\": 0.2,\n      \"status\": \"ok\",\n      \"has_evidence\": true,\n      \"manual_review_required\": false,\n      \"deduction_reason\": \"\",\n      \"evidence_map\": [\n        {\n          \"ref\": \"must\",\n          \"snippet\": \"\"\n        },\n        {\n          \"ref\": \"must_not\",\n          \"snippet\": \"\"\n        },\n        {\n          \"ref\": \"preconditions\",\n          \"snippet\": \"\"\n        }\n      ],\n      \"repair_suggestion\": \"在 AGENTS.md 新增/完善“职责边界（must/must_not/preconditions）”章节。\",\n      \"threshold\": 80\n    },\n    \"consistency\": {\n      \"label\": \"一致性\",\n      \"score\": 88,\n      \"weight\": 0.2,\n      \"status\": \"ok\",\n      \"has_evidence\": true,\n      \"manual_review_required\": false,\n      \"deduction_reason\": \"\",\n      \"evidence_map\": [\n        {\n          \"ref\": \"duty\",\n          \"snippet\": \"\"\n        },\n        {\n          \"ref\": \"constraints\",\n          \"snippet\": \"\"\n        }\n      ],\n      \"repair_suggestion\": \"统一 AGENTS.md 中角色目标和职责描述，删除互相矛盾条目。\",\n      \"threshold\": 80\n    },\n    \"traceability\": {\n      \"label\": \"可追溯性\",\n      \"score\": 0,\n      \"weight\": 0.15,\n      \"status\": \"low\",\n      \"has_evidence\": true,\n      \"manual_review_required\": false,\n      \"deduction_reason\": \"评分依据无法稳定映射到 AGENTS.md 原文证据。\",\n      \"evidence_map\": [\n        {\n          \"ref\": \"role\",\n          \"snippet\": \"\"\n        },\n        {\n          \"ref\": \"goal\",\n          \"snippet\": \"\"\n        },\n        {\n          \"ref\": \"duty\",\n          \"snippet\": \"\"\n        }\n      ],\n      \"repair_suggestion\": \"将关键限制条目改为清晰列表，并在同段补充可定位描述。\",\n      \"threshold\": 80\n    },\n    \"risk_coverage\": {\n      \"label\": \"风险覆盖度\",\n      \"score\": 92,\n      \"weight\": 0.15,\n      \"status\": \"ok\",\n      \"has_evidence\": true,\n      \"manual_review_required\": false,\n      \"deduction_reason\": \"\",\n      \"evidence_map\": [\n        {\n          \"ref\": \"must_not\",\n          \"snippet\": \"\"\n        },\n        {\n          \"ref\": \"duty\",\n          \"snippet\": \"\"\n        }\n      ],\n      \"repair_suggestion\": \"补充 AGENTS.md 中禁止项（must_not），明确高风险操作处理边界。\",\n      \"threshold\": 80\n    },\n    \"operability\": {\n      \"label\": \"可操作性\",\n      \"score\": 92,\n      \"weight\": 0.1,\n      \"status\": \"ok\",\n      \"has_evidence\": true,\n      \"manual_review_required\": false,\n      \"deduction_reason\": \"\",\n      \"evidence_map\": [\n        {\n          \"ref\": \"goal\",\n          \"snippet\": \"\"\n        },\n        {\n          \"ref\": \"duty\",\n          \"snippet\": \"\"\n        }\n      ],\n      \"repair_suggestion\": \"将职责边界改写为可执行动作列表（动词 + 条件 + 输出）。\",\n      \"threshold\": 80\n    }\n  },\n  \"clarity_score\": 78,\n  \"clarity_details\": {\n    \"completeness\": 100,\n    \"specificity\": 96,\n    \"consistency\": 88,\n    \"traceability\": 0,\n    \"executability\": 100,\n    \"risk_coverage\": 92,\n    \"operability\": 92\n  },\n  \"clarity_gate\": \"confirm\",\n  \"clarity_gate_reason\": \"constraints_evidence_missing\",\n  \"risk_tips\": [\n    \"清晰度不足或证据不充分，建议人工确认后再执行任务。\",\n    \"可追溯性偏低：评分依据无法稳定映射到 AGENTS.md 原文证据。\",\n    \"职责边界存在无证据条目\",\n    \"文档描述的是多角色协同体系，不是单一执行体；`role` 字段已做聚合表达。\",\n    \"`responsibilities.preconditions` 中部分条目来自“目标/关键约束”的前提化重述，属于结构化映射而非新增规则。\"\n  ],\n  \"policy_extract_ok\": true,\n  \"policy_error\": \"\"\n}",
+      "gate_decision": "{\n  \"policy_extract_source\": \"codex_exec\",\n  \"prompt_version\": \"2026-03-01-codex-exec-v1\",\n  \"parse_status\": \"ok\",\n  \"clarity_gate\": \"confirm\",\n  \"clarity_score\": 78,\n  \"session_gate\": \"policy_needs_confirm\",\n  \"policy_error\": \"\",\n  \"contract_status\": \"ok\",\n  \"contract_missing_fields\": [],\n  \"contract_issues\": [],\n  \"workspace_root\": \"D:/code/AI/workspace/agents\",\n  \"workspace_root_valid\": true,\n  \"workspace_root_error\": \"\",\n  \"target_agents_path\": \"D:/code/AI/workspace/agents/trainer/AGENTS.md\",\n  \"target_in_scope\": true,\n  \"scope_hint\": \"workspace_root=D:/code/AI/workspace/agents ; target_agents_path=D:/code/AI/workspace/agents/trainer/AGENTS.md ; expect target path under workspace root and workspace root contains workflow/.\",\n  \"command_summary\": \"codex exec --json --skip-git-repo-check --sandbox workspace-write --add-dir <workspace_root> -C <workspace_root> -\",\n  \"codex_exit_code\": 0,\n  \"fail_closed\": false\n}"
+    },
+    "codex_events_count": 8
+  },
+  "policy_contract_status": "ok",
+  "policy_contract_missing_fields": [],
+  "policy_contract_issues": [],
+  "policy_gate_state": "policy_needs_confirm",
+  "policy_gate_reason": "confirm"
+}

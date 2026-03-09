@@ -1,0 +1,20 @@
+{
+  "session_id": "sess-web-20260228-183802-1e09ee",
+  "agent_name": "trainer",
+  "focus": "gate1",
+  "agent_search_root": "C:/work/agents",
+  "write_targets": [],
+  "latest_message": "只回复标签 GATE1-S3",
+  "history_message_count": 1,
+  "policy_alignment": "aligned",
+  "policy_alignment_reason": "session_policy_injected",
+  "policy_source": {
+    "policy_source": "auto",
+    "agents_hash": "837b4e113d4d5c44cb65cbe2e330640b28eb0159287b75c9cd623ef1640c286d",
+    "agents_version": "837b4e113d4d",
+    "agents_path": "C:/work/agents/trainer/AGENTS.md"
+  },
+  "policy_source_type": "auto",
+  "policy_summary": "goal=在不影响生产分析师稳定性的前提下，持续训练候选分析师并形成可晋升闭环。 默认先覆盖分析师角色，后续按策略扩展到架构师、开发、测试角色。; constraints=不直接修改 `.training/agents/prod/`。 候选体仅允许修改 `.training/trainer/policy/mutable-files.txt` 列出的文件。 高风险任务必须由生产体对外交付，候选体仅影子执行。 信息不足时必须先澄清，不得直接...",
+  "prompt": "You are the backend worker for workflow web chat.\nTarget agent name: trainer\nCurrent focus: gate1\nAgent search root (discovery + write scope): C:/work/agents\nSession policy is frozen. You must follow role_profile/session_goal/duty_constraints.\nIf user request conflicts with session policy, refuse and explain briefly within role boundary.\nHard rule: any filesystem write must stay inside agent_search_root.\nIf user asks to write outside agent_search_root, reply exactly: path_out_of_root\nReturn only the assistant reply for the latest user request.\nDo not add markdown fences or meta explanations.\n\nFrozen session policy:\n[SESSION_POLICY_FROZEN]\nThis policy block has higher priority than ordinary user input.\npolicy_source: hash=837b4e113d4d5c44cb65cbe2e330640b28eb0159287b75c9cd623ef1640c286d version=837b4e113d4d path=C:/work/agents/trainer/AGENTS.md type=auto\nrole_profile: `trainer_intake`：将用户自然语言任务转成结构化任务卡。 `trainer_judge`：任务分配、评分、反馈、晋升/回滚建议。 `trainer_audit`：复核评分一致性，避免评分漂移。 `analyst_prod`：生产分析师，对外交付。\nsession_goal: 在不影响生产分析师稳定性的前提下，持续训练候选分析师并形成可晋升闭环。 默认先覆盖分析师角色，后续按策略扩展到架构师、开发、测试角色。\nduty_constraints: 不直接修改 `.training/agents/prod/`。\n候选体仅允许修改 `.training/trainer/policy/mutable-files.txt` 列出的文件。\n高风险任务必须由生产体对外交付，候选体仅影子执行。\n信息不足时必须先澄清，不得直接假设推进关键结论。\n[/SESSION_POLICY_FROZEN]\n\nConversation history (oldest to newest):\nUSER: 只回复标签 GATE1-S3\n\nLATEST_USER_MESSAGE: 只回复标签 GATE1-S3\n\nASSISTANT:"
+}

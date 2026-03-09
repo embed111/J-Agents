@@ -1,0 +1,142 @@
+{
+  "workspace": "C:\\work\\agents\\agent_gen",
+  "checked_at_utc": "2026-02-09T07:48:56+00:00",
+  "passed": true,
+  "total_checks": 22,
+  "passed_checks": 22,
+  "failed_checks": 0,
+  "checks": [
+    {
+      "check_id": "required_file:agent.md",
+      "description": "存在必需文件 `agent.md`",
+      "passed": true,
+      "details": "文件存在: agent.md"
+    },
+    {
+      "check_id": "required_file:agent_principles.yaml",
+      "description": "存在必需文件 `agent_principles.yaml`",
+      "passed": true,
+      "details": "文件存在: agent_principles.yaml"
+    },
+    {
+      "check_id": "required_file:config.yaml",
+      "description": "存在必需文件 `config.yaml`",
+      "passed": true,
+      "details": "文件存在: config.yaml"
+    },
+    {
+      "check_id": "required_file:docs/agent_framework.md",
+      "description": "存在必需文件 `docs/agent_framework.md`",
+      "passed": true,
+      "details": "文件存在: docs/agent_framework.md"
+    },
+    {
+      "check_id": "required_file:docs/config_dashboard.md",
+      "description": "存在必需文件 `docs/config_dashboard.md`",
+      "passed": true,
+      "details": "文件存在: docs/config_dashboard.md"
+    },
+    {
+      "check_id": "required_file:templates/framework.template.yaml",
+      "description": "存在必需文件 `templates/framework.template.yaml`",
+      "passed": true,
+      "details": "文件存在: templates/framework.template.yaml"
+    },
+    {
+      "check_id": "config_key:workspace_compliance_check: true",
+      "description": "config.yaml 包含关键设置 `workspace_compliance_check: true`",
+      "passed": true,
+      "details": "config.yaml 包含 `workspace_compliance_check: true`"
+    },
+    {
+      "check_id": "config_key:generated_agent_compliance_check: true",
+      "description": "config.yaml 包含关键设置 `generated_agent_compliance_check: true`",
+      "passed": true,
+      "details": "config.yaml 包含 `generated_agent_compliance_check: true`"
+    },
+    {
+      "check_id": "config_key:require_test_for_each_change: true",
+      "description": "config.yaml 包含关键设置 `require_test_for_each_change: true`",
+      "passed": true,
+      "details": "config.yaml 包含 `require_test_for_each_change: true`"
+    },
+    {
+      "check_id": "config_key:require_open_closed_principle: true",
+      "description": "config.yaml 包含关键设置 `require_open_closed_principle: true`",
+      "passed": true,
+      "details": "config.yaml 包含 `require_open_closed_principle: true`"
+    },
+    {
+      "check_id": "config_key:require_minimal_token_usage: true",
+      "description": "config.yaml 包含关键设置 `require_minimal_token_usage: true`",
+      "passed": true,
+      "details": "config.yaml 包含 `require_minimal_token_usage: true`"
+    },
+    {
+      "check_id": "config_key:require_script_for_repeatable_flows: true",
+      "description": "config.yaml 包含关键设置 `require_script_for_repeatable_flows: true`",
+      "passed": true,
+      "details": "config.yaml 包含 `require_script_for_repeatable_flows: true`"
+    },
+    {
+      "check_id": "config_key:enforce_workspace_compliance: true",
+      "description": "config.yaml 包含关键设置 `enforce_workspace_compliance: true`",
+      "passed": true,
+      "details": "config.yaml 包含 `enforce_workspace_compliance: true`"
+    },
+    {
+      "check_id": "config_key:enforce_generated_agent_compliance: true",
+      "description": "config.yaml 包含关键设置 `enforce_generated_agent_compliance: true`",
+      "passed": true,
+      "details": "config.yaml 包含 `enforce_generated_agent_compliance: true`"
+    },
+    {
+      "check_id": "config_key:workspace_compliance: true",
+      "description": "config.yaml 包含关键设置 `workspace_compliance: true`",
+      "passed": true,
+      "details": "config.yaml 包含 `workspace_compliance: true`"
+    },
+    {
+      "check_id": "config_key:generated_agent_compliance: true",
+      "description": "config.yaml 包含关键设置 `generated_agent_compliance: true`",
+      "passed": true,
+      "details": "config.yaml 包含 `generated_agent_compliance: true`"
+    },
+    {
+      "check_id": "principle_key:- id: dual_scope_compliance",
+      "description": "agent_principles.yaml 包含关键设置 `- id: dual_scope_compliance`",
+      "passed": true,
+      "details": "agent_principles.yaml 包含 `- id: dual_scope_compliance`"
+    },
+    {
+      "check_id": "principle_key:title: 双域合规",
+      "description": "agent_principles.yaml 包含关键设置 `title: 双域合规`",
+      "passed": true,
+      "details": "agent_principles.yaml 包含 `title: 双域合规`"
+    },
+    {
+      "check_id": "principle_key:enforce_workspace_compliance: true",
+      "description": "agent_principles.yaml 包含关键设置 `enforce_workspace_compliance: true`",
+      "passed": true,
+      "details": "agent_principles.yaml 包含 `enforce_workspace_compliance: true`"
+    },
+    {
+      "check_id": "principle_key:enforce_generated_agent_compliance: true",
+      "description": "agent_principles.yaml 包含关键设置 `enforce_generated_agent_compliance: true`",
+      "passed": true,
+      "details": "agent_principles.yaml 包含 `enforce_generated_agent_compliance: true`"
+    },
+    {
+      "check_id": "principle_key:workspace_compliance: true",
+      "description": "agent_principles.yaml 包含关键设置 `workspace_compliance: true`",
+      "passed": true,
+      "details": "agent_principles.yaml 包含 `workspace_compliance: true`"
+    },
+    {
+      "check_id": "principle_key:generated_agent_compliance: true",
+      "description": "agent_principles.yaml 包含关键设置 `generated_agent_compliance: true`",
+      "passed": true,
+      "details": "agent_principles.yaml 包含 `generated_agent_compliance: true`"
+    }
+  ]
+}

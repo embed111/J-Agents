@@ -1,0 +1,10 @@
+﻿score_scale: "0-10"
+dimensions:
+  - name: requirement_alignment
+    weight: 0.45
+  - name: risk_identification
+    weight: 0.25
+  - name: clarity_actionability
+    weight: 0.20
+  - name: assumption_labeling
+    weight: 0.10

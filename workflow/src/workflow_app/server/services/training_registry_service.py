@@ -1,0 +1,818 @@
+from __future__ import annotations
+
+import base64
+import binascii
+
+def bind_runtime_symbols(symbols: dict[str, object]) -> None:
+    if not isinstance(symbols, dict):
+        return
+    target = globals()
+    module_name = str(target.get('__name__') or '')
+    for key, value in symbols.items():
+        if str(key).startswith('__'):
+            continue
+        current = target.get(key)
+        if callable(current) and getattr(current, '__module__', '') == module_name:
+            continue
+        target[key] = value
+
+def _resolve_training_agent(conn: sqlite3.Connection, target: str) -> dict[str, Any] | None:
+    key = str(target or "").strip()
+    if not key:
+        return None
+    row = conn.execute(
+        """
+        SELECT
+            agent_id,agent_name,workspace_path,current_version,
+            latest_release_version,bound_release_version,
+            lifecycle_state,training_gate_state,parent_agent_id,
+            core_capabilities,capability_summary,knowledge_scope,skills_json,applicable_scenarios,version_notes,avatar_uri,
+            vector_icon,git_available,pre_release_state,pre_release_reason,pre_release_checked_at,pre_release_git_output,
+            last_release_at,status_tags_json,updated_at
+        FROM agent_registry
+        WHERE agent_id=?
+        LIMIT 1
+        """,
+        (key,),
+    ).fetchone()
+    if row is None:
+        row = conn.execute(
+            """
+                SELECT
+                    agent_id,agent_name,workspace_path,current_version,
+                    latest_release_version,bound_release_version,
+                    lifecycle_state,training_gate_state,parent_agent_id,
+                    core_capabilities,capability_summary,knowledge_scope,skills_json,applicable_scenarios,version_notes,avatar_uri,
+                    vector_icon,git_available,pre_release_state,pre_release_reason,pre_release_checked_at,pre_release_git_output,
+                    last_release_at,status_tags_json,updated_at
+                FROM agent_registry
+                WHERE agent_name=?
+                LIMIT 1
+                """,
+            (key,),
+        ).fetchone()
+    if row is None:
+        return None
+    return {name: row[name] for name in row.keys()}
+
+
+def _list_workspace_local_skills(workspace_path_raw: Any) -> list[str]:
+    workspace_text = str(workspace_path_raw or "").strip()
+    if not workspace_text:
+        return []
+    try:
+        workspace_path = Path(workspace_text).resolve(strict=False)
+    except Exception:
+        return []
+    skills_root = workspace_path / ".codex" / "skills"
+    if not skills_root.exists() or not skills_root.is_dir():
+        return []
+    items: list[str] = []
+    for child in skills_root.iterdir():
+        name = str(child.name or "").strip()
+        if not name or name.startswith("."):
+            continue
+        if not child.is_dir():
+            continue
+        if not (child / "SKILL.md").exists():
+            continue
+        items.append(name)
+    items.sort(key=lambda value: value.lower())
+    return items
+
+
+def sync_training_agent_registry(cfg: AppConfig) -> list[dict[str, Any]]:
+    root = cfg.agent_search_root
+    if root is None:
+        conn = connect_db(cfg.root)
+        try:
+            conn.execute("DELETE FROM agent_registry")
+            conn.execute("DELETE FROM agent_release_history")
+            conn.commit()
+        finally:
+            conn.close()
+        return []
+
+    available = list_available_agents(cfg, analyze_policy=False)
+    now_text = iso_ts(now_local())
+    conn = connect_db(cfg.root)
+    keep_ids: list[str] = []
+    try:
+        for item in available:
+            agent_name = safe_token(str(item.get("agent_name") or ""), "", 80)
+            agents_path_text = str(item.get("agents_md_path") or "").strip()
+            if not agent_name or not agents_path_text:
+                continue
+            agents_md_path = Path(agents_path_text).resolve(strict=False)
+            workspace_path = agents_md_path.parent.resolve(strict=False)
+            if not path_in_scope(workspace_path, root.resolve(strict=False)):
+                continue
+            agent_id = safe_token(agent_name, agent_name, 120)
+
+            if not agent_id:
+
+                continue
+
+            existed = conn.execute(
+                """
+                SELECT
+                    current_version,latest_release_version,bound_release_version,
+                    lifecycle_state,training_gate_state,parent_agent_id,avatar_uri,last_release_at
+                FROM agent_registry
+                WHERE agent_id=?
+                LIMIT 1
+                """,
+                (agent_id,),
+            ).fetchone()
+            vector_icon = build_agent_vector_icon(agent_name, agent_id)
+
+            current_version = str(item.get("agents_version") or "").strip()
+            last_release_at = ""
+            portrait = extract_agent_role_portrait(agents_md_path)
+            core_capabilities = extract_core_capability_summary(agents_md_path)
+            capability_summary = str(portrait.get("capability_summary") or "").strip()
+            knowledge_scope = str(portrait.get("knowledge_scope") or "").strip()
+            portrait_skills = _skills_list(portrait.get("skills"))
+            applicable_scenarios = str(portrait.get("applicable_scenarios") or "").strip()
+            version_notes = str(portrait.get("version_notes") or "").strip()
+            git_available = _git_available_in_scope(workspace_path, root)
+            status_tags: list[str] = []
+            release_rows: list[dict[str, str]] = []
+            latest_release_version = ""
+            pre_release_state = "pre_release"
+            pre_release_reason = "git_unavailable"
+            pre_release_checked_at = now_text
+            pre_release_git_output = ""
+            if git_available:
+                _, git_last_release_at, release_rows = _parse_git_release_rows(workspace_path, limit=60)
+                latest_release_version = choose_latest_release_version(release_rows) or ""
+                if git_last_release_at and latest_release_version:
+                    last_release_at = git_last_release_at
+                status_ok, status_out, status_err = _run_git_readonly_verbose(
+                    workspace_path,
+                    ["status", "--porcelain", "--untracked-files=normal"],
+                    timeout_s=12,
+                )
+                if status_ok:
+                    normalized_output = "\n".join(
+                        [str(line or "").rstrip() for line in str(status_out or "").splitlines() if str(line or "").strip()]
+                    )
+                    pre_release_git_output = _short_text(normalized_output, 2000)
+                    if normalized_output:
+                        pre_release_state = "pre_release"
+                        pre_release_reason = "git_status_non_empty"
+                    else:
+                        pre_release_state = "released"
+                        pre_release_reason = "git_status_clean"
+                else:
+                    pre_release_state = "unknown"
+                    pre_release_reason = "git_status_failed"
+                    pre_release_git_output = _short_text(str(status_err or "").strip(), 500)
+            else:
+                status_tags.append("git_unavailable")
+
+            existed_current = str(existed["current_version"] or "").strip() if existed is not None else ""
+            existed_latest = str(existed["latest_release_version"] or "").strip() if existed is not None else ""
+            existed_bound = str(existed["bound_release_version"] or "").strip() if existed is not None else ""
+            existed_last_release_at = str(existed["last_release_at"] or "").strip() if existed is not None else ""
+            existed_gate = (
+                normalize_training_gate_state(existed["training_gate_state"]) if existed is not None else "trainable"
+            )
+            parent_agent_id = str(existed["parent_agent_id"] or "").strip() if existed is not None else ""
+            avatar_uri = str(existed["avatar_uri"] or "").strip() if existed is not None else ""
+
+            if not git_available:
+                latest_release_version = existed_latest
+                last_release_at = existed_last_release_at if existed_latest else ""
+
+            if existed_current:
+                current_version = existed_current
+            elif latest_release_version:
+                current_version = latest_release_version
+            elif existed_latest:
+                current_version = existed_latest
+
+            release_labels = {
+                str(rel.get("version_label") or "").strip()
+                for rel in release_rows
+                if str(rel.get("version_label") or "").strip()
+                and str(rel.get("classification") or "release").strip().lower() == "release"
+            }
+            if parent_agent_id:
+                # 克隆角色首期以当前基线为“最新可切回版本”。
+                latest_release_version = (
+                    latest_release_version
+                    or existed_latest
+                    or current_version
+                )
+
+            if existed_bound and existed_bound in release_labels:
+                bound_release_version = existed_bound
+            elif current_version and current_version in release_labels:
+                bound_release_version = current_version
+            else:
+                bound_release_version = latest_release_version
+
+            if not latest_release_version:
+                last_release_at = ""
+
+            lifecycle_state = normalize_lifecycle_state(pre_release_state)
+            training_gate_state = derive_training_gate_state(
+                lifecycle_state=lifecycle_state,
+                current_version=current_version,
+                latest_release_version=latest_release_version,
+                parent_agent_id=parent_agent_id,
+                preferred=existed_gate,
+            )
+            if lifecycle_state == "pre_release":
+                status_tags.append("pre_release")
+            if lifecycle_state == "unknown":
+                status_tags.append("pre_release_unknown")
+            if training_gate_state == "frozen_switched":
+                status_tags.append("frozen_switched")
+            if parent_agent_id:
+                status_tags.append("cloned")
+            if any(str(rel.get("classification") or "").strip().lower() == "normal_commit" for rel in release_rows):
+                status_tags.append("normal_commit_present")
+
+            conn.execute(
+                """
+                INSERT INTO agent_registry (
+                    agent_id,agent_name,workspace_path,current_version,latest_release_version,bound_release_version,
+                    lifecycle_state,training_gate_state,parent_agent_id,
+                    core_capabilities,capability_summary,knowledge_scope,skills_json,applicable_scenarios,version_notes,avatar_uri,
+                    vector_icon,git_available,pre_release_state,pre_release_reason,pre_release_checked_at,pre_release_git_output,
+                    last_release_at,status_tags_json,updated_at
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                ON CONFLICT(agent_id) DO UPDATE SET
+                    agent_name=excluded.agent_name,
+                    workspace_path=excluded.workspace_path,
+                    current_version=excluded.current_version,
+                    latest_release_version=excluded.latest_release_version,
+                    bound_release_version=excluded.bound_release_version,
+                    lifecycle_state=excluded.lifecycle_state,
+                    training_gate_state=excluded.training_gate_state,
+                    parent_agent_id=excluded.parent_agent_id,
+                    core_capabilities=excluded.core_capabilities,
+                    capability_summary=excluded.capability_summary,
+                    knowledge_scope=excluded.knowledge_scope,
+                    skills_json=excluded.skills_json,
+                    applicable_scenarios=excluded.applicable_scenarios,
+                    version_notes=excluded.version_notes,
+                    avatar_uri=excluded.avatar_uri,
+                    vector_icon=excluded.vector_icon,
+                    git_available=excluded.git_available,
+                    pre_release_state=excluded.pre_release_state,
+                    pre_release_reason=excluded.pre_release_reason,
+                    pre_release_checked_at=excluded.pre_release_checked_at,
+                    pre_release_git_output=excluded.pre_release_git_output,
+                    last_release_at=excluded.last_release_at,
+                    status_tags_json=excluded.status_tags_json,
+                    updated_at=excluded.updated_at
+                """,
+                (
+                    agent_id,
+                    agent_name,
+                    workspace_path.as_posix(),
+                    current_version,
+                    latest_release_version,
+                    bound_release_version,
+                    lifecycle_state,
+                    training_gate_state,
+                    parent_agent_id,
+                    core_capabilities,
+                    capability_summary,
+                    knowledge_scope,
+                    json.dumps(portrait_skills, ensure_ascii=False),
+                    applicable_scenarios,
+                    version_notes,
+                    avatar_uri,
+                    vector_icon,
+                    1 if git_available else 0,
+                    pre_release_state,
+                    pre_release_reason,
+                    pre_release_checked_at,
+                    pre_release_git_output,
+                    last_release_at,
+                    json.dumps(status_tags, ensure_ascii=False),
+                    now_text,
+                ),
+            )
+            keep_ids.append(agent_id)
+
+            conn.execute("DELETE FROM agent_release_history WHERE agent_id=?", (agent_id,))
+            if release_rows:
+                for idx, rel in enumerate(release_rows, start=1):
+                    digest = hashlib.sha1(
+                        f"{agent_id}|{rel.get('commit_ref','')}|{rel.get('version_label','')}|{rel.get('classification','')}|{idx}".encode(
+                            "utf-8"
+                        )
+                    ).hexdigest()[:10]
+                    release_id = f"rel-{agent_id}-{digest}"
+                    conn.execute(
+                        """
+                        INSERT INTO agent_release_history (
+                            release_id,agent_id,version_label,released_at,change_summary,commit_ref,
+                            capability_summary,knowledge_scope,skills_json,applicable_scenarios,version_notes,
+                            release_valid,invalid_reasons_json,classification,raw_notes,created_at
+                        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                        """,
+                        (
+                            release_id,
+                            agent_id,
+                            str(rel.get("version_label") or ""),
+                            str(rel.get("released_at") or ""),
+                            str(rel.get("change_summary") or ""),
+                            str(rel.get("commit_ref") or ""),
+                            str(rel.get("capability_summary") or ""),
+                            str(rel.get("knowledge_scope") or ""),
+                            str(rel.get("skills_json") or "[]"),
+                            str(rel.get("applicable_scenarios") or ""),
+                            str(rel.get("version_notes") or ""),
+                            int(rel.get("release_valid") or 0),
+                            str(rel.get("invalid_reasons_json") or "[]"),
+                            str(rel.get("classification") or "normal_commit"),
+                            str(rel.get("raw_notes") or ""),
+                            now_text,
+                        ),
+                    )
+        if keep_ids:
+            marks = ",".join(["?"] * len(keep_ids))
+            conn.execute(f"DELETE FROM agent_registry WHERE agent_id NOT IN ({marks})", tuple(keep_ids))
+            conn.execute(f"DELETE FROM agent_release_history WHERE agent_id NOT IN ({marks})", tuple(keep_ids))
+        else:
+            conn.execute("DELETE FROM agent_registry")
+            conn.execute("DELETE FROM agent_release_history")
+        conn.commit()
+    finally:
+        conn.close()
+    return available
+
+
+def list_training_agents_overview(
+    cfg: AppConfig,
+    *,
+    include_test_data: bool = True,
+) -> dict[str, Any]:
+    sync_training_agent_registry(cfg)
+    include_flag = 1 if include_test_data else 0
+    conn = connect_db(cfg.root)
+    try:
+        pending_queue = int(
+            (
+                conn.execute(
+                    """
+                    SELECT COUNT(1) AS cnt
+                    FROM training_queue q
+                    INNER JOIN training_plan p ON p.plan_id=q.plan_id
+                    WHERE q.status='queued'
+                      AND (?=1 OR COALESCE(p.is_test_data,0)=0)
+                    """,
+                    (include_flag,),
+                ).fetchone()
+                or {"cnt": 0}
+            )["cnt"]
+        )
+        rows = conn.execute(
+            """
+            SELECT
+                agent_id,agent_name,workspace_path,current_version,
+                latest_release_version,bound_release_version,
+                lifecycle_state,training_gate_state,parent_agent_id,
+                core_capabilities,capability_summary,knowledge_scope,skills_json,applicable_scenarios,version_notes,avatar_uri,
+                vector_icon,git_available,pre_release_state,pre_release_reason,pre_release_checked_at,pre_release_git_output,
+                last_release_at,status_tags_json,updated_at
+            FROM agent_registry
+            ORDER BY agent_name COLLATE NOCASE ASC
+            """
+        ).fetchall()
+    finally:
+        conn.close()
+
+    items: list[dict[str, Any]] = []
+    latest_release_at = ""
+    git_available_count = 0
+    for row in rows:
+        tags_raw = str(row["status_tags_json"] or "[]")
+        try:
+            tags = json.loads(tags_raw)
+            if not isinstance(tags, list):
+                tags = []
+        except Exception:
+            tags = []
+        skills_raw = str(row["skills_json"] or "[]")
+        try:
+            skills_value = json.loads(skills_raw)
+            if not isinstance(skills_value, list):
+                skills_value = []
+        except Exception:
+            skills_value = []
+        item = {
+            "agent_id": str(row["agent_id"] or ""),
+            "agent_name": str(row["agent_name"] or ""),
+            "vector_icon": str(row["vector_icon"] or ""),
+            "workspace_path": str(row["workspace_path"] or ""),
+            "current_version": str(row["current_version"] or ""),
+            "latest_release_version": str(row["latest_release_version"] or ""),
+            "bound_release_version": str(row["bound_release_version"] or ""),
+            "lifecycle_state": normalize_lifecycle_state(row["lifecycle_state"]),
+            "training_gate_state": normalize_training_gate_state(row["training_gate_state"]),
+            "parent_agent_id": str(row["parent_agent_id"] or ""),
+            "core_capabilities": str(row["core_capabilities"] or ""),
+            "capability_summary": str(row["capability_summary"] or ""),
+            "knowledge_scope": str(row["knowledge_scope"] or ""),
+            "skills": [str(skill or "").strip() for skill in skills_value if str(skill or "").strip()],
+            "agent_skills": _list_workspace_local_skills(row["workspace_path"]),
+            "applicable_scenarios": str(row["applicable_scenarios"] or ""),
+            "version_notes": str(row["version_notes"] or ""),
+            "avatar_uri": str(row["avatar_uri"] or ""),
+            "git_available": bool(int(row["git_available"] or 0)),
+            "pre_release_state": str(row["pre_release_state"] or ""),
+            "pre_release_reason": str(row["pre_release_reason"] or ""),
+            "pre_release_checked_at": str(row["pre_release_checked_at"] or ""),
+            "pre_release_git_output": str(row["pre_release_git_output"] or ""),
+            "last_release_at": str(row["last_release_at"] or ""),
+            "status_tags": [str(tag).strip() for tag in tags if str(tag or "").strip()],
+            "updated_at": str(row["updated_at"] or ""),
+        }
+        if not include_test_data and is_system_or_test_workspace(
+            item["workspace_path"],
+            agent_search_root=cfg.agent_search_root,
+        ):
+            continue
+        items.append(item)
+        if item["git_available"]:
+            git_available_count += 1
+        if str(item["last_release_at"] or "") > latest_release_at:
+            latest_release_at = str(item["last_release_at"] or "")
+
+    return {
+        "items": items,
+        "stats": {
+            "agent_total": len(items),
+            "git_available_count": git_available_count,
+            "latest_release_at": latest_release_at,
+            "training_queue_pending": pending_queue,
+        },
+    }
+
+
+def list_training_agent_releases(
+    root: Path,
+    agent_id: str,
+    *,
+    page: int = 1,
+    page_size: int = 50,
+) -> dict[str, Any]:
+    pid = safe_token(str(agent_id or ""), "", 120)
+    if not pid:
+        raise TrainingCenterError(400, "agent_id required", "agent_id_required")
+    safe_page = max(1, int(page or 1))
+    safe_size = min(200, max(1, int(page_size or 50)))
+    offset = (safe_page - 1) * safe_size
+    conn = connect_db(root)
+    try:
+        meta = conn.execute(
+            """
+            SELECT
+                agent_id,agent_name,workspace_path,current_version,
+                latest_release_version,bound_release_version,
+                lifecycle_state,training_gate_state,parent_agent_id,
+                core_capabilities,capability_summary,knowledge_scope,skills_json,applicable_scenarios,version_notes,avatar_uri,
+                vector_icon,git_available,pre_release_state,pre_release_reason,pre_release_checked_at,pre_release_git_output,
+                last_release_at,status_tags_json,updated_at
+            FROM agent_registry
+            WHERE agent_id=?
+            LIMIT 1
+            """,
+            (pid,),
+        ).fetchone()
+        if meta is None:
+            raise TrainingCenterError(404, "agent not found", "agent_not_found", {"agent_id": pid})
+        meta = {name: meta[name] for name in meta.keys()}
+        release_total = int(
+            (
+                conn.execute(
+                    "SELECT COUNT(1) AS cnt FROM agent_release_history WHERE agent_id=? AND COALESCE(classification,'normal_commit')='release'",
+                    (pid,),
+                ).fetchone()
+                or {"cnt": 0}
+            )["cnt"]
+        )
+        normal_total = int(
+            (
+                conn.execute(
+                    "SELECT COUNT(1) AS cnt FROM agent_release_history WHERE agent_id=? AND COALESCE(classification,'normal_commit')='normal_commit'",
+                    (pid,),
+                ).fetchone()
+                or {"cnt": 0}
+            )["cnt"]
+        )
+        rows = conn.execute(
+            """
+            SELECT
+                release_id,agent_id,version_label,released_at,change_summary,commit_ref,
+                capability_summary,knowledge_scope,skills_json,applicable_scenarios,version_notes,
+                release_valid,invalid_reasons_json,classification,raw_notes,created_at
+            FROM agent_release_history
+            WHERE agent_id=?
+              AND COALESCE(classification,'normal_commit')='release'
+            ORDER BY released_at DESC, created_at DESC
+            LIMIT ? OFFSET ?
+            """,
+            (pid, safe_size, offset),
+        ).fetchall()
+        normal_rows = conn.execute(
+            """
+            SELECT
+                release_id,agent_id,version_label,released_at,change_summary,commit_ref,
+                capability_summary,knowledge_scope,skills_json,applicable_scenarios,version_notes,
+                release_valid,invalid_reasons_json,classification,raw_notes,created_at
+            FROM agent_release_history
+            WHERE agent_id=?
+              AND COALESCE(classification,'normal_commit')='normal_commit'
+            ORDER BY released_at DESC, created_at DESC
+            LIMIT 60
+            """,
+            (pid,),
+        ).fetchall()
+    finally:
+        conn.close()
+
+    meta_skills_raw = str(meta["skills_json"] or "[]")
+    try:
+        meta_skills = json.loads(meta_skills_raw)
+        if not isinstance(meta_skills, list):
+            meta_skills = []
+    except Exception:
+        meta_skills = []
+    agent_skills = _list_workspace_local_skills(meta.get("workspace_path"))
+
+    def decode_json_list(raw: Any) -> list[str]:
+        text = str(raw or "").strip()
+        if not text:
+            return []
+        try:
+            payload = json.loads(text)
+            if not isinstance(payload, list):
+                return []
+            return [str(item or "").strip() for item in payload if str(item or "").strip()]
+        except Exception:
+            return []
+
+    def decode_skill_names(raw: Any) -> list[str]:
+        skill_parser = globals().get("_skills_list")
+        if callable(skill_parser):
+            try:
+                rows = skill_parser(raw)
+            except Exception:
+                rows = []
+            if rows:
+                return [str(item or "").strip() for item in rows if str(item or "").strip()]
+        return decode_json_list(raw)
+
+    def decode_skill_profiles(raw_notes: Any, fallback_skills: list[str]) -> list[dict[str, str]]:
+        parser = globals().get("parse_release_portrait_fields")
+        if callable(parser):
+            try:
+                parsed = parser(str(raw_notes or ""))
+            except Exception:
+                parsed = {}
+            raw_profiles = parsed.get("skill_profiles") if isinstance(parsed, dict) else []
+            if isinstance(raw_profiles, list):
+                rows: list[dict[str, str]] = []
+                for item in raw_profiles:
+                    if not isinstance(item, dict):
+                        continue
+                    name = str(item.get("name") or "").strip()
+                    if not name:
+                        continue
+                    rows.append(
+                        {
+                            "name": name,
+                            "summary": str(item.get("summary") or "").strip(),
+                            "details": str(item.get("details") or "").strip(),
+                        }
+                    )
+                if rows:
+                    return rows
+        return [
+            {
+                "name": str(name or "").strip(),
+                "summary": "",
+                "details": "",
+            }
+            for name in fallback_skills
+            if str(name or "").strip()
+        ]
+
+    def build_release_payload(row: Any, *, fallback_classification: str) -> dict[str, Any]:
+        skills = decode_skill_names(row["skills_json"])
+        return {
+            "release_id": str(row["release_id"] or ""),
+            "agent_id": str(row["agent_id"] or ""),
+            "version_label": str(row["version_label"] or ""),
+            "released_at": str(row["released_at"] or ""),
+            "change_summary": str(row["change_summary"] or ""),
+            "capability_summary": str(row["capability_summary"] or ""),
+            "knowledge_scope": str(row["knowledge_scope"] or ""),
+            "skills": skills,
+            "skill_profiles": decode_skill_profiles(row["raw_notes"], skills),
+            "applicable_scenarios": str(row["applicable_scenarios"] or ""),
+            "version_notes": str(row["version_notes"] or ""),
+            "release_valid": bool(int(row["release_valid"] or 0)),
+            "invalid_reasons": decode_json_list(row["invalid_reasons_json"]),
+            "classification": str(row["classification"] or fallback_classification),
+            "created_at": str(row["created_at"] or ""),
+        }
+
+    return {
+        "agent": {
+            "agent_id": str(meta["agent_id"] or ""),
+            "agent_name": str(meta["agent_name"] or ""),
+            "vector_icon": str(meta["vector_icon"] or ""),
+            "workspace_path": str(meta["workspace_path"] or ""),
+            "current_version": str(meta["current_version"] or ""),
+            "latest_release_version": str(meta["latest_release_version"] or ""),
+            "bound_release_version": str(meta["bound_release_version"] or ""),
+            "lifecycle_state": normalize_lifecycle_state(meta["lifecycle_state"]),
+            "training_gate_state": normalize_training_gate_state(meta["training_gate_state"]),
+            "parent_agent_id": str(meta["parent_agent_id"] or ""),
+            "core_capabilities": str(meta["core_capabilities"] or ""),
+            "capability_summary": str(meta["capability_summary"] or ""),
+            "knowledge_scope": str(meta["knowledge_scope"] or ""),
+            "skills": [str(item or "").strip() for item in meta_skills if str(item or "").strip()],
+            "agent_skills": agent_skills,
+            "applicable_scenarios": str(meta["applicable_scenarios"] or ""),
+            "version_notes": str(meta["version_notes"] or ""),
+            "avatar_uri": str(meta["avatar_uri"] or ""),
+            "git_available": bool(int(meta["git_available"] or 0)),
+            "pre_release_state": str(meta["pre_release_state"] or ""),
+            "pre_release_reason": str(meta["pre_release_reason"] or ""),
+            "pre_release_checked_at": str(meta["pre_release_checked_at"] or ""),
+            "pre_release_git_output": str(meta["pre_release_git_output"] or ""),
+            "last_release_at": str(meta["last_release_at"] or ""),
+            "updated_at": str(meta["updated_at"] or ""),
+        },
+        "releases": [build_release_payload(row, fallback_classification="release") for row in rows],
+        "normal_commits": [build_release_payload(row, fallback_classification="normal_commit") for row in normal_rows],
+        "page": safe_page,
+        "page_size": safe_size,
+        "release_total": release_total,
+        "normal_commit_total": normal_total,
+        "total": release_total,
+        "has_more": offset + len(rows) < release_total,
+    }
+
+
+def set_training_agent_avatar(
+    cfg: AppConfig,
+    *,
+    agent_id: str,
+    avatar_uri: str = "",
+    upload_name: str = "",
+    upload_content_type: str = "",
+    upload_base64: str = "",
+    operator: str = "web-user",
+) -> dict[str, Any]:
+    sync_training_agent_registry(cfg)
+    pid = safe_token(str(agent_id or ""), "", 120)
+    if not pid:
+        raise TrainingCenterError(400, "agent_id required", "agent_id_required")
+
+    def _detect_avatar_kind(binary: bytes) -> str:
+        if binary.startswith(b"\x89PNG\r\n\x1a\n"):
+            return "png"
+        if len(binary) >= 3 and binary[:3] == b"\xff\xd8\xff":
+            return "jpg"
+        if len(binary) >= 12 and binary[:4] == b"RIFF" and binary[8:12] == b"WEBP":
+            return "webp"
+        return ""
+
+    def _normalize_upload_avatar(
+        *,
+        file_name: str,
+        content_type: str,
+        payload_base64: str,
+    ) -> tuple[str, dict[str, Any]]:
+        raw_name = str(file_name or "").strip()
+        raw_type = str(content_type or "").strip().lower()
+        raw_payload = str(payload_base64 or "").strip()
+        if not raw_payload:
+            raise TrainingCenterError(400, "头像文件内容为空", "avatar_payload_empty")
+        try:
+            binary = base64.b64decode(raw_payload, validate=True)
+        except (binascii.Error, ValueError):
+            raise TrainingCenterError(400, "头像文件编码无效", "avatar_payload_invalid_base64")
+        size_limit = 2 * 1024 * 1024
+        size_bytes = len(binary)
+        if size_bytes <= 0:
+            raise TrainingCenterError(400, "头像文件内容为空", "avatar_payload_empty")
+        if size_bytes > size_limit:
+            raise TrainingCenterError(400, "头像文件超过 2MB 限制", "avatar_too_large", {"size": size_bytes})
+
+        ext = ""
+        if "." in raw_name:
+            ext = str(raw_name.rsplit(".", 1)[-1] or "").strip().lower()
+        if ext == "jpeg":
+            ext = "jpg"
+        if ext and ext not in {"png", "jpg", "webp"}:
+            raise TrainingCenterError(
+                400,
+                "头像格式仅支持 png/jpg/webp",
+                "avatar_type_not_allowed",
+                {"filename": raw_name, "extension": ext},
+            )
+
+        detected = _detect_avatar_kind(binary)
+        if detected not in {"png", "jpg", "webp"}:
+            raise TrainingCenterError(400, "头像格式仅支持 png/jpg/webp", "avatar_type_not_allowed")
+
+        if raw_type and raw_type not in {"image/png", "image/jpeg", "image/webp"}:
+            raise TrainingCenterError(
+                400,
+                "头像格式仅支持 png/jpg/webp",
+                "avatar_content_type_not_allowed",
+                {"content_type": raw_type},
+            )
+        if raw_type:
+            type_to_kind = {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp"}
+            expected_kind = type_to_kind.get(raw_type, "")
+            if expected_kind and expected_kind != detected:
+                raise TrainingCenterError(
+                    400,
+                    "头像文件类型与内容不一致",
+                    "avatar_content_mismatch",
+                    {"content_type": raw_type, "detected": detected},
+                )
+        if ext and ext != detected:
+            raise TrainingCenterError(
+                400,
+                "头像后缀与文件内容不一致",
+                "avatar_extension_mismatch",
+                {"extension": ext, "detected": detected},
+            )
+
+        mime = {"png": "image/png", "jpg": "image/jpeg", "webp": "image/webp"}[detected]
+        normalized = base64.b64encode(binary).decode("ascii")
+        avatar_data_uri = f"data:{mime};base64,{normalized}"
+        detail = {
+            "filename": raw_name,
+            "content_type": mime,
+            "size": size_bytes,
+        }
+        return avatar_data_uri, detail
+
+    avatar_text = str(avatar_uri or "").strip()
+    upload_payload = str(upload_base64 or "").strip()
+    upload_detail: dict[str, Any] | None = None
+    if upload_payload:
+        avatar_text, upload_detail = _normalize_upload_avatar(
+            file_name=str(upload_name or "").strip(),
+            content_type=str(upload_content_type or "").strip(),
+            payload_base64=upload_payload,
+        )
+    if avatar_text and len(avatar_text) > (2 * 1024 * 1024 * 2):
+        raise TrainingCenterError(400, "avatar_uri too long", "avatar_uri_too_long")
+    operator_text = safe_token(str(operator or "web-user"), "web-user", 80)
+
+    now_text = iso_ts(now_local())
+    conn = connect_db(cfg.root)
+    try:
+        agent = _resolve_training_agent(conn, pid)
+        if agent is None:
+            raise TrainingCenterError(404, "agent not found", "agent_not_found", {"agent_id": pid})
+        target_agent_id = str(agent.get("agent_id") or "").strip()
+        conn.execute(
+            """
+            UPDATE agent_registry
+            SET avatar_uri=?,
+                updated_at=?
+            WHERE agent_id=?
+            """,
+            (avatar_text, now_text, target_agent_id),
+        )
+        conn.commit()
+        updated = _resolve_training_agent(conn, target_agent_id) or {}
+    finally:
+        conn.close()
+
+    audit_id = append_training_center_audit(
+        cfg.root,
+        action="set_avatar",
+        operator=operator_text,
+        target_id=pid,
+        detail={
+            "avatar_uri": _short_text(avatar_text, 240),
+            "cleared": not bool(avatar_text),
+            "upload": upload_detail or {},
+        },
+    )
+    return {
+        "agent_id": str(updated.get("agent_id") or pid),
+        "avatar_uri": str(updated.get("avatar_uri") or avatar_text),
+        "audit_id": audit_id,
+        "agent": updated,
+    }
+
+

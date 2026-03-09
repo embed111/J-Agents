@@ -1,0 +1,21 @@
+{
+  "policy_extract_source": "codex_exec",
+  "prompt_version": "2026-03-01-codex-exec-v2-evidence",
+  "parse_status": "ok",
+  "clarity_gate": "auto",
+  "clarity_score": 86,
+  "session_gate": "policy_ready",
+  "policy_error": "",
+  "contract_status": "ok",
+  "contract_missing_fields": [],
+  "contract_issues": [],
+  "workspace_root": "D:/code/AI/workspace/agents",
+  "workspace_root_valid": true,
+  "workspace_root_error": "",
+  "target_agents_path": "D:/code/AI/workspace/agents/Analyst2/AGENTS.md",
+  "target_in_scope": true,
+  "scope_hint": "workspace_root=D:/code/AI/workspace/agents ; target_agents_path=D:/code/AI/workspace/agents/Analyst2/AGENTS.md ; expect target path under workspace root and workspace root contains workflow/.",
+  "command_summary": "codex exec --json --skip-git-repo-check --sandbox workspace-write --add-dir <workspace_root> -C <workspace_root> -",
+  "codex_exit_code": 0,
+  "fail_closed": false
+}

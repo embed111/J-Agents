@@ -1,0 +1,9 @@
+test_compliant_workspace_passes (test_workspace_compliance_checker.WorkspaceComplianceCheckerTests.test_compliant_workspace_passes) ... ok
+test_missing_required_file_fails (test_workspace_compliance_checker.WorkspaceComplianceCheckerTests.test_missing_required_file_fails) ... ok
+test_missing_required_setting_fails (test_workspace_compliance_checker.WorkspaceComplianceCheckerTests.test_missing_required_setting_fails) ... ok
+test_report_is_written (test_workspace_compliance_checker.WorkspaceComplianceCheckerTests.test_report_is_written) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.038s
+
+OK

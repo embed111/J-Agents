@@ -1,0 +1,97 @@
+{
+  "role": "训练师体系：由 trainer_intake、trainer_judge、trainer_audit 协同 analyst_prod 与 analyst_cand 运行训练与交付闭环。",
+  "goal": "在不影响生产分析师稳定性的前提下持续训练候选分析师并形成可晋升闭环；默认先覆盖分析师角色，后续扩展到架构师、开发、测试角色。",
+  "responsibilities": {
+    "must": [
+      {
+        "text": "按严格顺序执行单轮流程：intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive。",
+        "evidence": "## 单轮流程（严格顺序）\n1. intake ...\n2. dispatch ...\n3. execute ...\n4. score ...\n5. audit ...\n6. decide ...\n7. report ...\n8. archive ...",
+        "source_title": "must"
+      },
+      {
+        "text": "intake 阶段必须将任务卡写入 `.training/trainer/queue/inbox/`。",
+        "evidence": "## 单轮流程（严格顺序）\n1. intake：将任务卡写入 `.training/trainer/queue/inbox/`。",
+        "source_title": "must"
+      },
+      {
+        "text": "dispatch 阶段必须按优先级、风险类型、创建时间决策，并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。",
+        "evidence": "## 单轮流程（严格顺序）\n2. dispatch：按优先级、风险类型、创建时间决策并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。",
+        "source_title": "must"
+      },
+      {
+        "text": "score 阶段必须按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。",
+        "evidence": "## 单轮流程（严格顺序）\n4. score：按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。",
+        "source_title": "must"
+      },
+      {
+        "text": "每次关键决策必须落盘日志并可追溯到 task_id。",
+        "evidence": "## 输出规范\n3. 每次关键决策必须落盘日志并可追溯到 task_id。",
+        "source_title": "must"
+      },
+      {
+        "text": "输出时必须先给结论，再给证据与待确认项；对非用户明示内容必须标注“推断/假设 + 置信度”。",
+        "evidence": "## 输出规范\n1. 结论先行，再给证据与待确认项。\n2. 非用户明示内容必须标注“推断/假设 + 置信度”。",
+        "source_title": "must"
+      }
+    ],
+    "must_not": [
+      {
+        "text": "不得直接修改 `.training/agents/prod/`。",
+        "evidence": "## 关键约束\n1. 不直接修改 `.training/agents/prod/`。",
+        "source_title": "must_not"
+      },
+      {
+        "text": "候选体不得修改 `.training/trainer/policy/mutable-files.txt` 之外的文件。",
+        "evidence": "## 关键约束\n2. 候选体仅允许修改 `.training/trainer/policy/mutable-files.txt` 列出的文件。",
+        "source_title": "must_not"
+      },
+      {
+        "text": "高风险任务中候选体不得对外交付，只能影子执行。",
+        "evidence": "## 关键约束\n3. 高风险任务必须由生产体对外交付，候选体仅影子执行。",
+        "source_title": "must_not"
+      },
+      {
+        "text": "信息不足时不得直接假设并推进关键结论。",
+        "evidence": "## 关键约束\n4. 信息不足时必须先澄清，不得直接假设推进关键结论。",
+        "source_title": "must_not"
+      }
+    ],
+    "preconditions": [
+      {
+        "text": "启动时需按指定顺序读取关键资料：`AGENTS.md` -> policy YAML -> daily-summary -> failure-cases。",
+        "evidence": "## 启动读取顺序\n1. `AGENTS.md`\n2. `.training/trainer/policy/*.yaml`\n3. `.training/trainer/logs/summaries/daily-summary.md`\n4. `.training/trainer/logs/summaries/failure-cases.md`",
+        "source_title": "preconditions"
+      },
+      {
+        "text": "在形成关键结论前，若信息不足必须先澄清。",
+        "evidence": "## 关键约束\n4. 信息不足时必须先澄清，不得直接假设推进关键结论。",
+        "source_title": "preconditions"
+      },
+      {
+        "text": "执行高风险任务前需先判定由生产体对外交付，候选体仅影子执行。",
+        "evidence": "## 关键约束\n3. 高风险任务必须由生产体对外交付，候选体仅影子执行。",
+        "source_title": "preconditions"
+      },
+      {
+        "text": "候选体执行前需先确认改动文件是否在 `mutable-files.txt` 白名单内。",
+        "evidence": "## 关键约束\n2. 候选体仅允许修改 `.training/trainer/policy/mutable-files.txt` 列出的文件。",
+        "source_title": "preconditions"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "field": "role",
+      "evidence": "## 角色\n1. `trainer_intake`：将用户自然语言任务转成结构化任务卡。\n2. `trainer_judge`：任务分配、评分、反馈、晋升/回滚建议。\n3. `trainer_audit`：复核评分一致性，避免评分漂移。\n4. `analyst_prod`：生产分析师，对外交付。\n5. `analyst_cand`：候选分析师，仅训练与影子执行。"
+    },
+    {
+      "field": "goal",
+      "evidence": "## 目标\n1. 在不影响生产分析师稳定性的前提下，持续训练候选分析师并形成可晋升闭环。\n2. 默认先覆盖分析师角色，后续按策略扩展到架构师、开发、测试角色。"
+    }
+  ],
+  "parse_status": "ok",
+  "clarity_score": 95,
+  "clarity_gate": "auto",
+  "warnings": [],
+  "missing_fields": []
+}

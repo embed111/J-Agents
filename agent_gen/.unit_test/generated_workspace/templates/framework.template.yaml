@@ -1,0 +1,105 @@
+framework:
+  name: agent-generator-framework
+  version: "0.1.0"
+  mode: design_only
+  source_of_truth: config.yaml
+
+runtime:
+  execute_generation: false
+  dry_run: true
+  fail_fast: true
+
+pipeline:
+  - id: load_config
+    enabled: true
+    output: normalized_config
+  - id: validate_config
+    enabled: true
+    output: validation_report
+  - id: map_fields
+    enabled: true
+    output: mapping_report
+  - id: build_spec
+    enabled: true
+    output: spec_draft
+  - id: ood_compliance_check
+    enabled: true
+    output: oo_design_report
+  - id: token_efficiency_check
+    enabled: true
+    output: token_efficiency_report
+  - id: scriptization_check
+    enabled: true
+    output: scriptization_report
+  - id: workspace_compliance_check
+    enabled: true
+    output: workspace_compliance_report
+  - id: generated_agent_compliance_check
+    enabled: true
+    output: generated_agent_compliance_report
+  - id: quality_gate
+    enabled: true
+    output: quality_report
+  - id: generate_agent
+    enabled: false
+    reason: design_only mode
+
+contracts:
+  required_keys:
+    - agent.name
+    - agent.role
+    - agent.goal
+    - outputs
+  target_sections:
+    - Identity
+    - Objectives
+    - Scope
+    - Inputs
+    - Workflow
+    - Tools
+    - Output Contract
+    - Safety & Policy
+    - Quality Gates
+    - Examples
+    - Runtime Rules
+
+quality_gates:
+  - required_keys_present
+  - no_conflict_non_goals_vs_workflow
+  - outputs_contains_failure_schema
+  - no_undeclared_tool_usage
+  - changes_have_corresponding_tests
+  - oo_design_compliance
+  - token_efficiency_compliance
+  - scriptization_compliance
+  - workspace_compliance
+  - generated_agent_compliance
+
+# 与 config.yaml 的映射（用于直观可调）
+config_bindings:
+  mode: controls.mode
+  execute_generation: controls.execute_generation
+  strictness: controls.strictness
+  allow_inference: controls.allow_inference
+  required_keys: framework_requirements.required_keys
+  required_sections: framework_requirements.required_sections
+  workflow_rules: framework_requirements.workflow_rules
+  output_contract_rules: framework_requirements.output_contract_rules
+  safety_rules: framework_requirements.safety_rules
+  change_testing: framework_requirements.change_testing
+  oo_design: framework_requirements.oo_design
+  token_efficiency: framework_requirements.token_efficiency
+  scriptization: framework_requirements.scriptization
+  compliance_scope: framework_requirements.compliance_scope
+  quality_gate_rules: framework_requirements.quality_gate_rules
+
+artifacts:
+  validation_report: reports/validation.md
+  mapping_report: reports/mapping.md
+  test_traceability_report: reports/test_traceability.md
+  oo_design_report: reports/oo_design.md
+  token_efficiency_report: reports/token_efficiency.md
+  scriptization_report: reports/scriptization.md
+  workspace_compliance_report: reports/workspace_compliance.md
+  generated_agent_compliance_report: reports/generated_agent_compliance.md
+  quality_report: reports/quality.md

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Proactive Practice Advisor"
+  short_description: "Propose stronger alternatives proactively"
+  default_prompt: "Complete the task and suggest better practices with tradeoffs."

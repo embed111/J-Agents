@@ -1,0 +1,91 @@
+{
+  "found": true,
+  "windows": [
+    {
+      "title": "微信",
+      "class_name": "Qt51514QWindowIcon",
+      "child_count": 2,
+      "sample_children": [
+        {
+          "name": "Weixin",
+          "control_type": "Pane",
+          "class_name": "Qt51514QWindowIcon",
+          "automation_id": ""
+        },
+        {
+          "name": "MMUIRenderSubWindowHW",
+          "control_type": "Pane",
+          "class_name": "MMUIRenderSubWindowHW",
+          "automation_id": ""
+        }
+      ]
+    },
+    {
+      "title": "微信网页版 和另外 2 个页面 - 个人 - Microsoft​ Edge",
+      "class_name": "Chrome_WidgetWin_1",
+      "child_count": 10,
+      "sample_children": [
+        {
+          "name": "",
+          "control_type": "Pane",
+          "class_name": "Intermediate D3D Window",
+          "automation_id": ""
+        },
+        {
+          "name": "微信网页版 - Microsoft Edge",
+          "control_type": "Pane",
+          "class_name": "BrowserRootView",
+          "automation_id": ""
+        },
+        {
+          "name": "",
+          "control_type": "Pane",
+          "class_name": "NonClientView",
+          "automation_id": ""
+        },
+        {
+          "name": "",
+          "control_type": "Pane",
+          "class_name": "BrowserFrameViewWin",
+          "automation_id": ""
+        },
+        {
+          "name": "",
+          "control_type": "Pane",
+          "class_name": "TopContainerOverlayView",
+          "automation_id": ""
+        },
+        {
+          "name": "翻译 英语 页面?",
+          "control_type": "Pane",
+          "class_name": "Chrome_WidgetWin_1",
+          "automation_id": ""
+        },
+        {
+          "name": "",
+          "control_type": "Pane",
+          "class_name": "Intermediate D3D Window",
+          "automation_id": ""
+        },
+        {
+          "name": "翻译 英语 页面?",
+          "control_type": "Text",
+          "class_name": "RootView",
+          "automation_id": ""
+        },
+        {
+          "name": "",
+          "control_type": "Pane",
+          "class_name": "NonClientView",
+          "automation_id": ""
+        },
+        {
+          "name": "",
+          "control_type": "Pane",
+          "class_name": "BubbleFrameView",
+          "automation_id": ""
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+﻿role: architect
+focus:
+  - module_boundary
+  - interface_contract
+  - risk_isolation
+handoff_to:
+  - developer

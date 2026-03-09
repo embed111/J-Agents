@@ -1,0 +1,20 @@
+﻿scoring_mode: "agent_judge"
+score_scale: "0-10"
+dimensions:
+  - name: requirement_alignment
+    weight: 0.40
+  - name: risk_identification
+    weight: 0.25
+  - name: clarity_actionability
+    weight: 0.20
+  - name: assumption_labeling
+    weight: 0.15
+
+judge_rules:
+  - "必须先给结论，再给依据与待确认项"
+  - "非用户明示内容必须标注为推断/假设+置信度"
+  - "信息不足时必须先澄清，不得直接假设推进"
+
+audit_rules:
+  - "trainer_audit 复核维度分与结论一致性"
+  - "若审计判定偏差>1分，标记该轮评分为需复审"

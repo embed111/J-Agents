@@ -1,0 +1,18 @@
+{
+  "source_workspace": "C:\\work\\agents\\agent_gen",
+  "target_workspace": "C:\\work\\agents\\agent_gen\\.unit_test\\generated_workspace",
+  "generated_at_utc": "2026-02-09T08:11:10+00:00",
+  "copied_files": [
+    "agent.md",
+    "agent_principles.yaml",
+    "config.yaml",
+    "README.md",
+    "workspace_compliance_checker.py",
+    "docs/agent_framework.md",
+    "docs/config_dashboard.md",
+    "templates/framework.template.yaml"
+  ],
+  "created_files": [
+    "reports/.gitkeep"
+  ]
+}

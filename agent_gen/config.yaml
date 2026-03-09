@@ -1,0 +1,192 @@
+# ==============================
+# Agent 生成框架主配置（可调整）
+# ==============================
+
+# 你最常改的开关（先看这里）
+controls:
+  mode: design_only           # design_only | generate
+  execute_generation: false   # false=不执行生成；true=执行生成
+  strictness: high            # low | medium | high
+  allow_inference: false      # 是否允许框架自动补全未声明项
+  detail_level: detailed      # concise | standard | detailed
+  language: zh-CN             # 最终生成文档语言
+
+# 框架元信息
+framework:
+  name: agent-generator-framework
+  version: "0.1.0"
+
+# 运行策略
+runtime:
+  dry_run: true
+  fail_fast: true
+  reports_only: true
+
+# 生成流程开关（可按需启停）
+pipeline:
+  load_config: true
+  validate_config: true
+  map_fields: true
+  build_spec: true
+  ood_compliance_check: true
+  token_efficiency_check: true
+  scriptization_check: true
+  workspace_compliance_check: true
+  generated_agent_compliance_check: true
+  quality_gate: true
+  generate_agent: false
+
+# 你可以在这里调整“对生成框架的要求”
+framework_requirements:
+  required_keys:
+    - agent.name
+    - agent.role
+    - agent.goal
+    - outputs
+
+  required_sections:
+    - Identity
+    - Objectives
+    - Scope
+    - Inputs
+    - Workflow
+    - Tools
+    - Output Contract
+    - Safety & Policy
+    - Quality Gates
+    - Examples
+    - Runtime Rules
+
+  workflow_rules:
+    numbered_steps: true
+    step_start_with_verb: true
+
+  output_contract_rules:
+    require_required_fields: true
+    require_format_constraints: true
+    require_failure_output_schema: true
+
+  safety_rules:
+    require_refusal_conditions: true
+    require_fallback_strategy: true
+
+  change_testing:
+    require_test_for_each_change: true
+    require_traceability_matrix: true
+    allowed_test_types:
+      - unit
+      - integration
+      - e2e
+    allow_missing_test_with_justification: false
+
+  oo_design:
+    require_minimal_dependency: true
+    require_open_closed_principle: true
+    require_single_responsibility: true
+    require_dependency_inversion: true
+    require_low_coupling_high_cohesion: true
+    allow_violation_with_justification: false
+
+  token_efficiency:
+    require_minimal_token_usage: true
+    forbid_unbounded_log_read: true
+    max_log_lines_per_read: 200
+    require_targeted_search_before_full_read: true
+    prefer_summary_over_raw_dump: true
+    allow_exception_with_justification: false
+
+  scriptization:
+    require_script_for_repeatable_flows: true
+    repeatability_threshold: 2
+    require_script_manifest: true
+    require_reusable_entrypoint: true
+    allow_manual_for_one_off_tasks: true
+    allow_exception_with_justification: false
+
+  compliance_scope:
+    enforce_workspace_compliance: true
+    enforce_generated_agent_compliance: true
+    workspace_root: .
+    generated_agent_scope: all_generated_agents
+    shared_requirements_source: agent_principles.yaml
+    block_on_scope_violation: true
+
+  quality_gate_rules:
+    required_keys_present: true
+    no_conflict_non_goals_vs_workflow: true
+    outputs_contains_failure_schema: true
+    no_undeclared_tool_usage: true
+    changes_have_corresponding_tests: true
+    oo_design_compliance: true
+    token_efficiency_compliance: true
+    scriptization_compliance: true
+    workspace_compliance: true
+    generated_agent_compliance: true
+
+# 字段映射（兼容你未来改字段名）
+field_mapping:
+  aliases:
+    agent.name:
+      - agent_name
+      - name
+    agent.role:
+      - role
+      - persona
+    agent.goal:
+      - goal
+      - objective
+    outputs:
+      - output
+      - output_contract
+
+# 目标 Agent 配置（当前仅用于校验与展示，不触发生成）
+agent:
+  name: ""
+  role: ""
+  goal: ""
+  non_goals: []
+
+inputs: []
+
+outputs:
+  required_fields:
+    - result
+    - confidence
+    - next_actions
+  format_constraints: []
+  failure_output:
+    code: AGENT_CONFIG_INVALID
+    reason: ""
+    missing_or_conflict: []
+    fix_suggestion: []
+
+workflow: []
+
+tools:
+  allowlist: []
+  blocklist: []
+
+policies:
+  refusal_conditions: []
+  fallback_strategy: []
+
+style:
+  tone: professional
+  verbosity: medium
+
+quality_checks: []
+
+examples: []
+
+# 报告产物位置
+artifacts:
+  validation_report: reports/validation.md
+  mapping_report: reports/mapping.md
+  test_traceability_report: reports/test_traceability.md
+  oo_design_report: reports/oo_design.md
+  token_efficiency_report: reports/token_efficiency.md
+  scriptization_report: reports/scriptization.md
+  workspace_compliance_report: reports/workspace_compliance.md
+  generated_agent_compliance_report: reports/generated_agent_compliance.md
+  quality_report: reports/quality.md
+  config_coverage_report: reports/coverage.md

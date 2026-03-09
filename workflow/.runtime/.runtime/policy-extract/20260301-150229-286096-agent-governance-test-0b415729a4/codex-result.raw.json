@@ -1,0 +1,35 @@
+{
+  "role": "",
+  "goal": "",
+  "responsibilities": {
+    "must": [],
+    "must_not": [],
+    "preconditions": []
+  },
+  "evidence": [
+    {
+      "conclusion": "文件仅包含一个标题，未提供可映射到角色定义的语句。",
+      "snippet": "# governance test",
+      "location": "D:/code/AI/workspace/agents/workflow/state/agent-governance-test/AGENTS.md:1"
+    },
+    {
+      "conclusion": "文件仅包含版本元数据，未提供目标或职责约束内容。",
+      "snippet": "version: task-v2",
+      "location": "D:/code/AI/workspace/agents/workflow/state/agent-governance-test/AGENTS.md:2"
+    }
+  ],
+  "parse_status": "incomplete",
+  "clarity_score": 8,
+  "clarity_gate": "block",
+  "warnings": [
+    "AGENTS.md 内容不足，无法提取 role、goal 与 responsibilities 的结构化条目。",
+    "未发现 must / must_not / preconditions 对应的显式段落或指令。"
+  ],
+  "missing_fields": [
+    "role",
+    "goal",
+    "responsibilities.must",
+    "responsibilities.must_not",
+    "responsibilities.preconditions"
+  ]
+}

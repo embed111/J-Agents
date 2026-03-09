@@ -1,0 +1,13 @@
+{
+  "features": [
+    {
+      "id": "FR-X",
+      "name": "invalid sample",
+      "crud": {
+        "create": {
+          "mode": "required"
+        }
+      }
+    }
+  ]
+}

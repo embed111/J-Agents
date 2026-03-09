@@ -1,0 +1,109 @@
+{
+  "role": "workflow 仓库的开发与维护执行者（依据仓库规范进行实现、测试、提交与持续维护）",
+  "goal": "在安全、可追溯前提下，按既定工程流程完成功能开发、门禁验收、日志留痕与对话复盘维护。",
+  "responsibilities": {
+    "must": [
+      {
+        "text": "改流程前先阅读 docs/workflow 文档。",
+        "evidence": "[Project Structure & Module Organization] `docs/workflow/`：需求、门禁和证据矩阵文档，先读这里再改流程。",
+        "source_title": "must"
+      },
+      {
+        "text": "改动 API/流程时优先补充 run_phase0_gate_acceptance.py 对应 case。",
+        "evidence": "[Testing Guidelines] 当前主测试入口是门禁脚本（非 pytest 套件）。改动 API/流程时，优先补充 `run_phase0_gate_acceptance.py` 对应 case。",
+        "source_title": "must"
+      },
+      {
+        "text": "将验收结果落盘到 logs/runs，并在必要时更新 Phase0 验收证据矩阵文档。",
+        "evidence": "[Testing Guidelines] 验收结果需落盘到 `logs/runs/`，并在必要时更新 `docs/workflow/验收证据矩阵-Phase0.md`。",
+        "source_title": "must"
+      },
+      {
+        "text": "用户偏好与需求假设统一维护在 state/user-preferences.md，并按固定格式记录 Need Hypotheses。",
+        "evidence": "[PM Continuous Maintenance] 用户偏好与需求假设统一维护在 `state/user-preferences.md`（单一事实源）。`Need Hypotheses` 使用固定格式：`Observation -> Inference -> Validation Action -> Confidence(High/Med/Low)`。",
+        "source_title": "must"
+      },
+      {
+        "text": "所有写入路径必须限制在 agent_search_root 内，并保持 $root 越界拦截不回退。",
+        "evidence": "[Security & Configuration Tips] 所有写入路径必须限制在 `agent_search_root` 内，保持 `$root` 越界拦截行为不回退。",
+        "source_title": "must"
+      }
+    ],
+    "must_not": [
+      {
+        "text": "当 DIALOGUE_RETRO_SWITCH 为 OFF 时，不得自动更新复盘相关文件。",
+        "evidence": "[运行开关（顶部手动切换）] `OFF`: 禁止自动更新复盘相关文件；仅在用户明确指令时更新：`state/session-snapshot.md`、`state/user-preferences.md`、`logs/runs/*.md`。",
+        "source_title": "must_not"
+      },
+      {
+        "text": "不得提交密钥或包含敏感信息的 trace。",
+        "evidence": "[Security & Configuration Tips] 严禁提交密钥或包含敏感信息的 trace；提交前检查 `logs/` 与 `state/` 新增文件。",
+        "source_title": "must_not"
+      },
+      {
+        "text": "更新执行快照时不得重复粘贴全文。",
+        "evidence": "[PM Continuous Maintenance] 每次更新执行快照（如 `state/session-snapshot.md`、`logs/runs/*.md`）时，不重复粘贴全文，只追加引用：`preference_ref: state/user-preferences.md` 与本次增量观察。",
+        "source_title": "must_not"
+      },
+      {
+        "text": "不得在 User Preferences 记录无关隐私。",
+        "evidence": "[PM Continuous Maintenance] `User Preferences` 只记录可观察偏好，例如：响应风格、交付粒度、容错策略、优先级倾向；避免记录无关隐私。",
+        "source_title": "must_not"
+      },
+      {
+        "text": "不得把心理或需求推测当作事实。",
+        "evidence": "[PM Continuous Maintenance] 禁止把推测当事实；任何心理层推断都要在后续对话中显式求证并允许用户否定。",
+        "source_title": "must_not"
+      }
+    ],
+    "preconditions": [
+      {
+        "text": "仅当 DIALOGUE_RETRO_SWITCH 为 ON 时，才允许自动写入每轮复盘增量。",
+        "evidence": "[PM Continuous Maintenance] 仅当 `DIALOGUE_RETRO_SWITCH: ON` 时，才自动写入每轮复盘增量；`OFF` 时只读不写，除非用户明确要求更新。",
+        "source_title": "preconditions"
+      },
+      {
+        "text": "当开关为 OFF 时，更新 state/session-snapshot.md、state/user-preferences.md、logs/runs/*.md 的前置条件是用户明确指令。",
+        "evidence": "[运行开关（顶部手动切换）] `OFF`: 禁止自动更新复盘相关文件；仅在用户明确指令时更新：`state/session-snapshot.md`、`state/user-preferences.md`、`logs/runs/*.md`。",
+        "source_title": "preconditions"
+      },
+      {
+        "text": "真实模型调用前需配置 WORKFLOW_AGENT_BASE_URL、WORKFLOW_AGENT_API_KEY、WORKFLOW_AGENT_MODEL 环境变量。",
+        "evidence": "[Security & Configuration Tips] 真实模型调用依赖环境变量：`WORKFLOW_AGENT_BASE_URL`、`WORKFLOW_AGENT_API_KEY`、`WORKFLOW_AGENT_MODEL`。",
+        "source_title": "preconditions"
+      },
+      {
+        "text": "修改 UI 前需同步检查 API 字段兼容性。",
+        "evidence": "[Architecture & Workflow Notes] 前端资源由后端直接托管，核心交互脚本位于 `scripts/workflow_web_client.js`，修改 UI 时需同步检查 API 字段兼容性。",
+        "source_title": "preconditions"
+      },
+      {
+        "text": "提交前需检查 logs/ 与 state/ 新增文件，确认不含敏感信息。",
+        "evidence": "[Security & Configuration Tips] 严禁提交密钥或包含敏感信息的 trace；提交前检查 `logs/` 与 `state/` 新增文件。",
+        "source_title": "preconditions"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "field": "role",
+      "evidence": "`# Repository Guidelines` 且包含 `Coding Style & Naming Conventions`、`Testing Guidelines`、`Commit & Pull Request Guidelines`，指向仓库开发/维护执行角色。"
+    },
+    {
+      "field": "goal",
+      "evidence": "`logs/` 被定义为“运行与审计留痕”；并有 `Security & Configuration Tips` 与 `PM Continuous Maintenance`，表明目标是安全、可审计、持续维护的工程执行。"
+    },
+    {
+      "field": "goal",
+      "evidence": "`Testing Guidelines` 明确门禁验收与证据落盘要求，体现以流程合规和可验证交付为目标。"
+    }
+  ],
+  "parse_status": "ok",
+  "clarity_score": 83,
+  "clarity_gate": "confirm",
+  "warnings": [
+    "role_and_goal_not_explicitly_labeled_in_source_inferred_from_section_titles_and_constraints"
+  ],
+  "missing_fields": []
+}
+

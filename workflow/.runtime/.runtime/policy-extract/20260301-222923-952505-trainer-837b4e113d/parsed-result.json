@@ -1,0 +1,431 @@
+{
+  "duty_title": "职责边界",
+  "duty_excerpt": "按严格顺序执行单轮流程：intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive。",
+  "duty_text": "按严格顺序执行单轮流程：intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive。\n将任务卡写入 `.training/trainer/queue/inbox/`。\ndispatch 阶段必须按优先级、风险类型、创建时间做决策，并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\n评分必须依据 `.training/trainer/policy/score-rubric.yaml`，并判断关键退化。\n每次关键决策必须落盘日志，并可追溯到 task_id。\n输出报告到 `.training/trainer/reports/<task_id>-report.md`，并将任务归档到 done 或 blocked 队列。\n输出时需先给结论，再给证据与待确认项。\n凡非用户明示内容，必须标注“推断/假设 + 置信度”。\n不得直接修改 `.training/agents/prod/`。\n候选体不得修改 `.training/trainer/policy/mutable-files.txt` 列表之外的文件。\n高风险任务中，候选体不得对外交付（仅可影子执行）。\n信息不足时，不得直接假设推进关键结论。\n启动阶段需按既定读取顺序加载上下文：`AGENTS.md` -> `.training/trainer/policy/*.yaml` -> `daily-summary.md` -> `failure-cases.md`。\n在形成关键结论前，若信息不足必须先澄清。\n执行阶段若判定为高风险任务，必须满足“生产体对外交付、候选体仅影子执行”的条件。",
+  "duty_truncated": false,
+  "role_profile": "训练师协同体系：`trainer_intake`、`trainer_judge`、`trainer_audit`，并与 `analyst_prod`（生产分析师）和 `analyst_cand`（候选分析师）协作。",
+  "session_goal": "在不影响生产分析师稳定性的前提下，持续训练候选分析师并形成可晋升闭环；默认先覆盖分析师角色，后续按策略扩展到架构师、开发、测试角色。",
+  "duty_constraints": [
+    "按严格顺序执行单轮流程：intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive。",
+    "将任务卡写入 `.training/trainer/queue/inbox/`。",
+    "dispatch 阶段必须按优先级、风险类型、创建时间做决策，并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。",
+    "评分必须依据 `.training/trainer/policy/score-rubric.yaml`，并判断关键退化。",
+    "每次关键决策必须落盘日志，并可追溯到 task_id。",
+    "输出报告到 `.training/trainer/reports/<task_id>-report.md`，并将任务归档到 done 或 blocked 队列。",
+    "输出时需先给结论，再给证据与待确认项。",
+    "凡非用户明示内容，必须标注“推断/假设 + 置信度”。",
+    "不得直接修改 `.training/agents/prod/`。",
+    "候选体不得修改 `.training/trainer/policy/mutable-files.txt` 列表之外的文件。",
+    "高风险任务中，候选体不得对外交付（仅可影子执行）。",
+    "信息不足时，不得直接假设推进关键结论。",
+    "启动阶段需按既定读取顺序加载上下文：`AGENTS.md` -> `.training/trainer/policy/*.yaml` -> `daily-summary.md` -> `failure-cases.md`。",
+    "在形成关键结论前，若信息不足必须先澄清。",
+    "执行阶段若判定为高风险任务，必须满足“生产体对外交付、候选体仅影子执行”的条件。"
+  ],
+  "duty_constraints_text": "按严格顺序执行单轮流程：intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive。\n将任务卡写入 `.training/trainer/queue/inbox/`。\ndispatch 阶段必须按优先级、风险类型、创建时间做决策，并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\n评分必须依据 `.training/trainer/policy/score-rubric.yaml`，并判断关键退化。\n每次关键决策必须落盘日志，并可追溯到 task_id。\n输出报告到 `.training/trainer/reports/<task_id>-report.md`，并将任务归档到 done 或 blocked 队列。\n输出时需先给结论，再给证据与待确认项。\n凡非用户明示内容，必须标注“推断/假设 + 置信度”。\n不得直接修改 `.training/agents/prod/`。\n候选体不得修改 `.training/trainer/policy/mutable-files.txt` 列表之外的文件。\n高风险任务中，候选体不得对外交付（仅可影子执行）。\n信息不足时，不得直接假设推进关键结论。\n启动阶段需按既定读取顺序加载上下文：`AGENTS.md` -> `.training/trainer/policy/*.yaml` -> `daily-summary.md` -> `failure-cases.md`。\n在形成关键结论前，若信息不足必须先澄清。\n执行阶段若判定为高风险任务，必须满足“生产体对外交付、候选体仅影子执行”的条件。",
+  "constraints": {
+    "must": [
+      {
+        "text": "按严格顺序执行单轮流程：intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive。",
+        "evidence": "《单轮流程（严格顺序）》明确列出 1-8 步，并在标题标注“严格顺序”。",
+        "source_title": "must"
+      },
+      {
+        "text": "将任务卡写入 `.training/trainer/queue/inbox/`。",
+        "evidence": "《单轮流程（严格顺序）》第1条：\"intake：将任务卡写入 `.training/trainer/queue/inbox/`。\"",
+        "source_title": "must"
+      },
+      {
+        "text": "dispatch 阶段必须按优先级、风险类型、创建时间做决策，并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。",
+        "evidence": "《单轮流程（严格顺序）》第2条：\"dispatch：按优先级、风险类型、创建时间决策并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\"",
+        "source_title": "must"
+      },
+      {
+        "text": "评分必须依据 `.training/trainer/policy/score-rubric.yaml`，并判断关键退化。",
+        "evidence": "《单轮流程（严格顺序）》第4条：\"score：按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。\"",
+        "source_title": "must"
+      },
+      {
+        "text": "每次关键决策必须落盘日志，并可追溯到 task_id。",
+        "evidence": "《输出规范》第3条：\"每次关键决策必须落盘日志并可追溯到 task_id。\"",
+        "source_title": "must"
+      },
+      {
+        "text": "输出报告到 `.training/trainer/reports/<task_id>-report.md`，并将任务归档到 done 或 blocked 队列。",
+        "evidence": "《单轮流程（严格顺序）》第7-8条：\"report：输出 `.training/trainer/reports/<task_id>-report.md`。\"；\"archive：任务移动到 `.training/trainer/queue/done/` 或 `.training/trainer/queue/blocked/`。\"",
+        "source_title": "must"
+      },
+      {
+        "text": "输出时需先给结论，再给证据与待确认项。",
+        "evidence": "《输出规范》第1条：\"结论先行，再给证据与待确认项。\"",
+        "source_title": "must"
+      },
+      {
+        "text": "凡非用户明示内容，必须标注“推断/假设 + 置信度”。",
+        "evidence": "《输出规范》第2条：\"非用户明示内容必须标注‘推断/假设 + 置信度’。\"",
+        "source_title": "must"
+      }
+    ],
+    "must_not": [
+      {
+        "text": "不得直接修改 `.training/agents/prod/`。",
+        "evidence": "《关键约束》第1条：\"不直接修改 `.training/agents/prod/`。\"",
+        "source_title": "must_not"
+      },
+      {
+        "text": "候选体不得修改 `.training/trainer/policy/mutable-files.txt` 列表之外的文件。",
+        "evidence": "《关键约束》第2条：\"候选体仅允许修改 `.training/trainer/policy/mutable-files.txt` 列出的文件。\"",
+        "source_title": "must_not"
+      },
+      {
+        "text": "高风险任务中，候选体不得对外交付（仅可影子执行）。",
+        "evidence": "《关键约束》第3条：\"高风险任务必须由生产体对外交付，候选体仅影子执行。\"",
+        "source_title": "must_not"
+      },
+      {
+        "text": "信息不足时，不得直接假设推进关键结论。",
+        "evidence": "《关键约束》第4条：\"信息不足时必须先澄清，不得直接假设推进关键结论。\"",
+        "source_title": "must_not"
+      }
+    ],
+    "preconditions": [
+      {
+        "text": "启动阶段需按既定读取顺序加载上下文：`AGENTS.md` -> `.training/trainer/policy/*.yaml` -> `daily-summary.md` -> `failure-cases.md`。",
+        "evidence": "《启动读取顺序》依次列出 1-4 项：`AGENTS.md`、`.training/trainer/policy/*.yaml`、`daily-summary.md`、`failure-cases.md`。",
+        "source_title": "preconditions"
+      },
+      {
+        "text": "在形成关键结论前，若信息不足必须先澄清。",
+        "evidence": "《关键约束》第4条：\"信息不足时必须先澄清，不得直接假设推进关键结论。\"",
+        "source_title": "preconditions"
+      },
+      {
+        "text": "执行阶段若判定为高风险任务，必须满足“生产体对外交付、候选体仅影子执行”的条件。",
+        "evidence": "《关键约束》第3条：\"高风险任务必须由生产体对外交付，候选体仅影子执行。\"；《单轮流程》第3条也注明“高风险任务 cand 仅影子”。",
+        "source_title": "preconditions"
+      }
+    ],
+    "issues": [],
+    "conflicts": [],
+    "missing_evidence_count": 0,
+    "total": 15
+  },
+  "parse_status": "ok",
+  "parse_warnings": [],
+  "evidence_snippets": {
+    "role": "",
+    "goal": "",
+    "duty": "《单轮流程（严格顺序）》明确列出 1-8 步，并在标题标注“严格顺序”。\n\n《单轮流程（严格顺序）》第1条：\"intake：将任务卡写入 `.training/trainer/queue/inbox/`。\"\n\n《单轮流程（严格顺序）》第2条：\"dispatch：按优先级、风险类型、创建时间决策并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\"\n\n《单轮流程（严格顺序）》第4条：\"score：按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。\"\n\n《输出规范》第3条：\"每次关键决策必须落盘日志并可追溯到 task_id。\"\n\n《单轮流程（严格顺序）》第7-8条：\"report：输出 `.training/trainer/reports/<task_id>-report.md`。\"；\"archive：任务移动到 `.training/trainer/queue/done/` 或 `.training/trainer/queue/blocked/`。\"\n\n《输出规范》第1条：\"结论先行，再给证据与待确认项。\"\n\n《输出规范》第2条：\"非用户明示内容必须标注‘推断/假设 + 置信度’。\"\n\n《关键约束》第1条：\"不直接修改 `.training/agents/prod/`。\"\n\n《关键约束》第2条：\"候选体仅允许修改 `.training/trainer/policy/mutable-files.txt` 列出的文件。\"\n\n《关\n...(已截断)"
+  },
+  "score_model": "v2",
+  "score_total": 88,
+  "score_weights": {
+    "completeness": 0.2,
+    "executability": 0.2,
+    "consistency": 0.2,
+    "traceability": 0.15,
+    "risk_coverage": 0.15,
+    "operability": 0.1
+  },
+  "score_dimensions": {
+    "completeness": {
+      "label": "完整性",
+      "score": 100,
+      "weight": 0.2,
+      "status": "ok",
+      "has_evidence": true,
+      "manual_review_required": false,
+      "deduction_reason": "",
+      "evidence_map": [
+        {
+          "ref": "duty",
+          "snippet": "《单轮流程（严格顺序）》明确列出 1-8 步，并在标题标注“严格顺序”。\n\n《单轮流程（严格顺序）》第1条：\"intake：将任务卡写入 `.training/trainer/queue/inbox/`。\"\n\n《单轮流程（严格顺序）》第2条：\"dispatch：按优先级、风险类型、创建时间决策并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\"\n\n《单轮流程（严格顺序）》第4条：\"s\n...(已截断)"
+        }
+      ],
+      "repair_suggestion": "补充 AGENTS.md 中“角色定位 / 会话目标 / 职责边界”三段基础内容。",
+      "threshold": 80
+    },
+    "executability": {
+      "label": "可执行边界",
+      "score": 100,
+      "weight": 0.2,
+      "status": "ok",
+      "has_evidence": true,
+      "manual_review_required": false,
+      "deduction_reason": "",
+      "evidence_map": [
+        {
+          "ref": "must",
+          "snippet": "《单轮流程（严格顺序）》明确列出 1-8 步，并在标题标注“严格顺序”。"
+        },
+        {
+          "ref": "must",
+          "snippet": "《单轮流程（严格顺序）》第1条：\"intake：将任务卡写入 `.training/trainer/queue/inbox/`。\""
+        },
+        {
+          "ref": "must",
+          "snippet": "《单轮流程（严格顺序）》第2条：\"dispatch：按优先级、风险类型、创建时间决策并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\""
+        },
+        {
+          "ref": "must",
+          "snippet": "《单轮流程（严格顺序）》第4条：\"score：按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。\""
+        },
+        {
+          "ref": "must",
+          "snippet": "《输出规范》第3条：\"每次关键决策必须落盘日志并可追溯到 task_id。\""
+        },
+        {
+          "ref": "must",
+          "snippet": "《单轮流程（严格顺序）》第7-8条：\"report：输出 `.training/trainer/reports/<task_id>-report.md`。\"；\"archive：任务移动到 `.training/trainer/queue/done/` 或 `.training/trainer/queue/blocked/`。\""
+        },
+        {
+          "ref": "must",
+          "snippet": "《输出规范》第1条：\"结论先行，再给证据与待确认项。\""
+        },
+        {
+          "ref": "must",
+          "snippet": "《输出规范》第2条：\"非用户明示内容必须标注‘推断/假设 + 置信度’。\""
+        },
+        {
+          "ref": "must_not",
+          "snippet": "《关键约束》第1条：\"不直接修改 `.training/agents/prod/`。\""
+        },
+        {
+          "ref": "must_not",
+          "snippet": "《关键约束》第2条：\"候选体仅允许修改 `.training/trainer/policy/mutable-files.txt` 列出的文件。\""
+        },
+        {
+          "ref": "must_not",
+          "snippet": "《关键约束》第3条：\"高风险任务必须由生产体对外交付，候选体仅影子执行。\""
+        },
+        {
+          "ref": "must_not",
+          "snippet": "《关键约束》第4条：\"信息不足时必须先澄清，不得直接假设推进关键结论。\""
+        },
+        {
+          "ref": "preconditions",
+          "snippet": "《启动读取顺序》依次列出 1-4 项：`AGENTS.md`、`.training/trainer/policy/*.yaml`、`daily-summary.md`、`failure-cases.md`。"
+        },
+        {
+          "ref": "preconditions",
+          "snippet": "《关键约束》第4条：\"信息不足时必须先澄清，不得直接假设推进关键结论。\""
+        },
+        {
+          "ref": "preconditions",
+          "snippet": "《关键约束》第3条：\"高风险任务必须由生产体对外交付，候选体仅影子执行。\"；《单轮流程》第3条也注明“高风险任务 cand 仅影子”。"
+        }
+      ],
+      "repair_suggestion": "在 AGENTS.md 新增/完善“职责边界（must/must_not/preconditions）”章节。",
+      "threshold": 80
+    },
+    "consistency": {
+      "label": "一致性",
+      "score": 88,
+      "weight": 0.2,
+      "status": "ok",
+      "has_evidence": true,
+      "manual_review_required": false,
+      "deduction_reason": "",
+      "evidence_map": [
+        {
+          "ref": "duty",
+          "snippet": "《单轮流程（严格顺序）》明确列出 1-8 步，并在标题标注“严格顺序”。\n\n《单轮流程（严格顺序）》第1条：\"intake：将任务卡写入 `.training/trainer/queue/inbox/`。\"\n\n《单轮流程（严格顺序）》第2条：\"dispatch：按优先级、风险类型、创建时间决策并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\"\n\n《单轮流程（严格顺序）》第4条：\"s\n...(已截断)"
+        }
+      ],
+      "repair_suggestion": "统一 AGENTS.md 中角色目标和职责描述，删除互相矛盾条目。",
+      "threshold": 80
+    },
+    "traceability": {
+      "label": "可追溯性",
+      "score": 53,
+      "weight": 0.15,
+      "status": "low",
+      "has_evidence": true,
+      "manual_review_required": false,
+      "deduction_reason": "评分依据无法稳定映射到 AGENTS.md 原文证据。",
+      "evidence_map": [
+        {
+          "ref": "duty",
+          "snippet": "《单轮流程（严格顺序）》明确列出 1-8 步，并在标题标注“严格顺序”。\n\n《单轮流程（严格顺序）》第1条：\"intake：将任务卡写入 `.training/trainer/queue/inbox/`。\"\n\n《单轮流程（严格顺序）》第2条：\"dispatch：按优先级、风险类型、创建时间决策并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\"\n\n《单轮流程（严格顺序）》第4条：\"s\n...(已截断)"
+        },
+        {
+          "ref": "constraints",
+          "snippet": "《单轮流程（严格顺序）》明确列出 1-8 步，并在标题标注“严格顺序”。"
+        },
+        {
+          "ref": "constraints",
+          "snippet": "《单轮流程（严格顺序）》第1条：\"intake：将任务卡写入 `.training/trainer/queue/inbox/`。\""
+        },
+        {
+          "ref": "constraints",
+          "snippet": "《单轮流程（严格顺序）》第2条：\"dispatch：按优先级、风险类型、创建时间决策并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\""
+        },
+        {
+          "ref": "constraints",
+          "snippet": "《单轮流程（严格顺序）》第4条：\"score：按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。\""
+        }
+      ],
+      "repair_suggestion": "将关键限制条目改为清晰列表，并在同段补充可定位描述。",
+      "threshold": 80
+    },
+    "risk_coverage": {
+      "label": "风险覆盖度",
+      "score": 88,
+      "weight": 0.15,
+      "status": "ok",
+      "has_evidence": true,
+      "manual_review_required": false,
+      "deduction_reason": "",
+      "evidence_map": [
+        {
+          "ref": "must_not",
+          "snippet": "《关键约束》第1条：\"不直接修改 `.training/agents/prod/`。\""
+        },
+        {
+          "ref": "must_not",
+          "snippet": "《关键约束》第2条：\"候选体仅允许修改 `.training/trainer/policy/mutable-files.txt` 列出的文件。\""
+        },
+        {
+          "ref": "must_not",
+          "snippet": "《关键约束》第3条：\"高风险任务必须由生产体对外交付，候选体仅影子执行。\""
+        },
+        {
+          "ref": "must_not",
+          "snippet": "《关键约束》第4条：\"信息不足时必须先澄清，不得直接假设推进关键结论。\""
+        },
+        {
+          "ref": "duty",
+          "snippet": "《单轮流程（严格顺序）》明确列出 1-8 步，并在标题标注“严格顺序”。\n\n《单轮流程（严格顺序）》第1条：\"intake：将任务卡写入 `.training/trainer/queue/inbox/`。\"\n\n《单轮流程（严格顺序）》第2条：\"dispatch：按优先级、风险类型、创建时间决策并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\"\n\n《单轮流程（严格顺序）》第4条：\"s\n...(已截断)"
+        }
+      ],
+      "repair_suggestion": "补充 AGENTS.md 中禁止项（must_not），明确高风险操作处理边界。",
+      "threshold": 80
+    },
+    "operability": {
+      "label": "可操作性",
+      "score": 92,
+      "weight": 0.1,
+      "status": "ok",
+      "has_evidence": true,
+      "manual_review_required": false,
+      "deduction_reason": "",
+      "evidence_map": [
+        {
+          "ref": "duty",
+          "snippet": "《单轮流程（严格顺序）》明确列出 1-8 步，并在标题标注“严格顺序”。\n\n《单轮流程（严格顺序）》第1条：\"intake：将任务卡写入 `.training/trainer/queue/inbox/`。\"\n\n《单轮流程（严格顺序）》第2条：\"dispatch：按优先级、风险类型、创建时间决策并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\"\n\n《单轮流程（严格顺序）》第4条：\"s\n...(已截断)"
+        }
+      ],
+      "repair_suggestion": "将职责边界改写为可执行动作列表（动词 + 条件 + 输出）。",
+      "threshold": 80
+    }
+  },
+  "clarity_score": 88,
+  "clarity_details": {
+    "completeness": 100,
+    "specificity": 96,
+    "consistency": 88,
+    "traceability": 53,
+    "executability": 100,
+    "risk_coverage": 88,
+    "operability": 92
+  },
+  "clarity_gate": "auto",
+  "clarity_gate_reason": "",
+  "risk_tips": [
+    "可追溯性偏低：评分依据无法稳定映射到 AGENTS.md 原文证据。"
+  ],
+  "policy_extract_ok": true,
+  "policy_error": "",
+  "policy_extract_source": "codex_exec",
+  "policy_prompt_version": "2026-03-01-codex-exec-v2-evidence",
+  "analysis_chain": {
+    "source": "codex_exec",
+    "prompt_version": "2026-03-01-codex-exec-v2-evidence",
+    "workspace_root": "D:/code/AI/workspace/agents",
+    "workspace_root_valid": true,
+    "workspace_root_error": "",
+    "target_agent_workspace": "D:/code/AI/workspace/agents/trainer",
+    "target_agents_path": "D:/code/AI/workspace/agents/trainer/AGENTS.md",
+    "target_in_scope": true,
+    "scope_hint": "workspace_root=D:/code/AI/workspace/agents ; target_agents_path=D:/code/AI/workspace/agents/trainer/AGENTS.md ; expect target path under workspace root and workspace root contains workflow/.",
+    "command_summary": "codex exec --json --skip-git-repo-check --sandbox workspace-write --add-dir <workspace_root> -C <workspace_root> -",
+    "command": [
+      "C:\\Users\\jmqj\\AppData\\Roaming\\npm\\codex.CMD",
+      "exec",
+      "--json",
+      "--skip-git-repo-check",
+      "--sandbox",
+      "workspace-write",
+      "--add-dir",
+      "D:/code/AI/workspace/agents",
+      "-C",
+      "D:/code/AI/workspace/agents",
+      "-"
+    ],
+    "codex_exit_code": 0,
+    "contract_status": "ok",
+    "contract_missing_fields": [],
+    "contract_issues": [],
+    "files": {
+      "trace_dir": ".runtime/policy-extract/20260301-222923-952505-trainer-837b4e113d",
+      "prompt": ".runtime/policy-extract/20260301-222923-952505-trainer-837b4e113d/prompt.txt",
+      "stdout": ".runtime/policy-extract/20260301-222923-952505-trainer-837b4e113d/stdout.txt",
+      "stderr": ".runtime/policy-extract/20260301-222923-952505-trainer-837b4e113d/stderr.txt",
+      "codex_result_raw": ".runtime/policy-extract/20260301-222923-952505-trainer-837b4e113d/codex-result.raw.json",
+      "parsed_result": ".runtime/policy-extract/20260301-222923-952505-trainer-837b4e113d/parsed-result.json",
+      "gate_decision": ".runtime/policy-extract/20260301-222923-952505-trainer-837b4e113d/gate-decision.json"
+    },
+    "content": {
+      "prompt": "你是“角色策略提取助手”。请读取指定 AGENTS.md 并输出结构化 JSON，不要输出与 JSON 无关的说明文字。\n\nprompt_version: 2026-03-01-codex-exec-v2-evidence\n\n输入:\n- workspace_root: D:/code/AI/workspace/agents\n- target_agent_workspace: D:/code/AI/workspace/agents/trainer\n- agents_md_path: D:/code/AI/workspace/agents/trainer/AGENTS.md\n\n任务:\n1) 仅基于 AGENTS.md 内容提取:\n   - role\n   - goal\n   - responsibilities.must\n   - responsibilities.must_not\n   - responsibilities.preconditions\n2) 对每个关键结论给 evidence（原文片段或段落定位）。\n3) 给出 parse_status、clarity_score(0-100)、clarity_gate(auto|confirm|block)、warnings[]。\n4) 若信息不足，必须显式标记 missing_fields[]，不要编造。\n5) responsibilities.must/must_not/preconditions 每个元素必须是对象，并且 text 与 evidence 均为非空字符串。\n6) evidence 必须是 AGENTS.md 原文摘录或可定位段落（标题+要点），禁止输出空 evidence。\n\n输出要求:\n- 仅输出一个 JSON 对象。\n- responsibilities 中不得使用纯字符串数组；每条职责均需 text + evidence。\n- 若某条职责无法给出证据，不要编造；在 warnings 增加 constraints_evidence_missing，并在 missing_fields 标注对应职责 evidence 缺失。\n- 字段至少包含:\n{\n  \"role\": \"\",\n  \"goal\": \"\",\n  \"responsibilities\": {\n    \"must\": [{\"text\": \"\", \"evidence\": \"\", \"source_title\": \"must\"}],\n    \"must_not\": [{\"text\": \"\", \"evidence\": \"\", \"source_title\": \"must_not\"}],\n    \"preconditions\": [{\"text\": \"\", \"evidence\": \"\", \"source_title\": \"preconditions\"}]\n  },\n  \"evidence\": [],\n  \"parse_status\": \"ok|incomplete|failed\",\n  \"clarity_score\": 0,\n  \"clarity_gate\": \"auto|confirm|block\",\n  \"warnings\": [],\n  \"missing_fields\": []\n}",
+      "stdout": "{\"type\":\"thread.started\",\"thread_id\":\"019ca9cd-d211-7b43-abb7-36e3f73e0626\"}\n{\"type\":\"turn.started\"}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_0\",\"type\":\"reasoning\",\"text\":\"**Preparing to read AGENTS.md**\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_1\",\"type\":\"command_execution\",\"command\":\"\\\"C:\\\\\\\\WINDOWS\\\\\\\\System32\\\\\\\\WindowsPowerShell\\\\\\\\v1.0\\\\\\\\powershell.exe\\\" -Command \\\"Get-Content -Raw 'D:/code/AI/workspace/agents/trainer/AGENTS.md'\\\"\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_1\",\"type\":\"command_execution\",\"command\":\"\\\"C:\\\\\\\\WINDOWS\\\\\\\\System32\\\\\\\\WindowsPowerShell\\\\\\\\v1.0\\\\\\\\powershell.exe\\\" -Command \\\"Get-Content -Raw 'D:/code/AI/workspace/agents/trainer/AGENTS.md'\\\"\",\"aggregated_output\":\"# 训练师 AGENTS\\n\\n## 目标\\n1. 在不影响生产分析师稳定性的前提下，持续训练候选分析师并形成可晋升闭环。\\n2. 默认先覆盖分析师角色，后续按策略扩展到架构师、开发、测试角色。\\n\\n## 角色\\n1. `trainer_intake`：将用户自然语言任务转成结构化任务卡。\\n2. `trainer_judge`：任务分配、评分、反馈、晋升/回滚建议。\\n3. `trainer_audit`：复核评分一致性，避免评分漂移。\\n4. `analyst_prod`：生产分析师，对外交付。\\n5. `analyst_cand`：候选分析师，仅训练与影子执行。\\n\\n## 关键约束\\n1. 不直接修改 `.training/agents/prod/`。\\n2. 候选体仅允许修改 `.training/trainer/policy/mutable-files.txt` 列出的文件。\\n3. 高风险任务必须由生产体对外交付，候选体仅影子执行。\\n4. 信息不足时必须先澄清，不得直接假设推进关键结论。\\n\\n## 单轮流程（严格顺序）\\n1. intake：将任务卡写入 `.training/trainer/queue/inbox/`。\\n2. dispatch：按优先级、风险类型、创建时间决策并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\\n3. execute：prod 与 cand 同题执行（高风险任务 cand 仅影子）。\\n4. score：按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。\\n5. audit：复核评分一致性。\\n6. decide：`keep_training | promote | rollback | blocked`。\\n7. report：输出 `.training/trainer/reports/<task_id>-report.md`。\\n8. archive：任务移动到 `.training/trainer/queue/done/` 或 `.training/trainer/queue/blocked/`。\\n\\n## 启动读取顺序\\n1. `AGENTS.md`\\n2. `.training/trainer/policy/*.yaml`\\n3. `.training/trainer/logs/summaries/daily-summary.md`\\n4. `.training/trainer/logs/summaries/failure-cases.md`\\n\\n## 输出规范\\n1. 结论先行，再给证据与待确认项。\\n2. 非用户明示内容必须标注“推断/假设 + 置信度”。\\n3. 每次关键决策必须落盘日志并可追溯到 task_id。\\r\\n\\r\\n\\r\\n\\r\\n\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_2\",\"type\":\"reasoning\",\"text\":\"**Designing structured extraction plan**\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_3\",\"type\":\"agent_message\",\"text\":\"{\\n  \\\"role\\\": \\\"训练师协同体系：`trainer_intake`、`trainer_judge`、`trainer_audit`，并与 `analyst_prod`（生产分析师）和 `analyst_cand`（候选分析师）协作。\\\",\\n  \\\"goal\\\": \\\"在不影响生产分析师稳定性的前提下，持续训练候选分析师并形成可晋升闭环；默认先覆盖分析师角色，后续按策略扩展到架构师、开发、测试角色。\\\",\\n  \\\"responsibilities\\\": {\\n    \\\"must\\\": [\\n      {\\n        \\\"text\\\": \\\"按严格顺序执行单轮流程：intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive。\\\",\\n        \\\"evidence\\\": \\\"《单轮流程（严格顺序）》明确列出 1-8 步，并在标题标注“严格顺序”。\\\",\\n        \\\"source_title\\\": \\\"must\\\"\\n      },\\n      {\\n        \\\"text\\\": \\\"将任务卡写入 `.training/trainer/queue/inbox/`。\\\",\\n        \\\"evidence\\\": \\\"《单轮流程（严格顺序）》第1条：\\\\\\\"intake：将任务卡写入 `.training/trainer/queue/inbox/`。\\\\\\\"\\\",\\n        \\\"source_title\\\": \\\"must\\\"\\n      },\\n      {\\n        \\\"text\\\": \\\"dispatch 阶段必须按优先级、风险类型、创建时间做决策，并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\\\",\\n        \\\"evidence\\\": \\\"《单轮流程（严格顺序）》第2条：\\\\\\\"dispatch：按优先级、风险类型、创建时间决策并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\\\\\\\"\\\",\\n        \\\"source_title\\\": \\\"must\\\"\\n      },\\n      {\\n        \\\"text\\\": \\\"评分必须依据 `.training/trainer/policy/score-rubric.yaml`，并判断关键退化。\\\",\\n        \\\"evidence\\\": \\\"《单轮流程（严格顺序）》第4条：\\\\\\\"score：按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。\\\\\\\"\\\",\\n        \\\"source_title\\\": \\\"must\\\"\\n      },\\n      {\\n        \\\"text\\\": \\\"每次关键决策必须落盘日志，并可追溯到 task_id。\\\",\\n        \\\"evidence\\\": \\\"《输出规范》第3条：\\\\\\\"每次关键决策必须落盘日志并可追溯到 task_id。\\\\\\\"\\\",\\n        \\\"source_title\\\": \\\"must\\\"\\n      },\\n      {\\n        \\\"text\\\": \\\"输出报告到 `.training/trainer/reports/<task_id>-report.md`，并将任务归档到 done 或 blocked 队列。\\\",\\n        \\\"evidence\\\": \\\"《单轮流程（严格顺序）》第7-8条：\\\\\\\"report：输出 `.training/trainer/reports/<task_id>-report.md`。\\\\\\\"；\\\\\\\"archive：任务移动到 `.training/trainer/queue/done/` 或 `.training/trainer/queue/blocked/`。\\\\\\\"\\\",\\n        \\\"source_title\\\": \\\"must\\\"\\n      },\\n      {\\n        \\\"text\\\": \\\"输出时需先给结论，再给证据与待确认项。\\\",\\n        \\\"evidence\\\": \\\"《输出规范》第1条：\\\\\\\"结论先行，再给证据与待确认项。\\\\\\\"\\\",\\n        \\\"source_title\\\": \\\"must\\\"\\n      },\\n      {\\n        \\\"text\\\": \\\"凡非用户明示内容，必须标注“推断/假设 + 置信度”。\\\",\\n        \\\"evidence\\\": \\\"《输出规范》第2条：\\\\\\\"非用户明示内容必须标注‘推断/假设 + 置信度’。\\\\\\\"\\\",\\n        \\\"source_title\\\": \\\"must\\\"\\n      }\\n    ],\\n    \\\"must_not\\\": [\\n      {\\n        \\\"text\\\": \\\"不得直接修改 `.training/agents/prod/`。\\\",\\n        \\\"evidence\\\": \\\"《关键约束》第1条：\\\\\\\"不直接修改 `.training/agents/prod/`。\\\\\\\"\\\",\\n        \\\"source_title\\\": \\\"must_not\\\"\\n      },\\n      {\\n        \\\"text\\\": \\\"候选体不得修改 `.training/trainer/policy/mutable-files.txt` 列表之外的文件。\\\",\\n        \\\"evidence\\\": \\\"《关键约束》第2条：\\\\\\\"候选体仅允许修改 `.training/trainer/policy/mutable-files.txt` 列出的文件。\\\\\\\"\\\",\\n        \\\"source_title\\\": \\\"must_not\\\"\\n      },\\n      {\\n        \\\"text\\\": \\\"高风险任务中，候选体不得对外交付（仅可影子执行）。\\\",\\n        \\\"evidence\\\": \\\"《关键约束》第3条：\\\\\\\"高风险任务必须由生产体对外交付，候选体仅影子执行。\\\\\\\"\\\",\\n        \\\"source_title\\\": \\\"must_not\\\"\\n      },\\n      {\\n        \\\"text\\\": \\\"信息不足时，不得直接假设推进关键结论。\\\",\\n        \\\"evidence\\\": \\\"《关键约束》第4条：\\\\\\\"信息不足时必须先澄清，不得直接假设推进关键结论。\\\\\\\"\\\",\\n        \\\"source_title\\\": \\\"must_not\\\"\\n      }\\n    ],\\n    \\\"preconditions\\\": [\\n      {\\n        \\\"text\\\": \\\"启动阶段需按既定读取顺序加载上下文：`AGENTS.md` -> `.training/trainer/policy/*.yaml` -> `daily-summary.md` -> `failure-cases.md`。\\\",\\n        \\\"evidence\\\": \\\"《启动读取顺序》依次列出 1-4 项：`AGENTS.md`、`.training/trainer/policy/*.yaml`、`daily-summary.md`、`failure-cases.md`。\\\",\\n        \\\"source_title\\\": \\\"preconditions\\\"\\n      },\\n      {\\n        \\\"text\\\": \\\"在形成关键结论前，若信息不足必须先澄清。\\\",\\n        \\\"evidence\\\": \\\"《关键约束》第4条：\\\\\\\"信息不足时必须先澄清，不得直接假设推进关键结论。\\\\\\\"\\\",\\n        \\\"source_title\\\": \\\"preconditions\\\"\\n      },\\n      {\\n        \\\"text\\\": \\\"执行阶段若判定为高风险任务，必须满足“生产体对外交付、候选体仅影子执行”的条件。\\\",\\n        \\\"evidence\\\": \\\"《关键约束》第3条：\\\\\\\"高风险任务必须由生产体对外交付，候选体仅影子执行。\\\\\\\"；《单轮流程》第3条也注明“高风险任务 cand 仅影子”。\\\",\\n        \\\"source_title\\\": \\\"preconditions\\\"\\n      }\\n    ]\\n  },\\n  \\\"evidence\\\": [\\n    {\\n      \\\"field\\\": \\\"role\\\",\\n      \\\"evidence\\\": \\\"《角色》列出 5 个角色：`trainer_intake`、`trainer_judge`、`trainer_audit`、`analyst_prod`、`analyst_cand`。\\\"\\n    },\\n    {\\n      \\\"field\\\": \\\"goal\\\",\\n      \\\"evidence\\\": \\\"《目标》第1-2条：\\\\\\\"在不影响生产分析师稳定性的前提下，持续训练候选分析师并形成可晋升闭环。\\\\\\\"；\\\\\\\"默认先覆盖分析师角色，后续按策略扩展到架构师、开发、测试角色。\\\\\\\"\\\"\\n    }\\n  ],\\n  \\\"parse_status\\\": \\\"ok\\\",\\n  \\\"clarity_score\\\": 95,\\n  \\\"clarity_gate\\\": \\\"auto\\\",\\n  \\\"warnings\\\": [],\\n  \\\"missing_fields\\\": []\\n}\"}}\n{\"type\":\"turn.completed\",\"usage\":{\"input_tokens\":14865,\"cached_input_tokens\":11264,\"output_tokens\":3599}}\n",
+      "stderr": "",
+      "codex_result_raw": "{\n  \"role\": \"训练师协同体系：`trainer_intake`、`trainer_judge`、`trainer_audit`，并与 `analyst_prod`（生产分析师）和 `analyst_cand`（候选分析师）协作。\",\n  \"goal\": \"在不影响生产分析师稳定性的前提下，持续训练候选分析师并形成可晋升闭环；默认先覆盖分析师角色，后续按策略扩展到架构师、开发、测试角色。\",\n  \"responsibilities\": {\n    \"must\": [\n      {\n        \"text\": \"按严格顺序执行单轮流程：intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive。\",\n        \"evidence\": \"《单轮流程（严格顺序）》明确列出 1-8 步，并在标题标注“严格顺序”。\",\n        \"source_title\": \"must\"\n      },\n      {\n        \"text\": \"将任务卡写入 `.training/trainer/queue/inbox/`。\",\n        \"evidence\": \"《单轮流程（严格顺序）》第1条：\\\"intake：将任务卡写入 `.training/trainer/queue/inbox/`。\\\"\",\n        \"source_title\": \"must\"\n      },\n      {\n        \"text\": \"dispatch 阶段必须按优先级、风险类型、创建时间做决策，并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\",\n        \"evidence\": \"《单轮流程（严格顺序）》第2条：\\\"dispatch：按优先级、风险类型、创建时间决策并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\\\"\",\n        \"source_title\": \"must\"\n      },\n      {\n        \"text\": \"评分必须依据 `.training/trainer/policy/score-rubric.yaml`，并判断关键退化。\",\n        \"evidence\": \"《单轮流程（严格顺序）》第4条：\\\"score：按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。\\\"\",\n        \"source_title\": \"must\"\n      },\n      {\n        \"text\": \"每次关键决策必须落盘日志，并可追溯到 task_id。\",\n        \"evidence\": \"《输出规范》第3条：\\\"每次关键决策必须落盘日志并可追溯到 task_id。\\\"\",\n        \"source_title\": \"must\"\n      },\n      {\n        \"text\": \"输出报告到 `.training/trainer/reports/<task_id>-report.md`，并将任务归档到 done 或 blocked 队列。\",\n        \"evidence\": \"《单轮流程（严格顺序）》第7-8条：\\\"report：输出 `.training/trainer/reports/<task_id>-report.md`。\\\"；\\\"archive：任务移动到 `.training/trainer/queue/done/` 或 `.training/trainer/queue/blocked/`。\\\"\",\n        \"source_title\": \"must\"\n      },\n      {\n        \"text\": \"输出时需先给结论，再给证据与待确认项。\",\n        \"evidence\": \"《输出规范》第1条：\\\"结论先行，再给证据与待确认项。\\\"\",\n        \"source_title\": \"must\"\n      },\n      {\n        \"text\": \"凡非用户明示内容，必须标注“推断/假设 + 置信度”。\",\n        \"evidence\": \"《输出规范》第2条：\\\"非用户明示内容必须标注‘推断/假设 + 置信度’。\\\"\",\n        \"source_title\": \"must\"\n      }\n    ],\n    \"must_not\": [\n      {\n        \"text\": \"不得直接修改 `.training/agents/prod/`。\",\n        \"evidence\": \"《关键约束》第1条：\\\"不直接修改 `.training/agents/prod/`。\\\"\",\n        \"source_title\": \"must_not\"\n      },\n      {\n        \"text\": \"候选体不得修改 `.training/trainer/policy/mutable-files.txt` 列表之外的文件。\",\n        \"evidence\": \"《关键约束》第2条：\\\"候选体仅允许修改 `.training/trainer/policy/mutable-files.txt` 列出的文件。\\\"\",\n        \"source_title\": \"must_not\"\n      },\n      {\n        \"text\": \"高风险任务中，候选体不得对外交付（仅可影子执行）。\",\n        \"evidence\": \"《关键约束》第3条：\\\"高风险任务必须由生产体对外交付，候选体仅影子执行。\\\"\",\n        \"source_title\": \"must_not\"\n      },\n      {\n        \"text\": \"信息不足时，不得直接假设推进关键结论。\",\n        \"evidence\": \"《关键约束》第4条：\\\"信息不足时必须先澄清，不得直接假设推进关键结论。\\\"\",\n        \"source_title\": \"must_not\"\n      }\n    ],\n    \"preconditions\": [\n      {\n        \"text\": \"启动阶段需按既定读取顺序加载上下文：`AGENTS.md` -> `.training/trainer/policy/*.yaml` -> `daily-summary.md` -> `failure-cases.md`。\",\n        \"evidence\": \"《启动读取顺序》依次列出 1-4 项：`AGENTS.md`、`.training/trainer/policy/*.yaml`、`daily-summary.md`、`failure-cases.md`。\",\n        \"source_title\": \"preconditions\"\n      },\n      {\n        \"text\": \"在形成关键结论前，若信息不足必须先澄清。\",\n        \"evidence\": \"《关键约束》第4条：\\\"信息不足时必须先澄清，不得直接假设推进关键结论。\\\"\",\n        \"source_title\": \"preconditions\"\n      },\n      {\n        \"text\": \"执行阶段若判定为高风险任务，必须满足“生产体对外交付、候选体仅影子执行”的条件。\",\n        \"evidence\": \"《关键约束》第3条：\\\"高风险任务必须由生产体对外交付，候选体仅影子执行。\\\"；《单轮流程》第3条也注明“高风险任务 cand 仅影子”。\",\n        \"source_title\": \"preconditions\"\n      }\n    ]\n  },\n  \"evidence\": [\n    {\n      \"field\": \"role\",\n      \"evidence\": \"《角色》列出 5 个角色：`trainer_intake`、`trainer_judge`、`trainer_audit`、`analyst_prod`、`analyst_cand`。\"\n    },\n    {\n      \"field\": \"goal\",\n      \"evidence\": \"《目标》第1-2条：\\\"在不影响生产分析师稳定性的前提下，持续训练候选分析师并形成可晋升闭环。\\\"；\\\"默认先覆盖分析师角色，后续按策略扩展到架构师、开发、测试角色。\\\"\"\n    }\n  ],\n  \"parse_status\": \"ok\",\n  \"clarity_score\": 95,\n  \"clarity_gate\": \"auto\",\n  \"warnings\": [],\n  \"missing_fields\": []\n}",
+      "parsed_result": "{\n  \"duty_title\": \"职责边界\",\n  \"duty_excerpt\": \"按严格顺序执行单轮流程：intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive。\",\n  \"duty_text\": \"按严格顺序执行单轮流程：intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive。\\n将任务卡写入 `.training/trainer/queue/inbox/`。\\ndispatch 阶段必须按优先级、风险类型、创建时间做决策，并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\\n评分必须依据 `.training/trainer/policy/score-rubric.yaml`，并判断关键退化。\\n每次关键决策必须落盘日志，并可追溯到 task_id。\\n输出报告到 `.training/trainer/reports/<task_id>-report.md`，并将任务归档到 done 或 blocked 队列。\\n输出时需先给结论，再给证据与待确认项。\\n凡非用户明示内容，必须标注“推断/假设 + 置信度”。\\n不得直接修改 `.training/agents/prod/`。\\n候选体不得修改 `.training/trainer/policy/mutable-files.txt` 列表之外的文件。\\n高风险任务中，候选体不得对外交付（仅可影子执行）。\\n信息不足时，不得直接假设推进关键结论。\\n启动阶段需按既定读取顺序加载上下文：`AGENTS.md` -> `.training/trainer/policy/*.yaml` -> `daily-summary.md` -> `failure-cases.md`。\\n在形成关键结论前，若信息不足必须先澄清。\\n执行阶段若判定为高风险任务，必须满足“生产体对外交付、候选体仅影子执行”的条件。\",\n  \"duty_truncated\": false,\n  \"role_profile\": \"训练师协同体系：`trainer_intake`、`trainer_judge`、`trainer_audit`，并与 `analyst_prod`（生产分析师）和 `analyst_cand`（候选分析师）协作。\",\n  \"session_goal\": \"在不影响生产分析师稳定性的前提下，持续训练候选分析师并形成可晋升闭环；默认先覆盖分析师角色，后续按策略扩展到架构师、开发、测试角色。\",\n  \"duty_constraints\": [\n    \"按严格顺序执行单轮流程：intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive。\",\n    \"将任务卡写入 `.training/trainer/queue/inbox/`。\",\n    \"dispatch 阶段必须按优先级、风险类型、创建时间做决策，并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\",\n    \"评分必须依据 `.training/trainer/policy/score-rubric.yaml`，并判断关键退化。\",\n    \"每次关键决策必须落盘日志，并可追溯到 task_id。\",\n    \"输出报告到 `.training/trainer/reports/<task_id>-report.md`，并将任务归档到 done 或 blocked 队列。\",\n    \"输出时需先给结论，再给证据与待确认项。\",\n    \"凡非用户明示内容，必须标注“推断/假设 + 置信度”。\",\n    \"不得直接修改 `.training/agents/prod/`。\",\n    \"候选体不得修改 `.training/trainer/policy/mutable-files.txt` 列表之外的文件。\",\n    \"高风险任务中，候选体不得对外交付（仅可影子执行）。\",\n    \"信息不足时，不得直接假设推进关键结论。\",\n    \"启动阶段需按既定读取顺序加载上下文：`AGENTS.md` -> `.training/trainer/policy/*.yaml` -> `daily-summary.md` -> `failure-cases.md`。\",\n    \"在形成关键结论前，若信息不足必须先澄清。\",\n    \"执行阶段若判定为高风险任务，必须满足“生产体对外交付、候选体仅影子执行”的条件。\"\n  ],\n  \"duty_constraints_text\": \"按严格顺序执行单轮流程：intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive。\\n将任务卡写入 `.training/trainer/queue/inbox/`。\\ndispatch 阶段必须按优先级、风险类型、创建时间做决策，并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\\n评分必须依据 `.training/trainer/policy/score-rubric.yaml`，并判断关键退化。\\n每次关键决策必须落盘日志，并可追溯到 task_id。\\n输出报告到 `.training/trainer/reports/<task_id>-report.md`，并将任务归档到 done 或 blocked 队列。\\n输出时需先给结论，再给证据与待确认项。\\n凡非用户明示内容，必须标注“推断/假设 + 置信度”。\\n不得直接修改 `.training/agents/prod/`。\\n候选体不得修改 `.training/trainer/policy/mutable-files.txt` 列表之外的文件。\\n高风险任务中，候选体不得对外交付（仅可影子执行）。\\n信息不足时，不得直接假设推进关键结论。\\n启动阶段需按既定读取顺序加载上下文：`AGENTS.md` -> `.training/trainer/policy/*.yaml` -> `daily-summary.md` -> `failure-cases.md`。\\n在形成关键结论前，若信息不足必须先澄清。\\n执行阶段若判定为高风险任务，必须满足“生产体对外交付、候选体仅影子执行”的条件。\",\n  \"constraints\": {\n    \"must\": [\n      {\n        \"text\": \"按严格顺序执行单轮流程：intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive。\",\n        \"evidence\": \"《单轮流程（严格顺序）》明确列出 1-8 步，并在标题标注“严格顺序”。\",\n        \"source_title\": \"must\"\n      },\n      {\n        \"text\": \"将任务卡写入 `.training/trainer/queue/inbox/`。\",\n        \"evidence\": \"《单轮流程（严格顺序）》第1条：\\\"intake：将任务卡写入 `.training/trainer/queue/inbox/`。\\\"\",\n        \"source_title\": \"must\"\n      },\n      {\n        \"text\": \"dispatch 阶段必须按优先级、风险类型、创建时间做决策，并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\",\n        \"evidence\": \"《单轮流程（严格顺序）》第2条：\\\"dispatch：按优先级、风险类型、创建时间决策并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\\\"\",\n        \"source_title\": \"must\"\n      },\n      {\n        \"text\": \"评分必须依据 `.training/trainer/policy/score-rubric.yaml`，并判断关键退化。\",\n        \"evidence\": \"《单轮流程（严格顺序）》第4条：\\\"score：按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。\\\"\",\n        \"source_title\": \"must\"\n      },\n      {\n        \"text\": \"每次关键决策必须落盘日志，并可追溯到 task_id。\",\n        \"evidence\": \"《输出规范》第3条：\\\"每次关键决策必须落盘日志并可追溯到 task_id。\\\"\",\n        \"source_title\": \"must\"\n      },\n      {\n        \"text\": \"输出报告到 `.training/trainer/reports/<task_id>-report.md`，并将任务归档到 done 或 blocked 队列。\",\n        \"evidence\": \"《单轮流程（严格顺序）》第7-8条：\\\"report：输出 `.training/trainer/reports/<task_id>-report.md`。\\\"；\\\"archive：任务移动到 `.training/trainer/queue/done/` 或 `.training/trainer/queue/blocked/`。\\\"\",\n        \"source_title\": \"must\"\n      },\n      {\n        \"text\": \"输出时需先给结论，再给证据与待确认项。\",\n        \"evidence\": \"《输出规范》第1条：\\\"结论先行，再给证据与待确认项。\\\"\",\n        \"source_title\": \"must\"\n      },\n      {\n        \"text\": \"凡非用户明示内容，必须标注“推断/假设 + 置信度”。\",\n        \"evidence\": \"《输出规范》第2条：\\\"非用户明示内容必须标注‘推断/假设 + 置信度’。\\\"\",\n        \"source_title\": \"must\"\n      }\n    ],\n    \"must_not\": [\n      {\n        \"text\": \"不得直接修改 `.training/agents/prod/`。\",\n        \"evidence\": \"《关键约束》第1条：\\\"不直接修改 `.training/agents/prod/`。\\\"\",\n        \"source_title\": \"must_not\"\n      },\n      {\n        \"text\": \"候选体不得修改 `.training/trainer/policy/mutable-files.txt` 列表之外的文件。\",\n        \"evidence\": \"《关键约束》第2条：\\\"候选体仅允许修改 `.training/trainer/policy/mutable-files.txt` 列出的文件。\\\"\",\n        \"source_title\": \"must_not\"\n      },\n      {\n        \"text\": \"高风险任务中，候选体不得对外交付（仅可影子执行）。\",\n        \"evidence\": \"《关键约束》第3条：\\\"高风险任务必须由生产体对外交付，候选体仅影子执行。\\\"\",\n        \"source_title\": \"must_not\"\n      },\n      {\n        \"text\": \"信息不足时，不得直接假设推进关键结论。\",\n        \"evidence\": \"《关键约束》第4条：\\\"信息不足时必须先澄清，不得直接假设推进关键结论。\\\"\",\n        \"source_title\": \"must_not\"\n      }\n    ],\n    \"preconditions\": [\n      {\n        \"text\": \"启动阶段需按既定读取顺序加载上下文：`AGENTS.md` -> `.training/trainer/policy/*.yaml` -> `daily-summary.md` -> `failure-cases.md`。\",\n        \"evidence\": \"《启动读取顺序》依次列出 1-4 项：`AGENTS.md`、`.training/trainer/policy/*.yaml`、`daily-summary.md`、`failure-cases.md`。\",\n        \"source_title\": \"preconditions\"\n      },\n      {\n        \"text\": \"在形成关键结论前，若信息不足必须先澄清。\",\n        \"evidence\": \"《关键约束》第4条：\\\"信息不足时必须先澄清，不得直接假设推进关键结论。\\\"\",\n        \"source_title\": \"preconditions\"\n      },\n      {\n        \"text\": \"执行阶段若判定为高风险任务，必须满足“生产体对外交付、候选体仅影子执行”的条件。\",\n        \"evidence\": \"《关键约束》第3条：\\\"高风险任务必须由生产体对外交付，候选体仅影子执行。\\\"；《单轮流程》第3条也注明“高风险任务 cand 仅影子”。\",\n        \"source_title\": \"preconditions\"\n      }\n    ],\n    \"issues\": [],\n    \"conflicts\": [],\n    \"missing_evidence_count\": 0,\n    \"total\": 15\n  },\n  \"parse_status\": \"ok\",\n  \"parse_warnings\": [],\n  \"evidence_snippets\": {\n    \"role\": \"\",\n    \"goal\": \"\",\n    \"duty\": \"《单轮流程（严格顺序）》明确列出 1-8 步，并在标题标注“严格顺序”。\\n\\n《单轮流程（严格顺序）》第1条：\\\"intake：将任务卡写入 `.training/trainer/queue/inbox/`。\\\"\\n\\n《单轮流程（严格顺序）》第2条：\\\"dispatch：按优先级、风险类型、创建时间决策并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\\\"\\n\\n《单轮流程（严格顺序）》第4条：\\\"score：按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。\\\"\\n\\n《输出规范》第3条：\\\"每次关键决策必须落盘日志并可追溯到 task_id。\\\"\\n\\n《单轮流程（严格顺序）》第7-8条：\\\"report：输出 `.training/trainer/reports/<task_id>-report.md`。\\\"；\\\"archive：任务移动到 `.training/trainer/queue/done/` 或 `.training/trainer/queue/blocked/`。\\\"\\n\\n《输出规范》第1条：\\\"结论先行，再给证据与待确认项。\\\"\\n\\n《输出规范》第2条：\\\"非用户明示内容必须标注‘推断/假设 + 置信度’。\\\"\\n\\n《关键约束》第1条：\\\"不直接修改 `.training/agents/prod/`。\\\"\\n\\n《关键约束》第2条：\\\"候选体仅允许修改 `.training/trainer/policy/mutable-files.txt` 列出的文件。\\\"\\n\\n《关\\n...(已截断)\"\n  },\n  \"score_model\": \"v2\",\n  \"score_total\": 88,\n  \"score_weights\": {\n    \"completeness\": 0.2,\n    \"executability\": 0.2,\n    \"consistency\": 0.2,\n    \"traceability\": 0.15,\n    \"risk_coverage\": 0.15,\n    \"operability\": 0.1\n  },\n  \"score_dimensions\": {\n    \"completeness\": {\n      \"label\": \"完整性\",\n      \"score\": 100,\n      \"weight\": 0.2,\n      \"status\": \"ok\",\n      \"has_evidence\": true,\n      \"manual_review_required\": false,\n      \"deduction_reason\": \"\",\n      \"evidence_map\": [\n        {\n          \"ref\": \"duty\",\n          \"snippet\": \"《单轮流程（严格顺序）》明确列出 1-8 步，并在标题标注“严格顺序”。\\n\\n《单轮流程（严格顺序）》第1条：\\\"intake：将任务卡写入 `.training/trainer/queue/inbox/`。\\\"\\n\\n《单轮流程（严格顺序）》第2条：\\\"dispatch：按优先级、风险类型、创建时间决策并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\\\"\\n\\n《单轮流程（严格顺序）》第4条：\\\"s\\n...(已截断)\"\n        }\n      ],\n      \"repair_suggestion\": \"补充 AGENTS.md 中“角色定位 / 会话目标 / 职责边界”三段基础内容。\",\n      \"threshold\": 80\n    },\n    \"executability\": {\n      \"label\": \"可执行边界\",\n      \"score\": 100,\n      \"weight\": 0.2,\n      \"status\": \"ok\",\n      \"has_evidence\": true,\n      \"manual_review_required\": false,\n      \"deduction_reason\": \"\",\n      \"evidence_map\": [\n        {\n          \"ref\": \"must\",\n          \"snippet\": \"《单轮流程（严格顺序）》明确列出 1-8 步，并在标题标注“严格顺序”。\"\n        },\n        {\n          \"ref\": \"must\",\n          \"snippet\": \"《单轮流程（严格顺序）》第1条：\\\"intake：将任务卡写入 `.training/trainer/queue/inbox/`。\\\"\"\n        },\n        {\n          \"ref\": \"must\",\n          \"snippet\": \"《单轮流程（严格顺序）》第2条：\\\"dispatch：按优先级、风险类型、创建时间决策并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\\\"\"\n        },\n        {\n          \"ref\": \"must\",\n          \"snippet\": \"《单轮流程（严格顺序）》第4条：\\\"score：按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。\\\"\"\n        },\n        {\n          \"ref\": \"must\",\n          \"snippet\": \"《输出规范》第3条：\\\"每次关键决策必须落盘日志并可追溯到 task_id。\\\"\"\n        },\n        {\n          \"ref\": \"must\",\n          \"snippet\": \"《单轮流程（严格顺序）》第7-8条：\\\"report：输出 `.training/trainer/reports/<task_id>-report.md`。\\\"；\\\"archive：任务移动到 `.training/trainer/queue/done/` 或 `.training/trainer/queue/blocked/`。\\\"\"\n        },\n        {\n          \"ref\": \"must\",\n          \"snippet\": \"《输出规范》第1条：\\\"结论先行，再给证据与待确认项。\\\"\"\n        },\n        {\n          \"ref\": \"must\",\n          \"snippet\": \"《输出规范》第2条：\\\"非用户明示内容必须标注‘推断/假设 + 置信度’。\\\"\"\n        },\n        {\n          \"ref\": \"must_not\",\n          \"snippet\": \"《关键约束》第1条：\\\"不直接修改 `.training/agents/prod/`。\\\"\"\n        },\n        {\n          \"ref\": \"must_not\",\n          \"snippet\": \"《关键约束》第2条：\\\"候选体仅允许修改 `.training/trainer/policy/mutable-files.txt` 列出的文件。\\\"\"\n        },\n        {\n          \"ref\": \"must_not\",\n          \"snippet\": \"《关键约束》第3条：\\\"高风险任务必须由生产体对外交付，候选体仅影子执行。\\\"\"\n        },\n        {\n          \"ref\": \"must_not\",\n          \"snippet\": \"《关键约束》第4条：\\\"信息不足时必须先澄清，不得直接假设推进关键结论。\\\"\"\n        },\n        {\n          \"ref\": \"preconditions\",\n          \"snippet\": \"《启动读取顺序》依次列出 1-4 项：`AGENTS.md`、`.training/trainer/policy/*.yaml`、`daily-summary.md`、`failure-cases.md`。\"\n        },\n        {\n          \"ref\": \"preconditions\",\n          \"snippet\": \"《关键约束》第4条：\\\"信息不足时必须先澄清，不得直接假设推进关键结论。\\\"\"\n        },\n        {\n          \"ref\": \"preconditions\",\n          \"snippet\": \"《关键约束》第3条：\\\"高风险任务必须由生产体对外交付，候选体仅影子执行。\\\"；《单轮流程》第3条也注明“高风险任务 cand 仅影子”。\"\n        }\n      ],\n      \"repair_suggestion\": \"在 AGENTS.md 新增/完善“职责边界（must/must_not/preconditions）”章节。\",\n      \"threshold\": 80\n    },\n    \"consistency\": {\n      \"label\": \"一致性\",\n      \"score\": 88,\n      \"weight\": 0.2,\n      \"status\": \"ok\",\n      \"has_evidence\": true,\n      \"manual_review_required\": false,\n      \"deduction_reason\": \"\",\n      \"evidence_map\": [\n        {\n          \"ref\": \"duty\",\n          \"snippet\": \"《单轮流程（严格顺序）》明确列出 1-8 步，并在标题标注“严格顺序”。\\n\\n《单轮流程（严格顺序）》第1条：\\\"intake：将任务卡写入 `.training/trainer/queue/inbox/`。\\\"\\n\\n《单轮流程（严格顺序）》第2条：\\\"dispatch：按优先级、风险类型、创建时间决策并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\\\"\\n\\n《单轮流程（严格顺序）》第4条：\\\"s\\n...(已截断)\"\n        }\n      ],\n      \"repair_suggestion\": \"统一 AGENTS.md 中角色目标和职责描述，删除互相矛盾条目。\",\n      \"threshold\": 80\n    },\n    \"traceability\": {\n      \"label\": \"可追溯性\",\n      \"score\": 53,\n      \"weight\": 0.15,\n      \"status\": \"low\",\n      \"has_evidence\": true,\n      \"manual_review_required\": false,\n      \"deduction_reason\": \"评分依据无法稳定映射到 AGENTS.md 原文证据。\",\n      \"evidence_map\": [\n        {\n          \"ref\": \"duty\",\n          \"snippet\": \"《单轮流程（严格顺序）》明确列出 1-8 步，并在标题标注“严格顺序”。\\n\\n《单轮流程（严格顺序）》第1条：\\\"intake：将任务卡写入 `.training/trainer/queue/inbox/`。\\\"\\n\\n《单轮流程（严格顺序）》第2条：\\\"dispatch：按优先级、风险类型、创建时间决策并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\\\"\\n\\n《单轮流程（严格顺序）》第4条：\\\"s\\n...(已截断)\"\n        },\n        {\n          \"ref\": \"constraints\",\n          \"snippet\": \"《单轮流程（严格顺序）》明确列出 1-8 步，并在标题标注“严格顺序”。\"\n        },\n        {\n          \"ref\": \"constraints\",\n          \"snippet\": \"《单轮流程（严格顺序）》第1条：\\\"intake：将任务卡写入 `.training/trainer/queue/inbox/`。\\\"\"\n        },\n        {\n          \"ref\": \"constraints\",\n          \"snippet\": \"《单轮流程（严格顺序）》第2条：\\\"dispatch：按优先级、风险类型、创建时间决策并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\\\"\"\n        },\n        {\n          \"ref\": \"constraints\",\n          \"snippet\": \"《单轮流程（严格顺序）》第4条：\\\"score：按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。\\\"\"\n        }\n      ],\n      \"repair_suggestion\": \"将关键限制条目改为清晰列表，并在同段补充可定位描述。\",\n      \"threshold\": 80\n    },\n    \"risk_coverage\": {\n      \"label\": \"风险覆盖度\",\n      \"score\": 88,\n      \"weight\": 0.15,\n      \"status\": \"ok\",\n      \"has_evidence\": true,\n      \"manual_review_required\": false,\n      \"deduction_reason\": \"\",\n      \"evidence_map\": [\n        {\n          \"ref\": \"must_not\",\n          \"snippet\": \"《关键约束》第1条：\\\"不直接修改 `.training/agents/prod/`。\\\"\"\n        },\n        {\n          \"ref\": \"must_not\",\n          \"snippet\": \"《关键约束》第2条：\\\"候选体仅允许修改 `.training/trainer/policy/mutable-files.txt` 列出的文件。\\\"\"\n        },\n        {\n          \"ref\": \"must_not\",\n          \"snippet\": \"《关键约束》第3条：\\\"高风险任务必须由生产体对外交付，候选体仅影子执行。\\\"\"\n        },\n        {\n          \"ref\": \"must_not\",\n          \"snippet\": \"《关键约束》第4条：\\\"信息不足时必须先澄清，不得直接假设推进关键结论。\\\"\"\n        },\n        {\n          \"ref\": \"duty\",\n          \"snippet\": \"《单轮流程（严格顺序）》明确列出 1-8 步，并在标题标注“严格顺序”。\\n\\n《单轮流程（严格顺序）》第1条：\\\"intake：将任务卡写入 `.training/trainer/queue/inbox/`。\\\"\\n\\n《单轮流程（严格顺序）》第2条：\\\"dispatch：按优先级、风险类型、创建时间决策并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\\\"\\n\\n《单轮流程（严格顺序）》第4条：\\\"s\\n...(已截断)\"\n        }\n      ],\n      \"repair_suggestion\": \"补充 AGENTS.md 中禁止项（must_not），明确高风险操作处理边界。\",\n      \"threshold\": 80\n    },\n    \"operability\": {\n      \"label\": \"可操作性\",\n      \"score\": 92,\n      \"weight\": 0.1,\n      \"status\": \"ok\",\n      \"has_evidence\": true,\n      \"manual_review_required\": false,\n      \"deduction_reason\": \"\",\n      \"evidence_map\": [\n        {\n          \"ref\": \"duty\",\n          \"snippet\": \"《单轮流程（严格顺序）》明确列出 1-8 步，并在标题标注“严格顺序”。\\n\\n《单轮流程（严格顺序）》第1条：\\\"intake：将任务卡写入 `.training/trainer/queue/inbox/`。\\\"\\n\\n《单轮流程（严格顺序）》第2条：\\\"dispatch：按优先级、风险类型、创建时间决策并记录到 `.training/trainer/runs/<task_id>-dispatch.md`。\\\"\\n\\n《单轮流程（严格顺序）》第4条：\\\"s\\n...(已截断)\"\n        }\n      ],\n      \"repair_suggestion\": \"将职责边界改写为可执行动作列表（动词 + 条件 + 输出）。\",\n      \"threshold\": 80\n    }\n  },\n  \"clarity_score\": 88,\n  \"clarity_details\": {\n    \"completeness\": 100,\n    \"specificity\": 96,\n    \"consistency\": 88,\n    \"traceability\": 53,\n    \"executability\": 100,\n    \"risk_coverage\": 88,\n    \"operability\": 92\n  },\n  \"clarity_gate\": \"auto\",\n  \"clarity_gate_reason\": \"\",\n  \"risk_tips\": [\n    \"可追溯性偏低：评分依据无法稳定映射到 AGENTS.md 原文证据。\"\n  ],\n  \"policy_extract_ok\": true,\n  \"policy_error\": \"\"\n}",
+      "gate_decision": "{\n  \"policy_extract_source\": \"codex_exec\",\n  \"prompt_version\": \"2026-03-01-codex-exec-v2-evidence\",\n  \"parse_status\": \"ok\",\n  \"clarity_gate\": \"auto\",\n  \"clarity_score\": 88,\n  \"session_gate\": \"policy_ready\",\n  \"policy_error\": \"\",\n  \"contract_status\": \"ok\",\n  \"contract_missing_fields\": [],\n  \"contract_issues\": [],\n  \"workspace_root\": \"D:/code/AI/workspace/agents\",\n  \"workspace_root_valid\": true,\n  \"workspace_root_error\": \"\",\n  \"target_agents_path\": \"D:/code/AI/workspace/agents/trainer/AGENTS.md\",\n  \"target_in_scope\": true,\n  \"scope_hint\": \"workspace_root=D:/code/AI/workspace/agents ; target_agents_path=D:/code/AI/workspace/agents/trainer/AGENTS.md ; expect target path under workspace root and workspace root contains workflow/.\",\n  \"command_summary\": \"codex exec --json --skip-git-repo-check --sandbox workspace-write --add-dir <workspace_root> -C <workspace_root> -\",\n  \"codex_exit_code\": 0,\n  \"fail_closed\": false\n}"
+    },
+    "codex_events_count": 8,
+    "ui_progress": {
+      "source": "codex_exec",
+      "active": false,
+      "failed": false,
+      "started_at_ms": 1772375363955,
+      "finished_at_ms": 1772375426501,
+      "total_ms": 62546,
+      "stages": [
+        {
+          "index": 1,
+          "key": "ready",
+          "label": "codex与agent信息就绪",
+          "started_at_ms": 1772375363955,
+          "duration_ms": 6
+        },
+        {
+          "index": 2,
+          "key": "running",
+          "label": "codex分析中",
+          "started_at_ms": 1772375363961,
+          "duration_ms": 62507
+        },
+        {
+          "index": 3,
+          "key": "analyzed",
+          "label": "codex分析完成",
+          "started_at_ms": 1772375426469,
+          "duration_ms": 31
+        },
+        {
+          "index": 4,
+          "key": "done",
+          "label": "角色分析结束",
+          "started_at_ms": 1772375426500,
+          "duration_ms": 1
+        }
+      ]
+    }
+  },
+  "policy_contract_status": "ok",
+  "policy_contract_missing_fields": [],
+  "policy_contract_issues": [],
+  "policy_gate_state": "policy_ready",
+  "policy_gate_reason": "auto"
+}

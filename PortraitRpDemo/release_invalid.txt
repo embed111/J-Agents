@@ -1,0 +1,2 @@
+﻿capability_summary: 仅有摘要
+version_notes: 缺少关键字段

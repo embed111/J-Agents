@@ -1,0 +1,123 @@
+{
+  "role": "推断：workflow 仓库的开发与维护执行者（负责代码、流程、验收、留痕与安全约束）。",
+  "goal": "推断：在安全可控、可审计的前提下维护 workflow 系统，保障门禁验收、日志与状态一致性，以及偏好/需求假设的持续维护。",
+  "responsibilities": {
+    "must": [
+      "修改流程前先阅读 `docs/workflow/` 中的需求、门禁和证据矩阵文档。",
+      "改动 API/流程时，优先补充 `scripts/run_phase0_gate_acceptance.py` 对应 case。",
+      "将验收结果落盘到 `logs/runs/`，必要时更新 `docs/workflow/验收证据矩阵-Phase0.md`。",
+      "修改 UI 时同步检查 `scripts/workflow_web_client.js` 与 API 字段兼容性。",
+      "真实模型调用前配置环境变量：`WORKFLOW_AGENT_BASE_URL`、`WORKFLOW_AGENT_API_KEY`、`WORKFLOW_AGENT_MODEL`。",
+      "提交前检查 `logs/` 与 `state/` 的新增文件，避免敏感内容泄露。",
+      "所有写入路径限制在 `agent_search_root` 内，并保持 `$root` 越界拦截不回退。",
+      "仅当 `DIALOGUE_RETRO_SWITCH: ON` 时，自动写入每轮复盘增量。",
+      "将用户偏好与需求假设统一维护在 `state/user-preferences.md`（单一事实源）。",
+      "更新执行快照时仅追加增量并引用 `preference_ref: state/user-preferences.md`。",
+      "`Need Hypotheses` 使用固定格式：`Observation -> Inference -> Validation Action -> Confidence(High/Med/Low)`。",
+      "任何心理层推断需在后续对话中显式求证，并允许用户否定。"
+    ],
+    "must_not": [
+      "`DIALOGUE_RETRO_SWITCH: OFF` 时不得自动更新复盘文件（除非用户明确要求）。",
+      "严禁提交密钥或包含敏感信息的 trace。",
+      "不得将写入路径放到 `agent_search_root` 外（不得回退越界拦截）。",
+      "`User Preferences` 不得记录无关隐私信息。",
+      "不得将推测当作事实。"
+    ],
+    "preconditions": [
+      "自动执行复盘增量记录的前提是 `DIALOGUE_RETRO_SWITCH: ON`。",
+      "`DIALOGUE_RETRO_SWITCH: OFF` 时，只有用户明确指令才可更新 `state/session-snapshot.md`、`state/user-preferences.md`、`logs/runs/*.md`。",
+      "进行流程修改前应先阅读 `docs/workflow/`。",
+      "更新执行快照前应具备偏好引用与本轮增量观察（`preference_ref` + delta）。",
+      "进行真实模型调用前应先配置所需环境变量。"
+    ]
+  },
+  "evidence": [
+    {
+      "conclusion": "角色为仓库开发/维护执行者（推断）",
+      "location": "# Repository Guidelines + Project Structure/Build/Test/Coding/Testing/Security 各节",
+      "excerpt": "文档整体给出项目结构、开发命令、编码规范、测试规范、安全约束，指向面向仓库维护与开发执行者的操作规范。"
+    },
+    {
+      "conclusion": "目标是稳定维护 workflow 并确保可审计与安全（推断）",
+      "location": "Project Structure & Module Organization / Testing Guidelines / Security & Configuration Tips / PM Continuous Maintenance",
+      "excerpt": "`logs/`：运行与审计留痕；`run_phase0_gate_acceptance.py` 用于门禁验收；严禁提交密钥；复盘与偏好维护有明确规则。"
+    },
+    {
+      "conclusion": "流程修改前先读 docs/workflow",
+      "location": "## Project Structure & Module Organization",
+      "excerpt": "`docs/workflow/`：需求、门禁和证据矩阵文档，先读这里再改流程。"
+    },
+    {
+      "conclusion": "API/流程改动需补充门禁 case",
+      "location": "## Testing Guidelines",
+      "excerpt": "改动 API/流程时，优先补充 `run_phase0_gate_acceptance.py` 对应 case。"
+    },
+    {
+      "conclusion": "验收结果需落盘并按需更新证据矩阵",
+      "location": "## Testing Guidelines",
+      "excerpt": "验收结果需落盘到 `logs/runs/`，并在必要时更新 `docs/workflow/验收证据矩阵-Phase0.md`。"
+    },
+    {
+      "conclusion": "UI 修改要检查 API 字段兼容",
+      "location": "## Architecture & Workflow Notes",
+      "excerpt": "修改 UI 时需同步检查 API 字段兼容性。"
+    },
+    {
+      "conclusion": "真实模型调用依赖三个环境变量",
+      "location": "## Security & Configuration Tips",
+      "excerpt": "真实模型调用依赖环境变量：`WORKFLOW_AGENT_BASE_URL`、`WORKFLOW_AGENT_API_KEY`、`WORKFLOW_AGENT_MODEL`。"
+    },
+    {
+      "conclusion": "禁止提交敏感信息并需提交前检查",
+      "location": "## Security & Configuration Tips",
+      "excerpt": "严禁提交密钥或包含敏感信息的 trace；提交前检查 `logs/` 与 `state/` 新增文件。"
+    },
+    {
+      "conclusion": "写入路径必须受根目录约束",
+      "location": "## Security & Configuration Tips",
+      "excerpt": "所有写入路径必须限制在 `agent_search_root` 内，保持 `$root` 越界拦截行为不回退。"
+    },
+    {
+      "conclusion": "复盘自动写入仅在开关 ON 时允许",
+      "location": "## 运行开关（顶部手动切换） + ## PM Continuous Maintenance",
+      "excerpt": "`ON`: 允许自动执行复盘增量记录；`OFF`: 禁止自动更新复盘相关文件。"
+    },
+    {
+      "conclusion": "OFF 时只有用户明确指令才可写指定文件",
+      "location": "## 运行开关（顶部手动切换）",
+      "excerpt": "`OFF`: 禁止自动更新复盘相关文件；仅在用户明确指令时更新：`state/session-snapshot.md`、`state/user-preferences.md`、`logs/runs/*.md`。"
+    },
+    {
+      "conclusion": "偏好与需求假设单一事实源",
+      "location": "## PM Continuous Maintenance",
+      "excerpt": "用户偏好与需求假设统一维护在 `state/user-preferences.md`（单一事实源）。"
+    },
+    {
+      "conclusion": "快照更新采用增量引用而非全文粘贴",
+      "location": "## PM Continuous Maintenance",
+      "excerpt": "每次更新执行快照...不重复粘贴全文，只追加引用：`preference_ref: state/user-preferences.md` 与本次增量观察。"
+    },
+    {
+      "conclusion": "Need Hypotheses 固定格式要求",
+      "location": "## PM Continuous Maintenance",
+      "excerpt": "`Need Hypotheses` 使用固定格式：`Observation -> Inference -> Validation Action -> Confidence(High/Med/Low)`。"
+    },
+    {
+      "conclusion": "不得记录无关隐私与不得把推测当事实",
+      "location": "## PM Continuous Maintenance",
+      "excerpt": "`User Preferences` 只记录可观察偏好...避免记录无关隐私；禁止把推测当事实。"
+    }
+  ],
+  "parse_status": "incomplete",
+  "clarity_score": 84,
+  "clarity_gate": "confirm",
+  "warnings": [
+    "`role` 与 `goal` 在文档中未以显式字段声明，当前为基于各章节规范的语义推断。",
+    "文档同时包含“建议/应当/禁止”语气；本次 `must` 仅收录约束性较强条目，弱建议未全部纳入。"
+  ],
+  "missing_fields": [
+    "explicit_role_definition",
+    "explicit_goal_definition"
+  ]
+}
+
