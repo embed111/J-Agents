@@ -125,7 +125,7 @@ def ensure_tables(
             "CREATE INDEX IF NOT EXISTS idx_apc_hash_mtime ON agent_policy_cache(agents_hash,agents_mtime)"
         )
         conn.execute(
-            "CREATE TABLE IF NOT EXISTS agent_registry (agent_id TEXT PRIMARY KEY,agent_name TEXT NOT NULL,workspace_path TEXT NOT NULL,current_version TEXT NOT NULL DEFAULT '',latest_release_version TEXT NOT NULL DEFAULT '',bound_release_version TEXT NOT NULL DEFAULT '',lifecycle_state TEXT NOT NULL DEFAULT 'released',training_gate_state TEXT NOT NULL DEFAULT 'trainable',parent_agent_id TEXT NOT NULL DEFAULT '',core_capabilities TEXT NOT NULL DEFAULT '',capability_summary TEXT NOT NULL DEFAULT '',knowledge_scope TEXT NOT NULL DEFAULT '',skills_json TEXT NOT NULL DEFAULT '[]',applicable_scenarios TEXT NOT NULL DEFAULT '',version_notes TEXT NOT NULL DEFAULT '',avatar_uri TEXT NOT NULL DEFAULT '',vector_icon TEXT NOT NULL DEFAULT '',git_available INTEGER NOT NULL DEFAULT 0,pre_release_state TEXT NOT NULL DEFAULT 'unknown',pre_release_reason TEXT NOT NULL DEFAULT '',pre_release_checked_at TEXT NOT NULL DEFAULT '',pre_release_git_output TEXT NOT NULL DEFAULT '',last_release_at TEXT NOT NULL DEFAULT '',status_tags_json TEXT NOT NULL DEFAULT '[]',updated_at TEXT NOT NULL)"
+            "CREATE TABLE IF NOT EXISTS agent_registry (agent_id TEXT PRIMARY KEY,agent_name TEXT NOT NULL,workspace_path TEXT NOT NULL,current_version TEXT NOT NULL DEFAULT '',latest_release_version TEXT NOT NULL DEFAULT '',bound_release_version TEXT NOT NULL DEFAULT '',lifecycle_state TEXT NOT NULL DEFAULT 'released',training_gate_state TEXT NOT NULL DEFAULT 'trainable',parent_agent_id TEXT NOT NULL DEFAULT '',core_capabilities TEXT NOT NULL DEFAULT '',capability_summary TEXT NOT NULL DEFAULT '',knowledge_scope TEXT NOT NULL DEFAULT '',skills_json TEXT NOT NULL DEFAULT '[]',applicable_scenarios TEXT NOT NULL DEFAULT '',version_notes TEXT NOT NULL DEFAULT '',avatar_uri TEXT NOT NULL DEFAULT '',vector_icon TEXT NOT NULL DEFAULT '',git_available INTEGER NOT NULL DEFAULT 0,pre_release_state TEXT NOT NULL DEFAULT 'unknown',pre_release_reason TEXT NOT NULL DEFAULT '',pre_release_checked_at TEXT NOT NULL DEFAULT '',pre_release_git_output TEXT NOT NULL DEFAULT '',last_release_at TEXT NOT NULL DEFAULT '',status_tags_json TEXT NOT NULL DEFAULT '[]',active_role_profile_release_id TEXT NOT NULL DEFAULT '',active_role_profile_ref TEXT NOT NULL DEFAULT '',updated_at TEXT NOT NULL)"
         )
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_ar_registry_name ON agent_registry(agent_name)"
@@ -134,7 +134,7 @@ def ensure_tables(
             "CREATE INDEX IF NOT EXISTS idx_ar_registry_updated ON agent_registry(updated_at)"
         )
         conn.execute(
-            "CREATE TABLE IF NOT EXISTS agent_release_history (release_id TEXT PRIMARY KEY,agent_id TEXT NOT NULL,version_label TEXT NOT NULL,released_at TEXT NOT NULL,change_summary TEXT NOT NULL DEFAULT '',commit_ref TEXT NOT NULL DEFAULT '',capability_summary TEXT NOT NULL DEFAULT '',knowledge_scope TEXT NOT NULL DEFAULT '',skills_json TEXT NOT NULL DEFAULT '[]',applicable_scenarios TEXT NOT NULL DEFAULT '',version_notes TEXT NOT NULL DEFAULT '',release_valid INTEGER NOT NULL DEFAULT 0,invalid_reasons_json TEXT NOT NULL DEFAULT '[]',classification TEXT NOT NULL DEFAULT 'normal_commit',raw_notes TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL)"
+            "CREATE TABLE IF NOT EXISTS agent_release_history (release_id TEXT PRIMARY KEY,agent_id TEXT NOT NULL,version_label TEXT NOT NULL,released_at TEXT NOT NULL,change_summary TEXT NOT NULL DEFAULT '',commit_ref TEXT NOT NULL DEFAULT '',capability_summary TEXT NOT NULL DEFAULT '',knowledge_scope TEXT NOT NULL DEFAULT '',skills_json TEXT NOT NULL DEFAULT '[]',applicable_scenarios TEXT NOT NULL DEFAULT '',version_notes TEXT NOT NULL DEFAULT '',release_valid INTEGER NOT NULL DEFAULT 0,invalid_reasons_json TEXT NOT NULL DEFAULT '[]',classification TEXT NOT NULL DEFAULT 'normal_commit',raw_notes TEXT NOT NULL DEFAULT '',release_source_ref TEXT NOT NULL DEFAULT '',public_profile_ref TEXT NOT NULL DEFAULT '',capability_snapshot_ref TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL)"
         )
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_arh_agent_time ON agent_release_history(agent_id,released_at DESC)"
@@ -146,7 +146,7 @@ def ensure_tables(
             "CREATE INDEX IF NOT EXISTS idx_are_agent_time ON agent_release_evaluation(agent_id,created_at DESC)"
         )
         conn.execute(
-            "CREATE TABLE IF NOT EXISTS agent_release_review (review_id TEXT PRIMARY KEY,agent_id TEXT NOT NULL,target_version TEXT NOT NULL DEFAULT '',current_workspace_ref TEXT NOT NULL DEFAULT '',release_review_state TEXT NOT NULL DEFAULT 'idle',prompt_version TEXT NOT NULL DEFAULT '',analysis_chain_json TEXT NOT NULL DEFAULT '{}',report_json TEXT NOT NULL DEFAULT '{}',report_error TEXT NOT NULL DEFAULT '',review_decision TEXT NOT NULL DEFAULT '',reviewer TEXT NOT NULL DEFAULT '',review_comment TEXT NOT NULL DEFAULT '',reviewed_at TEXT NOT NULL DEFAULT '',publish_version TEXT NOT NULL DEFAULT '',publish_status TEXT NOT NULL DEFAULT '',publish_error TEXT NOT NULL DEFAULT '',execution_log_json TEXT NOT NULL DEFAULT '[]',fallback_json TEXT NOT NULL DEFAULT '{}',created_at TEXT NOT NULL,updated_at TEXT NOT NULL)"
+            "CREATE TABLE IF NOT EXISTS agent_release_review (review_id TEXT PRIMARY KEY,agent_id TEXT NOT NULL,target_version TEXT NOT NULL DEFAULT '',current_workspace_ref TEXT NOT NULL DEFAULT '',release_review_state TEXT NOT NULL DEFAULT 'idle',prompt_version TEXT NOT NULL DEFAULT '',analysis_chain_json TEXT NOT NULL DEFAULT '{}',report_json TEXT NOT NULL DEFAULT '{}',report_error TEXT NOT NULL DEFAULT '',review_decision TEXT NOT NULL DEFAULT '',reviewer TEXT NOT NULL DEFAULT '',review_comment TEXT NOT NULL DEFAULT '',reviewed_at TEXT NOT NULL DEFAULT '',publish_version TEXT NOT NULL DEFAULT '',publish_status TEXT NOT NULL DEFAULT '',publish_error TEXT NOT NULL DEFAULT '',execution_log_json TEXT NOT NULL DEFAULT '[]',fallback_json TEXT NOT NULL DEFAULT '{}',public_profile_markdown_path TEXT NOT NULL DEFAULT '',capability_snapshot_json_path TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL,updated_at TEXT NOT NULL)"
         )
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_arr_agent_created ON agent_release_review(agent_id,created_at DESC)"
@@ -200,6 +200,8 @@ def ensure_tables(
         ensure_column(conn, "agent_registry", "pre_release_reason", "pre_release_reason TEXT NOT NULL DEFAULT ''")
         ensure_column(conn, "agent_registry", "pre_release_checked_at", "pre_release_checked_at TEXT NOT NULL DEFAULT ''")
         ensure_column(conn, "agent_registry", "pre_release_git_output", "pre_release_git_output TEXT NOT NULL DEFAULT ''")
+        ensure_column(conn, "agent_registry", "active_role_profile_release_id", "active_role_profile_release_id TEXT NOT NULL DEFAULT ''")
+        ensure_column(conn, "agent_registry", "active_role_profile_ref", "active_role_profile_ref TEXT NOT NULL DEFAULT ''")
         ensure_column(conn, "agent_release_history", "capability_summary", "capability_summary TEXT NOT NULL DEFAULT ''")
         ensure_column(conn, "agent_release_history", "knowledge_scope", "knowledge_scope TEXT NOT NULL DEFAULT ''")
         ensure_column(conn, "agent_release_history", "skills_json", "skills_json TEXT NOT NULL DEFAULT '[]'")
@@ -209,6 +211,9 @@ def ensure_tables(
         ensure_column(conn, "agent_release_history", "invalid_reasons_json", "invalid_reasons_json TEXT NOT NULL DEFAULT '[]'")
         ensure_column(conn, "agent_release_history", "classification", "classification TEXT NOT NULL DEFAULT 'normal_commit'")
         ensure_column(conn, "agent_release_history", "raw_notes", "raw_notes TEXT NOT NULL DEFAULT ''")
+        ensure_column(conn, "agent_release_history", "release_source_ref", "release_source_ref TEXT NOT NULL DEFAULT ''")
+        ensure_column(conn, "agent_release_history", "public_profile_ref", "public_profile_ref TEXT NOT NULL DEFAULT ''")
+        ensure_column(conn, "agent_release_history", "capability_snapshot_ref", "capability_snapshot_ref TEXT NOT NULL DEFAULT ''")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_arh_agent_class_time ON agent_release_history(agent_id,classification,released_at DESC)")
         ensure_column(conn, "agent_release_review", "target_version", "target_version TEXT NOT NULL DEFAULT ''")
         ensure_column(conn, "agent_release_review", "current_workspace_ref", "current_workspace_ref TEXT NOT NULL DEFAULT ''")
@@ -226,6 +231,8 @@ def ensure_tables(
         ensure_column(conn, "agent_release_review", "publish_error", "publish_error TEXT NOT NULL DEFAULT ''")
         ensure_column(conn, "agent_release_review", "execution_log_json", "execution_log_json TEXT NOT NULL DEFAULT '[]'")
         ensure_column(conn, "agent_release_review", "fallback_json", "fallback_json TEXT NOT NULL DEFAULT '{}'")
+        ensure_column(conn, "agent_release_review", "public_profile_markdown_path", "public_profile_markdown_path TEXT NOT NULL DEFAULT ''")
+        ensure_column(conn, "agent_release_review", "capability_snapshot_json_path", "capability_snapshot_json_path TEXT NOT NULL DEFAULT ''")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_arr_agent_created ON agent_release_review(agent_id,created_at DESC)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_arr_agent_updated ON agent_release_review(agent_id,updated_at DESC)")
         ensure_column(conn, "training_plan", "is_test_data", "is_test_data INTEGER NOT NULL DEFAULT 0")

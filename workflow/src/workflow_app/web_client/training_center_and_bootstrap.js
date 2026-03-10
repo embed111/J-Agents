@@ -897,6 +897,13 @@
         },
       },
       {
+        label: '上一正式版本',
+        value: safe(report.previous_release_version).trim(),
+        options: {
+          tag: true,
+        },
+      },
+      {
         label: '发布建议',
         value: safe(report.release_recommendation).trim(),
         options: {
@@ -920,19 +927,58 @@
       moduleCount += 1;
     }
 
+    const firstPersonSummary = safe(report.first_person_summary).trim();
+    const fullCapabilityInventory = Array.isArray(report.full_capability_inventory) ? report.full_capability_inventory : [];
+    const knowledgeScope = safe(report.knowledge_scope).trim();
+    const agentSkills = Array.isArray(report.agent_skills) ? report.agent_skills : [];
+    const applicableScenarios = Array.isArray(report.applicable_scenarios) ? report.applicable_scenarios : [];
+    const roleProfilePreviewParts = [];
+    if (firstPersonSummary) {
+      const summaryNode = document.createElement('div');
+      summaryNode.className = 'tc-release-report-text';
+      summaryNode.textContent = firstPersonSummary;
+      roleProfilePreviewParts.push(summaryNode);
+    }
+    const inventoryList = createTrainingCenterReleaseReportList(fullCapabilityInventory, 'capability');
+    if (inventoryList) {
+      roleProfilePreviewParts.push(inventoryList);
+    }
+    const previewFacts = [
+      ['角色知识范围', knowledgeScope],
+      ['Agent Skills', agentSkills.join('、')],
+      ['适用场景', applicableScenarios.join('、')],
+    ].filter((entry) => !!safe(entry[1]).trim());
+    if (previewFacts.length) {
+      const previewGrid = document.createElement('div');
+      previewGrid.className = 'tc-release-report-core-grid';
+      previewFacts.forEach((entry) => {
+        previewGrid.appendChild(createTrainingCenterReleaseReportCard(entry[0], entry[1], {}));
+      });
+      roleProfilePreviewParts.push(previewGrid);
+    }
+    if (roleProfilePreviewParts.length) {
+      const module = createTrainingCenterReleaseReportModule('正式发布角色介绍预览', '确认发布成功后，角色详情页优先展示这里的第一人称全量介绍');
+      roleProfilePreviewParts.forEach((node) => module.body.appendChild(node));
+      stack.appendChild(module.section);
+      moduleCount += 1;
+    }
+
     const changeSummary = safe(report.change_summary).trim();
-    if (changeSummary) {
-      const module = createTrainingCenterReleaseReportModule('变更摘要');
+    const capabilityDeltaList = createTrainingCenterReleaseReportList(report.capability_delta, 'capability');
+    if (changeSummary || capabilityDeltaList) {
+      const module = createTrainingCenterReleaseReportModule('功能差异报告', '重点说明相对上一正式发布版本的变化');
       const text = document.createElement('div');
       text.className = 'tc-release-report-text';
-      text.textContent = changeSummary;
+      text.textContent = changeSummary || '当前未补充结构化变更摘要。';
       module.body.appendChild(text);
+      if (capabilityDeltaList) {
+        module.body.appendChild(capabilityDeltaList);
+      }
       stack.appendChild(module.section);
       moduleCount += 1;
     }
 
     [
-      ['能力变化', report.capability_delta, 'capability', '本次版本相较工作区的主要能力变化'],
       ['风险清单', report.risk_list, 'risk', '发布前需要继续确认或补齐的风险点'],
       ['验证证据', report.validation_evidence, 'evidence', '报告中引用的验证动作与结果'],
       ['补充提示', report.warnings, 'warning', '非阻断但建议关注的附加说明'],
@@ -1106,6 +1152,8 @@
         ['提示词版本', safe(analysisChain.prompt_version || review.prompt_version).trim()],
         ['提示词文件', safe(analysisChain.prompt_path).trim()],
         ['报告文件', safe(analysisChain.report_path).trim()],
+        ['公开介绍快照', safe(effectiveReview.public_profile_markdown_path || analysisChain.public_profile_markdown_path).trim()],
+        ['能力快照', safe(effectiveReview.capability_snapshot_json_path || analysisChain.capability_snapshot_json_path).trim()],
         ['stdout', safe(analysisChain.stdout_path).trim()],
         ['stderr', safe(analysisChain.stderr_path).trim()],
         ['trace 目录', safe(analysisChain.trace_dir).trim()],
@@ -1656,8 +1704,74 @@
     return text.slice(0, size - 3).trimEnd() + '...';
   }
 
+  function trainingCenterProfileTextItems(value, limit) {
+    const rows = safe(value)
+      .split(/[\r\n,，、;；|/]+/)
+      .map((item) => safe(item).trim())
+      .filter((item) => !!item);
+    return rows.slice(0, Math.max(1, Number(limit) || 6));
+  }
+
+  function trainingCenterRoleProfile(detail) {
+    const raw = detail && detail.role_profile && typeof detail.role_profile === 'object'
+      ? detail.role_profile
+      : {};
+    const normalizeItems = (value, limit) => {
+      if (Array.isArray(value)) {
+        return value.map((item) => safe(item).trim()).filter(Boolean).slice(0, Math.max(1, Number(limit) || 6));
+      }
+      return trainingCenterProfileTextItems(value, limit);
+    };
+    return {
+      profile_source: safe(raw.profile_source).trim(),
+      fallback_reason: safe(raw.fallback_reason).trim(),
+      source_release_id: safe(raw.source_release_id).trim(),
+      source_release_version: safe(raw.source_release_version).trim(),
+      source_ref: safe(raw.source_ref).trim(),
+      first_person_summary: safe(raw.first_person_summary).trim(),
+      what_i_can_do: normalizeItems(raw.what_i_can_do, 5),
+      full_capability_inventory: normalizeItems(raw.full_capability_inventory, 12),
+      knowledge_scope: safe(raw.knowledge_scope).trim(),
+      agent_skills: normalizeItems(raw.agent_skills, 12),
+      applicable_scenarios: normalizeItems(raw.applicable_scenarios, 6),
+      version_notes: safe(raw.version_notes).trim(),
+      public_profile_ref: safe(raw.public_profile_ref).trim(),
+      capability_snapshot_ref: safe(raw.capability_snapshot_ref).trim(),
+    };
+  }
+
+  function trainingCenterRoleProfileSourceText(source) {
+    const key = safe(source).trim().toLowerCase();
+    if (key === 'latest_release_report') return '最新正式发布报告';
+    if (key === 'structured_fields_fallback') return '结构化字段回退';
+    return '未绑定';
+  }
+
+  function trainingCenterRoleProfileFallbackReasonText(reason) {
+    const key = safe(reason).trim().toLowerCase();
+    if (key === 'latest_release_report_missing') return '正式发布报告快照缺失';
+    if (key === 'latest_release_report_invalid') return '正式发布报告快照解析失败';
+    if (key === 'no_released_profile') return '当前还没有可用的正式发布画像';
+    return safe(reason).trim();
+  }
+
+  function trainingCenterPortraitIntroText(detail, publishedRelease, highlights) {
+    const roleProfile = trainingCenterRoleProfile(detail);
+    if (roleProfile.first_person_summary) return roleProfile.first_person_summary;
+    const intro =
+      safe((publishedRelease && (publishedRelease.capability_summary || publishedRelease.change_summary)) || '').trim() ||
+      safe(detail && (detail.capability_summary || detail.core_capabilities)).trim();
+    if (intro) return intro;
+    if (Array.isArray(highlights) && highlights.length) return highlights.join('；');
+    return safe((publishedRelease && publishedRelease.knowledge_scope) || detail.knowledge_scope).trim() || '当前暂无已发布角色简介。';
+  }
+
   function trainingCenterWhatICanDoLines(item) {
     const detail = item || {};
+    const roleProfile = trainingCenterRoleProfile(detail);
+    if (roleProfile.what_i_can_do.length) {
+      return roleProfile.what_i_can_do.slice(0, 5);
+    }
     const candidateLines = [];
     const pushLines = (text) => {
       const rows = safe(text)
@@ -1792,38 +1906,79 @@
       return;
     }
     const publishedRelease = currentTrainingCenterPublishedRelease(detail);
+    const roleProfile = trainingCenterRoleProfile(detail);
     const localAgentSkills = trainingCenterPortraitSkills(detail.agent_skills);
-    const whatICanDo = trainingCenterWhatICanDoLines(publishedRelease || {});
-    const rows = [];
-    const knowledgeScope = safe(publishedRelease && publishedRelease.knowledge_scope).trim();
-    const applicableScenarios = safe(publishedRelease && publishedRelease.applicable_scenarios).trim();
-    const versionNotes = safe(publishedRelease && publishedRelease.version_notes).trim();
-    rows.push([
-      '我能做什么',
-      publishedRelease && whatICanDo.length
-        ? "<ul class='tc-portrait-list'>" + whatICanDo.map((line) => '<li>' + safe(line) + '</li>').join('') + '</ul>'
-        : '未发布',
-    ]);
-    rows.push(['知识范围', knowledgeScope || '未发布']);
-    rows.push(['Agent Skills', renderTrainingCenterSkillCards(localAgentSkills, publishedRelease, localAgentSkills)]);
-    rows.push(['适用场景', applicableScenarios || '未发布']);
-    rows.push(['版本说明', versionNotes || '未发布']);
+    const publishedSkillMap = trainingCenterPublishedSkillMap(publishedRelease || {}, localAgentSkills);
+    const publishedSkillRows = Object.keys(publishedSkillMap).map((key) => publishedSkillMap[key]).filter((row) => !!row);
+    const introText = trainingCenterPortraitIntroText(detail, publishedRelease, roleProfile.what_i_can_do);
+    const whatICanDo = roleProfile.what_i_can_do.length ? roleProfile.what_i_can_do : trainingCenterWhatICanDoLines(detail);
+    const fullCapabilityInventory = roleProfile.full_capability_inventory.length
+      ? roleProfile.full_capability_inventory
+      : whatICanDo;
+    const knowledgeScope = roleProfile.knowledge_scope || safe(publishedRelease && publishedRelease.knowledge_scope).trim();
+    const scenarioItems = roleProfile.applicable_scenarios.length
+      ? roleProfile.applicable_scenarios
+      : trainingCenterProfileTextItems(safe(publishedRelease && publishedRelease.applicable_scenarios).trim(), 6);
+    const skillItems = roleProfile.agent_skills.length
+      ? roleProfile.agent_skills
+      : (
+        publishedSkillRows.length
+          ? publishedSkillRows.map((row) => safe(row.name).trim()).filter((row) => !!row)
+          : localAgentSkills
+      );
+    const versionNotes = roleProfile.version_notes || safe(publishedRelease && publishedRelease.version_notes).trim();
+    const skillHint = roleProfile.profile_source === 'structured_fields_fallback'
+      ? '当前角色详情来自结构化字段回退；正式发布报告补齐后会优先替换。'
+      : (
+        publishedRelease && !publishedSkillRows.some((skill) => safe(skill.summary || skill.details).trim())
+          ? '当前版本仅同步到技能标签，未单独补充技能说明。'
+          : ''
+      );
+    const sourceText = trainingCenterRoleProfileSourceText(roleProfile.profile_source);
+    const sourceDetail = sourceText +
+      (roleProfile.source_release_version ? ' · 来源版本=' + roleProfile.source_release_version : '') +
+      (roleProfile.fallback_reason ? ' · 原因=' + trainingCenterRoleProfileFallbackReasonText(roleProfile.fallback_reason) : '');
+    const portraitSections = [];
+    const addTextSection = (label, value) => {
+      const text = safe(value).trim();
+      if (!text) return;
+      portraitSections.push(
+        "<section class='tc-portrait-item'>" +
+          "<div class='tc-portrait-k'>" + safe(label) + '</div>' +
+          "<div class='tc-portrait-v'>" + safe(text) + '</div>' +
+        '</section>'
+      );
+    };
+    const addListSection = (label, rows, extraTip) => {
+      const list = Array.isArray(rows) ? rows.map((row) => safe(row).trim()).filter((row) => !!row) : [];
+      if (!list.length) return;
+      portraitSections.push(
+        "<section class='tc-portrait-item'>" +
+          "<div class='tc-portrait-k'>" + safe(label) + '</div>' +
+          "<ul class='tc-portrait-v tc-portrait-list'>" +
+            list.map((row) => '<li>' + safe(row) + '</li>').join('') +
+          '</ul>' +
+          (extraTip ? "<div class='tc-portrait-v'>" + safe(extraTip) + '</div>' : '') +
+        '</section>'
+      );
+    };
+    addTextSection('角色详情来源', sourceDetail);
+    addTextSection('我是', introText);
+    addListSection('我当前能做什么', whatICanDo);
+    addListSection('全量能力清单', fullCapabilityInventory);
+    addTextSection('角色知识范围', knowledgeScope);
+    addListSection('适用场景', scenarioItems);
+    addListSection('Agent Skills', skillItems, skillHint);
+    addTextSection('版本备注', versionNotes);
     portraitNode.style.display = '';
-    portraitNode.innerHTML = rows
-      .map((row) => {
-        const rich = String(row[0]) === '我能做什么' || String(row[0]) === 'Agent Skills';
-        return (
-          "<div class='tc-portrait-item'>" +
-          "<div class='tc-portrait-k'>" +
-          row[0] +
-          '</div>' +
-          "<div class='tc-portrait-v'>" +
-          (rich ? row[1] : safe(row[1])) +
-          '</div>' +
-          '</div>'
-        );
-      })
-      .join('');
+    portraitNode.innerHTML = portraitSections.length
+      ? portraitSections.join('')
+      : (
+        "<section class='tc-portrait-item'>" +
+          "<div class='tc-portrait-k'>发布状态</div>" +
+          "<div class='tc-portrait-v'>" + safe(publishedRelease ? '当前版本尚未补充角色简介详情。' : '当前还没有可用的发布简介。') + '</div>' +
+        '</section>'
+      );
     renderTrainingCenterAvatarPreview(detail);
   }
 
@@ -2060,15 +2215,16 @@
     }
     const publishedRelease = currentTrainingCenterPublishedRelease(item);
     const hasPublishedRelease = !!publishedRelease;
+    const roleProfile = trainingCenterRoleProfile(item);
     const roleSubtitle = trainingCenterRolePositionText(
-      safe((publishedRelease && (publishedRelease.capability_summary || publishedRelease.knowledge_scope)) || '').trim(),
+      safe(roleProfile.first_person_summary || (publishedRelease && (publishedRelease.capability_summary || publishedRelease.knowledge_scope)) || '').trim(),
       50
     );
     if (titleNode) {
       titleNode.textContent = '角色详情 · ' + safe(item.agent_name || item.agent_id || '');
     }
     if (subtitleNode) {
-      subtitleNode.textContent = '角色介绍：' + roleSubtitle;
+      subtitleNode.textContent = '角色介绍：' + roleSubtitle + ' · 来源=' + trainingCenterRoleProfileSourceText(roleProfile.profile_source || '');
     }
     if (detailBody instanceof HTMLElement) detailBody.style.display = '';
     if (avatarBtn) avatarBtn.disabled = false;
@@ -2112,6 +2268,10 @@
       }
       if (lastReleaseAt) {
         lines.push('最近发布时间=' + lastReleaseAt);
+      }
+      lines.push('角色详情来源=' + trainingCenterRoleProfileSourceText(roleProfile.profile_source || ''));
+      if (roleProfile.source_release_version) {
+        lines.push('画像来源版本=' + roleProfile.source_release_version);
       }
       if (tags.length) {
         lines.push('状态标签=' + tags.map((tag) => trainingStatusTagText(tag)).join(','));
@@ -2735,6 +2895,25 @@
       risk_tip: '',
       run_status: '',
       api_result: {},
+      review_state: '',
+      review_decision: '',
+      review_reviewer: '',
+      review_can_review: false,
+      review_can_confirm: false,
+      review_error: '',
+      publish_status: '',
+      publish_error: '',
+      fallback_status: '',
+      report_first_person_summary: '',
+      report_change_summary: '',
+      report_has_inventory: false,
+      report_has_delta: false,
+      analysis_chain_paths: {},
+      execution_log_phases: [],
+      role_profile_source: '',
+      role_profile_source_release_id: '',
+      role_profile_first_person_summary: '',
+      active_role_profile_ref: '',
     };
     const errorPayload = (err) => ({
       ok: false,
@@ -2751,6 +2930,7 @@
       const rows = Array.isArray(state.tcAgents) ? state.tcAgents : [];
       output.agent_count = rows.length;
       const probeCase = output.case;
+      const requestedAgent = safe(queryParam('tc_probe_agent')).trim().toLowerCase();
       let selected = await selectTrainingCenterProbeAgent({ nonGitFirst: probeCase === 'ac_uo_04' });
       if (!selected) {
         selected = findTrainingCenterProbeAgent({});
@@ -2777,7 +2957,15 @@
         return null;
       };
 
-      if (probeCase.startsWith('ac_ar_')) {
+      if (requestedAgent) {
+        const explicit = await pickAgentBy((detail) => {
+          const agentId = safe(detail && detail.agent_id).trim().toLowerCase();
+          const agentName = safe(detail && detail.agent_name).trim().toLowerCase();
+          return requestedAgent === agentId || requestedAgent === agentName;
+        });
+        if (explicit) selected = explicit;
+      }
+      if (probeCase.startsWith('ac_ar_') && !requestedAgent) {
         const preferred = await pickAgentBy((detail, releases) => {
           return !!detail.git_available && releases.length >= 2;
         });
@@ -3010,12 +3198,27 @@
         await refreshTrainingCenterSelectedAgentContext(evalAgentId);
       } else if (probeCase === 'ac_ar_10') {
         setTrainingCenterModule('agents');
+      } else if (
+        probeCase === 'ac_ar_rr_09' ||
+        probeCase === 'ac_ar_rr_10' ||
+        probeCase === 'ac_ar_rr_11' ||
+        probeCase === 'ac_ar_rr_12' ||
+        probeCase === 'ac_ar_rr_13' ||
+        probeCase === 'ac_ar_rr_14' ||
+        probeCase === 'ac_ar_rr_15'
+      ) {
+        setTrainingCenterModule('agents');
+        if (selectedId) {
+          await refreshTrainingCenterSelectedAgentContext(selectedId);
+        }
       } else {
         setTrainingCenterModule('ops');
         await refreshTrainingCenterQueue();
       }
 
       const selectedDetail = state.tcSelectedAgentDetail || {};
+      const roleProfile = trainingCenterRoleProfile(selectedDetail);
+      const currentReview = currentTrainingCenterReleaseReview(safe(state.tcSelectedAgentId).trim());
       const releases = state.tcReleasesByAgent[safe(state.tcSelectedAgentId)] || [];
       const queueItems = Array.isArray(state.tcQueue) ? state.tcQueue : [];
       output.module = safe(state.tcModule);
@@ -3035,6 +3238,40 @@
       output.status_tags = Array.isArray(selectedDetail.status_tags) ? selectedDetail.status_tags : [];
       output.lifecycle_state = safe(selectedDetail.lifecycle_state || '').toLowerCase();
       output.training_gate_state = safe(selectedDetail.training_gate_state || '').toLowerCase();
+      output.review_state = safe(currentReview.release_review_state || '').toLowerCase();
+      output.review_decision = safe(currentReview.review_decision || '').trim();
+      output.review_reviewer = safe(currentReview.reviewer || '').trim();
+      output.review_can_review = !!currentReview.can_review;
+      output.review_can_confirm = !!currentReview.can_confirm;
+      output.review_error = safe(currentReview.report_error || '').trim();
+      output.publish_status = safe(currentReview.publish_status || '').toLowerCase();
+      output.publish_error = safe(currentReview.publish_error || '').trim();
+      output.fallback_status = safe(currentReview.fallback && currentReview.fallback.status).toLowerCase();
+      output.report_first_person_summary = safe(currentReview.report && currentReview.report.first_person_summary).trim();
+      output.report_change_summary = safe(currentReview.report && currentReview.report.change_summary).trim();
+      output.report_has_inventory =
+        !!(currentReview.report && Array.isArray(currentReview.report.full_capability_inventory) && currentReview.report.full_capability_inventory.length);
+      output.report_has_delta =
+        !!(currentReview.report && Array.isArray(currentReview.report.capability_delta) && currentReview.report.capability_delta.length);
+      output.analysis_chain_paths = {
+        prompt_path: safe(currentReview.analysis_chain && currentReview.analysis_chain.prompt_path).trim(),
+        stdout_path: safe(currentReview.analysis_chain && currentReview.analysis_chain.stdout_path).trim(),
+        stderr_path: safe(currentReview.analysis_chain && currentReview.analysis_chain.stderr_path).trim(),
+        report_path: safe(currentReview.analysis_chain && currentReview.analysis_chain.report_path).trim(),
+        public_profile_markdown_path: safe(currentReview.public_profile_markdown_path).trim(),
+        capability_snapshot_json_path: safe(currentReview.capability_snapshot_json_path).trim(),
+      };
+      output.execution_log_phases = Array.from(
+        new Set(
+          (Array.isArray(currentReview.execution_logs) ? currentReview.execution_logs : [])
+            .map((row) => safe(row && row.phase).trim().toLowerCase())
+            .filter(Boolean)
+        )
+      );
+      output.role_profile_source = safe(roleProfile.profile_source).trim();
+      output.role_profile_source_release_id = safe(roleProfile.source_release_id).trim();
+      output.role_profile_first_person_summary = safe(roleProfile.first_person_summary).trim();
+      output.active_role_profile_ref = safe(selectedDetail.active_role_profile_ref || '').trim();
       if (!output.error_code) {
         output.error_code = safe((output.api_result && output.api_result.code) || '').toLowerCase();
       }
@@ -3073,6 +3310,40 @@
                                       ? !!safe(output.api_result && output.api_result.evaluation_id) && safe(output.api_result && output.api_result.decision) === 'approve'
                                       : probeCase === 'ac_ar_10'
                                         ? true
+                                        : probeCase === 'ac_ar_rr_09'
+                                          ? output.review_state === 'report_generating'
+                                          : probeCase === 'ac_ar_rr_10'
+                                            ? output.review_state === 'report_ready' &&
+                                              output.report_has_inventory &&
+                                              output.report_has_delta &&
+                                              !!safe(output.analysis_chain_paths.prompt_path) &&
+                                              !!safe(output.analysis_chain_paths.stdout_path) &&
+                                              !!safe(output.analysis_chain_paths.stderr_path) &&
+                                              !!safe(output.analysis_chain_paths.report_path) &&
+                                              /^我/.test(output.report_first_person_summary)
+                                            : probeCase === 'ac_ar_rr_11'
+                                              ? output.review_state === 'review_approved' &&
+                                                output.review_decision === 'approve_publish' &&
+                                                !!output.review_reviewer
+                                              : probeCase === 'ac_ar_rr_12'
+                                                ? output.publish_status === 'success' &&
+                                                  output.role_profile_source === 'latest_release_report' &&
+                                                  !!output.active_role_profile_ref &&
+                                                  /^我/.test(output.role_profile_first_person_summary)
+                                                : probeCase === 'ac_ar_rr_13'
+                                                  ? output.execution_log_phases.includes('prepare') &&
+                                                    output.execution_log_phases.includes('git_execute') &&
+                                                    output.execution_log_phases.includes('release_note') &&
+                                                    output.execution_log_phases.includes('verify')
+                                                  : probeCase === 'ac_ar_rr_14'
+                                                    ? output.review_state === 'publish_failed' &&
+                                                      !!output.fallback_status &&
+                                                      output.execution_log_phases.includes('fallback_trigger') &&
+                                                      output.execution_log_phases.includes('fallback_result')
+                                                    : probeCase === 'ac_ar_rr_15'
+                                                      ? output.review_state === 'report_failed' &&
+                                                        !!output.review_error &&
+                                                        !output.review_can_confirm
                                         : true);
     } catch (err) {
       output.error = safe(err && err.message ? err.message : err);

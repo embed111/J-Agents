@@ -9,6 +9,7 @@
 - `run_acceptance_training_center_uo.py`: AC-UO-01~11 训练中心统一入口验收。
 - `run_acceptance_agent_release_ar.py`: AC-AR-01~10 agent 发布管理与版本切换验收。
 - `run_acceptance_test_data_toggle_td.py`: AC-TD-01~09 测试数据展示开关全局统一验收。
+- `run_acceptance_agent_release_review_ar09_ar15.py`: AC-AR-09~15 角色发布评审、确认发布与角色画像绑定验收。
 - `prune_evidence_keep_gate_only.py`: 验收通过后证据精简脚本（仅保留门禁截图与汇总文件）。
 
 ## Prune Evidence

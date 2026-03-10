@@ -31,13 +31,15 @@ RELEASE_REVIEW_STATES = (
     "publish_failed",
     "report_failed",
 )
-RELEASE_REVIEW_PROMPT_VERSION = "2026-03-08-release-review-v2"
+RELEASE_REVIEW_PROMPT_VERSION = "2026-03-09-release-review-v6"
 RELEASE_REVIEW_FALLBACK_PROMPT_VERSION = "2026-03-07-release-review-fallback-v1"
 RELEASE_REVIEW_CODEX_TIMEOUT_S = 900
 RELEASE_REVIEW_ENTERABLE_STATES = ("idle", "review_rejected", "publish_failed", "report_failed")
 RELEASE_REVIEW_REQUIRED_FIELDS = (
     "target_version",
     "current_workspace_ref",
+    "first_person_summary",
+    "knowledge_scope",
     "change_summary",
     "release_recommendation",
     "next_action_suggestion",
@@ -185,6 +187,12 @@ def _release_review_structured_result_candidates(candidates: list[dict[str, Any]
     expected_keys = {
         "target_version",
         "current_workspace_ref",
+        "previous_release_version",
+        "first_person_summary",
+        "full_capability_inventory",
+        "knowledge_scope",
+        "agent_skills",
+        "applicable_scenarios",
         "change_summary",
         "capability_delta",
         "risk_list",
@@ -243,6 +251,12 @@ def _release_review_payload_score(candidate: dict[str, Any]) -> int:
     for key in (
         "target_version",
         "current_workspace_ref",
+        "previous_release_version",
+        "first_person_summary",
+        "full_capability_inventory",
+        "knowledge_scope",
+        "agent_skills",
+        "applicable_scenarios",
         "change_summary",
         "capability_delta",
         "risk_list",
@@ -299,38 +313,39 @@ def _release_review_normalize_recommendation(value: Any) -> str:
     if not key:
         return ""
     mapping = {
-        "approve_publish": "approve_publish",
-        "approve": "approve_publish",
-        "approve_release": "approve_publish",
-        "publish": "approve_publish",
-        "go": "approve_publish",
-        "通过": "approve_publish",
-        "review_approved": "approve_publish",
-        "reject_continue_training": "reject_continue_training",
-        "continue_training": "reject_continue_training",
-        "continue_train": "reject_continue_training",
-        "reject": "reject_continue_training",
-        "hold": "reject_continue_training",
-        "retry": "reject_continue_training",
-        "继续训练": "reject_continue_training",
-        "reject_discard_pre_release": "reject_discard_pre_release",
-        "discard_pre_release": "reject_discard_pre_release",
-        "discard": "reject_discard_pre_release",
-        "abandon": "reject_discard_pre_release",
-        "舍弃预发布": "reject_discard_pre_release",
+        "approve_publish": "approve",
+        "approve": "approve",
+        "approve_release": "approve",
+        "publish": "approve",
+        "go": "approve",
+        "通过": "approve",
+        "review_approved": "approve",
+        "reject_continue_training": "needs_more_validation",
+        "continue_training": "needs_more_validation",
+        "continue_train": "needs_more_validation",
+        "needs_more_validation": "needs_more_validation",
+        "hold": "needs_more_validation",
+        "retry": "needs_more_validation",
+        "继续训练": "needs_more_validation",
+        "reject_discard_pre_release": "reject",
+        "discard_pre_release": "reject",
+        "discard": "reject",
+        "abandon": "reject",
+        "舍弃预发布": "reject",
+        "reject": "reject",
     }
     return mapping.get(key, "")
 
 
 def _release_review_default_next_action(recommendation: str, *, has_structured_content: bool) -> str:
     key = str(recommendation or "").strip().lower()
-    if key == "approve_publish":
-        return "请人工复核风险与验证证据，无误后提交审核结论并进入确认发布。"
-    if key == "reject_discard_pre_release":
-        return "请人工确认本次预发布是否应直接舍弃；若确认无保留价值，可提交“不通过：舍弃预发布”。"
+    if key == "approve":
+        return "我建议人工复核风险与验证证据，无误后提交审核结论并进入确认发布。"
+    if key == "reject":
+        return "我建议人工确认本次预发布是否应直接舍弃；若确认无保留价值，可提交“不通过：舍弃预发布”。"
     if has_structured_content:
-        return "请根据本次报告补齐风险说明或验证证据后，再重新进入发布评审。"
-    return "请先查看分析链路中的 stdout / stderr / 报告文件，修正结构化输出后重新进入发布评审。"
+        return "我建议先根据本次报告补齐风险说明或验证证据，再重新进入发布评审。"
+    return "我建议先查看分析链路中的 stdout / stderr / 报告文件，修正结构化输出后重新进入发布评审。"
 
 
 def _normalize_text_list(raw: Any, *, limit: int = 280) -> list[str]:
@@ -345,6 +360,263 @@ def _normalize_text_list(raw: Any, *, limit: int = 280) -> list[str]:
     if not text:
         return []
     return [_short_text(line.strip("- •\t "), limit) for line in text.splitlines() if line.strip()]
+
+
+def _text_items(raw: Any, *, limit: int = 8, item_limit: int = 220) -> list[str]:
+    values = raw if isinstance(raw, list) else re.split(r"[\r\n]+|(?<=[。；;!?！？])", str(raw or "").strip())
+    out: list[str] = []
+    seen: set[str] = set()
+    for item in values:
+        text = _short_text(str(item or "").strip().strip("-•* \t"), item_limit)
+        if not text:
+            continue
+        key = re.sub(r"\s+", "", text).lower()
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        out.append(text)
+        if len(out) >= max(1, int(limit or 1)):
+            break
+    return out
+
+
+def _ensure_first_person_text(value: Any, prefix: str, *, limit: int = 320) -> str:
+    text = _short_text(str(value or "").strip(), limit)
+    if not text:
+        return ""
+    if text.startswith(("我是", "我当前", "我能", "我已", "我会", "我建议", "本次发布", "当前工作区")):
+        return text
+    if text.startswith("你是"):
+        return "我" + text[1:]
+    if text.startswith("作为"):
+        return "我" + text
+    return prefix + text
+
+
+def _ensure_first_person_list(raw: Any, prefix: str, *, limit: int = 8, item_limit: int = 220) -> list[str]:
+    out: list[str] = []
+    for item in _text_items(raw, limit=limit, item_limit=item_limit):
+        out.append(_ensure_first_person_text(item, prefix, limit=item_limit))
+    return out
+
+
+def _release_review_agent_context(agent: dict[str, Any]) -> dict[str, Any]:
+    workspace = Path(str(agent.get("workspace_path") or "")).resolve(strict=False)
+    agents_md_path = workspace / "AGENTS.md"
+    portrait_parser = globals().get("extract_agent_role_portrait")
+    policy_parser = globals().get("extract_agent_policy_fields")
+    list_workspace_local_skills = globals().get("_list_workspace_local_skills")
+
+    portrait: dict[str, Any] = {}
+    if callable(portrait_parser):
+        try:
+            portrait = portrait_parser(agents_md_path)
+        except Exception:
+            portrait = {}
+
+    agents_text = ""
+    try:
+        if agents_md_path.exists():
+            agents_text = agents_md_path.read_text(encoding="utf-8")
+    except Exception:
+        agents_text = ""
+
+    policy_payload: dict[str, Any] = {}
+    if agents_text and callable(policy_parser):
+        try:
+            policy_payload = policy_parser(agents_text)
+        except Exception:
+            policy_payload = {}
+
+    duty_constraints = [
+        _short_text(str(item or "").strip(), 220)
+        for item in (policy_payload.get("duty_constraints") or [])
+        if str(item or "").strip()
+    ]
+    capability_inventory: list[str] = []
+    for item in _text_items(policy_payload.get("session_goal"), limit=3, item_limit=220):
+        if item not in capability_inventory:
+            capability_inventory.append(item)
+    for item in duty_constraints:
+        if item not in capability_inventory:
+            capability_inventory.append(item)
+        if len(capability_inventory) >= 12:
+            break
+    if not capability_inventory:
+        for item in _text_items(
+            str(portrait.get("capability_summary") or agent.get("core_capabilities") or policy_payload.get("role_profile") or ""),
+            limit=8,
+            item_limit=220,
+        ):
+            if item not in capability_inventory:
+                capability_inventory.append(item)
+    if not capability_inventory:
+        fallback_item = _short_text(str(agent.get("capability_summary") or portrait.get("capability_summary") or "").strip(), 220)
+        if fallback_item:
+            capability_inventory.append(fallback_item)
+
+    knowledge_scope = str(
+        portrait.get("knowledge_scope")
+        or agent.get("knowledge_scope")
+        or policy_payload.get("session_goal")
+        or policy_payload.get("role_profile")
+        or ""
+    ).strip()
+    applicable_scenarios = _text_items(
+        portrait.get("applicable_scenarios") or agent.get("applicable_scenarios") or policy_payload.get("session_goal") or "",
+        limit=6,
+        item_limit=140,
+    )
+    local_skills: list[str] = []
+    if callable(list_workspace_local_skills):
+        try:
+            local_skills = _skills_list(list_workspace_local_skills(workspace))
+        except Exception:
+            local_skills = []
+    if not local_skills:
+        local_skills = _skills_list(portrait.get("skills") or agent.get("skills") or agent.get("skills_json"))
+
+    first_person_seed = str(
+        portrait.get("capability_summary")
+        or agent.get("capability_summary")
+        or policy_payload.get("role_profile")
+        or policy_payload.get("session_goal")
+        or ""
+    ).strip()
+    return {
+        "first_person_summary": _ensure_first_person_text(first_person_seed, "我当前的核心能力是：", limit=320),
+        "full_capability_inventory": capability_inventory,
+        "knowledge_scope": knowledge_scope,
+        "agent_skills": local_skills,
+        "applicable_scenarios": applicable_scenarios,
+        "previous_release_version": str(agent.get("latest_release_version") or "").strip(),
+    }
+
+
+def _derive_what_i_can_do(summary: str, inventory: list[str]) -> list[str]:
+    items = _ensure_first_person_list(inventory, "我当前可以：", limit=5, item_limit=180)
+    if items:
+        return items[:5]
+    return _ensure_first_person_list(summary, "我当前可以：", limit=5, item_limit=180)
+
+
+def _build_release_public_profile_snapshot(
+    *,
+    agent: dict[str, Any],
+    report: dict[str, Any],
+    analysis_chain: dict[str, Any],
+    review_id: str,
+) -> dict[str, Any]:
+    summary = _ensure_first_person_text(report.get("first_person_summary"), "我当前的核心能力是：", limit=320)
+    inventory = _ensure_first_person_list(report.get("full_capability_inventory"), "我当前可以：", limit=12, item_limit=220)
+    knowledge_scope = _ensure_first_person_text(report.get("knowledge_scope"), "我当前覆盖的知识范围是：", limit=320)
+    scenarios = _text_items(report.get("applicable_scenarios"), limit=6, item_limit=140)
+    return {
+        "profile_source": "latest_release_report",
+        "review_id": review_id,
+        "agent_id": str(agent.get("agent_id") or "").strip(),
+        "agent_name": str(agent.get("agent_name") or "").strip(),
+        "source_release_version": str(report.get("target_version") or "").strip(),
+        "first_person_summary": summary,
+        "what_i_can_do": _derive_what_i_can_do(summary, inventory),
+        "full_capability_inventory": inventory,
+        "knowledge_scope": knowledge_scope,
+        "agent_skills": _skills_list(report.get("agent_skills")),
+        "applicable_scenarios": scenarios,
+        "version_notes": _short_text(str(report.get("change_summary") or "").strip(), 320),
+        "change_summary": _short_text(str(report.get("change_summary") or "").strip(), 1000),
+        "capability_delta": _ensure_first_person_list(report.get("capability_delta"), "我本次主要补充了：", limit=8, item_limit=220),
+        "risk_list": _ensure_first_person_list(report.get("risk_list"), "我当前识别到的风险是：", limit=8, item_limit=220),
+        "validation_evidence": _ensure_first_person_list(report.get("validation_evidence"), "我当前已确认的证据是：", limit=8, item_limit=240),
+        "release_recommendation": str(report.get("release_recommendation") or "").strip(),
+        "next_action_suggestion": _ensure_first_person_text(report.get("next_action_suggestion"), "我建议下一步：", limit=320),
+        "analysis_chain_ref": str(analysis_chain.get("report_path") or analysis_chain.get("trace_dir") or "").strip(),
+        "public_profile_ref": "",
+        "capability_snapshot_ref": "",
+    }
+
+
+def _build_release_public_profile_markdown(snapshot: dict[str, Any]) -> str:
+    lines = [
+        "# 最新正式发布角色述职报告",
+        "",
+        f"- 角色：{str(snapshot.get('agent_name') or snapshot.get('agent_id') or '').strip() or '-'}",
+        f"- 目标版本：{str(snapshot.get('source_release_version') or '').strip() or '-'}",
+        "",
+        "## 我是 / 我当前能做什么",
+        str(snapshot.get("first_person_summary") or "").strip() or "我当前暂无可展示的正式发布摘要。",
+        "",
+    ]
+    what_i_can_do = snapshot.get("what_i_can_do") if isinstance(snapshot.get("what_i_can_do"), list) else []
+    if what_i_can_do:
+        lines.append("## 我当前能做什么")
+        lines.extend([f"- {str(item or '').strip()}" for item in what_i_can_do if str(item or "").strip()])
+        lines.append("")
+    inventory = snapshot.get("full_capability_inventory") if isinstance(snapshot.get("full_capability_inventory"), list) else []
+    if inventory:
+        lines.append("## 全量能力清单")
+        lines.extend([f"- {str(item or '').strip()}" for item in inventory if str(item or "").strip()])
+        lines.append("")
+    if str(snapshot.get("knowledge_scope") or "").strip():
+        lines.extend(["## 角色知识范围", str(snapshot.get("knowledge_scope") or "").strip(), ""])
+    skills = snapshot.get("agent_skills") if isinstance(snapshot.get("agent_skills"), list) else []
+    if skills:
+        lines.append("## Agent Skills")
+        lines.extend([f"- {str(item or '').strip()}" for item in skills if str(item or "").strip()])
+        lines.append("")
+    scenarios = snapshot.get("applicable_scenarios") if isinstance(snapshot.get("applicable_scenarios"), list) else []
+    if scenarios:
+        lines.append("## 适用场景")
+        lines.extend([f"- {str(item or '').strip()}" for item in scenarios if str(item or "").strip()])
+        lines.append("")
+    if str(snapshot.get("version_notes") or "").strip():
+        lines.extend(["## 版本说明", str(snapshot.get("version_notes") or "").strip(), ""])
+    delta = snapshot.get("capability_delta") if isinstance(snapshot.get("capability_delta"), list) else []
+    if delta:
+        lines.append("## 相对上一正式发布版本的能力增量")
+        lines.extend([f"- {str(item or '').strip()}" for item in delta if str(item or "").strip()])
+        lines.append("")
+    risks = snapshot.get("risk_list") if isinstance(snapshot.get("risk_list"), list) else []
+    if risks:
+        lines.append("## 风险清单")
+        lines.extend([f"- {str(item or '').strip()}" for item in risks if str(item or "").strip()])
+        lines.append("")
+    evidence = snapshot.get("validation_evidence") if isinstance(snapshot.get("validation_evidence"), list) else []
+    if evidence:
+        lines.append("## 验证证据")
+        lines.extend([f"- {str(item or '').strip()}" for item in evidence if str(item or "").strip()])
+        lines.append("")
+    if str(snapshot.get("next_action_suggestion") or "").strip():
+        lines.extend(["## 下一步建议", str(snapshot.get("next_action_suggestion") or "").strip(), ""])
+    return "\n".join(lines).strip() + "\n"
+
+
+def _write_release_review_profile_assets(
+    *,
+    root: Path,
+    trace_dir: Path,
+    agent: dict[str, Any],
+    review_id: str,
+    report: dict[str, Any],
+    analysis_chain: dict[str, Any],
+) -> dict[str, Any]:
+    snapshot = _build_release_public_profile_snapshot(
+        agent=agent,
+        report=report,
+        analysis_chain=analysis_chain,
+        review_id=review_id,
+    )
+    public_profile_path = trace_dir / "public-role-profile.md"
+    capability_snapshot_path = trace_dir / "capability-snapshot.json"
+    _write_release_review_text(public_profile_path, _build_release_public_profile_markdown(snapshot))
+    snapshot["public_profile_ref"] = _path_for_ui(root, public_profile_path)
+    snapshot["capability_snapshot_ref"] = _path_for_ui(root, capability_snapshot_path)
+    _write_release_review_json(capability_snapshot_path, snapshot)
+    return {
+        "public_profile_markdown_path": snapshot["public_profile_ref"],
+        "capability_snapshot_json_path": snapshot["capability_snapshot_ref"],
+        "snapshot": snapshot,
+    }
 
 
 def _workspace_current_ref(workspace: Path) -> str:
@@ -412,20 +684,35 @@ def _build_release_review_prompt(
             "1) 阅读 AGENTS.md、当前工作区 Git 信息、最近已发布版本，评估当前预发布内容是否适合确认发布。",
             "   - 优先只读取：AGENTS.md、README.md、CHANGELOG.md（若存在）、最近 release note、git status、git log 最近 20 条、git tag 最近 20 条。",
             "   - 不要递归扫描大型目录；不要遍历 .git 全量历史、node_modules、dist、build、coverage、.venv、site-packages、logs 等大目录。",
-            "2) 输出一份结构化发布报告，必须覆盖：",
+            "2) 报告要同时服务两个用途：",
+            "   - 用途 A：作为发布评审页的“功能差异报告”，重点说明相对上一正式发布版本的变化、风险与证据。",
+            "   - 用途 B：作为正式发布成功后可绑定到角色详情页的“第一人称角色述职介绍”，用于说明当前正式发布版本完整能做什么。",
+            "3) 输出一份结构化发布报告，必须覆盖：",
             "   - target_version",
             "   - current_workspace_ref",
+            "   - previous_release_version",
+            "   - first_person_summary",
+            "   - full_capability_inventory",
+            "   - knowledge_scope",
+            "   - agent_skills",
+            "   - applicable_scenarios",
             "   - change_summary",
             "   - capability_delta",
             "   - risk_list",
             "   - validation_evidence",
             "   - release_recommendation",
             "   - next_action_suggestion",
-            "3) capability_delta / risk_list / validation_evidence 必须是字符串数组。",
-            "4) release_recommendation 推荐使用：approve_publish / reject_continue_training / reject_discard_pre_release 之一。",
-            "5) 若信息不足，不要编造；在 warnings[] 里明确指出。",
-            "6) target_version 必须直接复制输入上下文中的 target_version；current_workspace_ref 必须直接复制输入上下文中的 current_workspace_ref。",
-            "7) 即使信息不足，也不要省略字段；必须保留完整 JSON 结构，并在 warnings[] / next_action_suggestion 里说明不足。",
+            "4) full_capability_inventory / agent_skills / applicable_scenarios / capability_delta / risk_list / validation_evidence 必须是字符串数组。",
+            "5) release_recommendation 推荐使用：approve / reject / needs_more_validation 之一。",
+            "6) 将这份报告理解为该 agent 面向发布评审环节提交的“述职报告”，自然语言字段统一使用第一人称视角描述。",
+            "   - 例如：“我当前补充了… / 我识别到… / 我已完成… / 我建议下一步…”。",
+            "   - 适用字段包括：first_person_summary、change_summary、capability_delta[]、risk_list[]、validation_evidence[]、next_action_suggestion、warnings[]。",
+            "   - 人工审核结论不在本 JSON 中表达，因此这里不需要输出 reviewer 视角内容。",
+            "7) full_capability_inventory 必须描述“当前目标版本完整能做什么”，不能只写 capability_delta。",
+            "8) capability_delta 必须明确说明“相对上一正式发布版本”的变化；若上一正式发布版本不存在，需在 warnings[] 中写明。",
+            "9) 若信息不足，不要编造；在 warnings[] 里明确指出。",
+            "10) target_version 必须直接复制输入上下文中的 target_version；current_workspace_ref 必须直接复制输入上下文中的 current_workspace_ref。",
+            "11) 即使信息不足，也不要省略字段；必须保留完整 JSON 结构，并在 warnings[] / next_action_suggestion 里说明不足。",
             "",
             "输出要求:",
             "- 仅输出一个 JSON 对象。",
@@ -435,11 +722,17 @@ def _build_release_review_prompt(
             "{",
             '  "target_version": "",',
             '  "current_workspace_ref": "",',
+            '  "previous_release_version": "",',
+            '  "first_person_summary": "",',
+            '  "full_capability_inventory": ["..."],',
+            '  "knowledge_scope": "",',
+            '  "agent_skills": ["..."],',
+            '  "applicable_scenarios": ["..."],',
             '  "change_summary": "",',
             '  "capability_delta": ["..."],',
             '  "risk_list": ["..."],',
             '  "validation_evidence": ["..."],',
-            '  "release_recommendation": "approve_publish|reject_continue_training|reject_discard_pre_release",',
+            '  "release_recommendation": "approve|reject|needs_more_validation",',
             '  "next_action_suggestion": "",',
             '  "warnings": []',
             "}",
@@ -636,6 +929,7 @@ def _run_codex_exec_for_release_review(
 def _normalize_release_review_report(
     raw_result: dict[str, Any],
     *,
+    agent: dict[str, Any] | None = None,
     target_version: str,
     current_workspace_ref: str,
     codex_error: str = "",
@@ -644,11 +938,79 @@ def _normalize_release_review_report(
     source = _release_review_best_payload(raw) if raw else {}
     if not source and raw:
         source = raw
+    agent_payload = agent if isinstance(agent, dict) else {}
+    context = _release_review_agent_context(agent_payload) if agent_payload else {}
     warnings = _normalize_text_list(source.get("warnings") if isinstance(source, dict) else [], limit=180)
     if raw and source is not raw:
         warnings.append("已自动从嵌套输出中提取结构化发布报告。")
     if str(codex_error or "").strip().lower() == "codex_result_missing":
         warnings.append("Codex 未直接返回标准结构化 JSON，系统已根据上下文自动补齐报告字段。")
+
+    full_capability_inventory = _normalize_text_list(
+        source.get("full_capability_inventory")
+        if isinstance(source, dict) and "full_capability_inventory" in source
+        else (
+            source.get("capability_inventory")
+            if isinstance(source, dict)
+            else []
+        ),
+        limit=220,
+    )
+    if not full_capability_inventory:
+        full_capability_inventory = _ensure_first_person_list(
+            context.get("full_capability_inventory"),
+            "我当前可以：",
+            limit=12,
+            item_limit=220,
+        )
+        if full_capability_inventory:
+            warnings.append("全量能力清单缺失，系统已根据 AGENTS.md 与工作区上下文自动补齐。")
+
+    knowledge_scope = _short_text(
+        _release_review_pick_text(source, "knowledge_scope", "knowledge", "scope")
+        or str(context.get("knowledge_scope") or "").strip(),
+        320,
+    )
+    if knowledge_scope and not _release_review_pick_text(source, "knowledge_scope", "knowledge", "scope"):
+        warnings.append("知识范围缺失，系统已根据 AGENTS.md 自动补齐。")
+
+    agent_skills = _normalize_text_list(
+        source.get("agent_skills")
+        if isinstance(source, dict) and "agent_skills" in source
+        else (source.get("skills") if isinstance(source, dict) else []),
+        limit=80,
+    )
+    if not agent_skills:
+        agent_skills = _skills_list(context.get("agent_skills"))
+        if agent_skills:
+            warnings.append("Agent Skills 缺失，系统已根据工作区本地技能自动补齐。")
+
+    applicable_scenarios = _normalize_text_list(
+        source.get("applicable_scenarios")
+        if isinstance(source, dict) and "applicable_scenarios" in source
+        else (source.get("scenarios") if isinstance(source, dict) else []),
+        limit=140,
+    )
+    if not applicable_scenarios:
+        applicable_scenarios = _text_items(context.get("applicable_scenarios"), limit=6, item_limit=140)
+        if applicable_scenarios:
+            warnings.append("适用场景缺失，系统已根据 AGENTS.md 自动补齐。")
+
+    first_person_summary = _ensure_first_person_text(
+        _release_review_pick_text(
+            source,
+            "first_person_summary",
+            "self_summary",
+            "role_summary",
+            "capability_summary",
+            "summary",
+        )
+        or str(context.get("first_person_summary") or "").strip(),
+        "我当前的核心能力是：",
+        limit=320,
+    )
+    if not _release_review_pick_text(source, "first_person_summary", "self_summary", "role_summary", "capability_summary"):
+        warnings.append("第一人称角色摘要缺失，系统已根据 AGENTS.md 自动补齐。")
 
     capability_delta = _normalize_text_list(
         source.get("capability_delta")
@@ -656,52 +1018,63 @@ def _normalize_release_review_report(
         else (source.get("capability_changes") if isinstance(source, dict) else []),
         limit=280,
     )
+    capability_delta = _ensure_first_person_list(capability_delta, "我本次主要补充了：", limit=8, item_limit=220)
     risk_list = _normalize_text_list(
         source.get("risk_list")
         if isinstance(source, dict) and "risk_list" in source
         else (source.get("risks") if isinstance(source, dict) else []),
         limit=220,
     )
+    risk_list = _ensure_first_person_list(risk_list, "我当前识别到的风险是：", limit=8, item_limit=220)
     validation_evidence = _normalize_text_list(
         source.get("validation_evidence")
         if isinstance(source, dict) and "validation_evidence" in source
         else (source.get("evidence") if isinstance(source, dict) else []),
         limit=320,
     )
+    validation_evidence = _ensure_first_person_list(validation_evidence, "我当前已确认的验证证据是：", limit=8, item_limit=240)
 
-    change_summary = _short_text(
+    change_summary = _ensure_first_person_text(
         _release_review_pick_text(source, "change_summary", "summary", "change_overview", "release_summary"),
-        1000,
+        "我本次版本的主要变化是：",
+        limit=1000,
     )
     if not change_summary:
         if capability_delta:
-            change_summary = _short_text("本次预发布主要变化：" + "；".join(capability_delta[:3]), 1000)
+            change_summary = _short_text("我本次预发布的主要变化是：" + "；".join(capability_delta[:3]), 1000)
             warnings.append("变更摘要由 capability_delta 自动汇总生成。")
         elif risk_list:
-            change_summary = _short_text("本次预发布仍存在待确认风险：" + "；".join(risk_list[:2]), 1000)
+            change_summary = _short_text("我当前仍识别到待确认风险：" + "；".join(risk_list[:2]), 1000)
             warnings.append("变更摘要由 risk_list 自动汇总生成。")
         elif validation_evidence:
-            change_summary = _short_text("已收集验证证据：" + "；".join(validation_evidence[:2]), 1000)
+            change_summary = _short_text("我当前已收集的验证证据包括：" + "；".join(validation_evidence[:2]), 1000)
             warnings.append("变更摘要由 validation_evidence 自动汇总生成。")
         else:
-            change_summary = "未能从 Codex 输出中提取结构化变更摘要，请人工查看分析链路中的 stdout / 报告文件。"
+            change_summary = "我暂未能从 Codex 输出中提取结构化变更摘要，请人工查看分析链路中的 stdout / 报告文件。"
             warnings.append("未提取到结构化变更摘要，已填入人工复核提示。")
 
     recommendation = _release_review_normalize_recommendation(
         _release_review_pick_text(source, "release_recommendation", "recommendation", "decision", "review_decision")
     )
     if not recommendation:
-        recommendation = "reject_continue_training"
-        warnings.append("未提取到有效发布建议，系统已默认保守建议为 reject_continue_training。")
+        recommendation = "needs_more_validation"
+        warnings.append("未提取到有效发布建议，系统已默认保守建议为 needs_more_validation。")
 
-    has_structured_content = bool(capability_delta or risk_list or validation_evidence or raw)
-    next_action_suggestion = _short_text(
+    has_structured_content = bool(full_capability_inventory or capability_delta or risk_list or validation_evidence or raw)
+    next_action_suggestion = _ensure_first_person_text(
         _release_review_pick_text(source, "next_action_suggestion", "next_action", "suggestion", "recommended_action")
         or _release_review_default_next_action(recommendation, has_structured_content=has_structured_content),
-        320,
+        "我建议下一步：",
+        limit=320,
     )
     if not _release_review_pick_text(source, "next_action_suggestion", "next_action", "suggestion", "recommended_action"):
         warnings.append("未提取到下一步建议，系统已自动补齐。")
+
+    previous_release_version = _short_text(
+        _release_review_pick_text(source, "previous_release_version", "latest_release_version", "base_release_version")
+        or str(context.get("previous_release_version") or "").strip(),
+        80,
+    )
 
     report = {
         "target_version": _short_text(
@@ -713,11 +1086,19 @@ def _normalize_release_review_report(
             or current_workspace_ref,
             80,
         ),
+        "previous_release_version": previous_release_version,
+        "first_person_summary": first_person_summary,
+        "what_i_can_do": _derive_what_i_can_do(first_person_summary, full_capability_inventory),
+        "full_capability_inventory": full_capability_inventory,
+        "knowledge_scope": knowledge_scope,
+        "agent_skills": _skills_list(agent_skills),
+        "applicable_scenarios": applicable_scenarios,
         "change_summary": change_summary,
         "capability_delta": capability_delta,
         "risk_list": risk_list,
         "validation_evidence": validation_evidence,
         "release_recommendation": _short_text(recommendation, 80),
+        "version_notes": _short_text(change_summary, 320),
         "next_action_suggestion": next_action_suggestion,
         "warnings": [item for item in dict.fromkeys([str(item).strip() for item in warnings if str(item or "").strip()])],
         "raw_result": raw,
@@ -825,6 +1206,14 @@ def _build_publish_release_note(
     publish_version: str,
     review_comment: str,
 ) -> str:
+    def note_first_person(value: Any, prefix: str, *, limit: int = 280) -> str:
+        text = _short_text(str(value or "").strip(), limit)
+        if not text:
+            return ""
+        if text.startswith(("我", "当前工作区", "本次发布", "本次版本")):
+            return text
+        return prefix + text
+
     workspace = Path(str(agent.get("workspace_path") or "")).resolve(strict=False)
     portrait = extract_agent_role_portrait(workspace / "AGENTS.md")
     skills = _skills_list(portrait.get("skills"))
@@ -840,43 +1229,201 @@ def _build_publish_release_note(
             skills = []
     if not skills:
         skills = ["workflow"]
-    capability_summary = str(portrait.get("capability_summary") or agent.get("capability_summary") or report.get("change_summary") or "见本次发布评审报告").strip()
-    knowledge_scope = str(portrait.get("knowledge_scope") or agent.get("knowledge_scope") or report.get("next_action_suggestion") or "参考当前角色知识范围").strip()
-    applicable_scenarios = str(portrait.get("applicable_scenarios") or agent.get("applicable_scenarios") or "角色发布评审与确认发布").strip()
+    capability_summary = str(
+        report.get("first_person_summary")
+        or portrait.get("capability_summary")
+        or agent.get("capability_summary")
+        or report.get("change_summary")
+        or "见本次发布评审报告"
+    ).strip()
+    knowledge_scope = str(
+        report.get("knowledge_scope")
+        or portrait.get("knowledge_scope")
+        or agent.get("knowledge_scope")
+        or report.get("next_action_suggestion")
+        or "参考当前角色知识范围"
+    ).strip()
+    applicable_scenarios = "；".join(_normalize_text_list(report.get("applicable_scenarios"), limit=120)) or str(
+        portrait.get("applicable_scenarios")
+        or agent.get("applicable_scenarios")
+        or "角色发布评审与确认发布"
+    ).strip()
     version_notes = str(report.get("change_summary") or review_comment or agent.get("version_notes") or publish_version).strip()
+    what_i_can_do = _normalize_text_list(report.get("what_i_can_do"), limit=180)
+    full_capability_inventory = _normalize_text_list(report.get("full_capability_inventory"), limit=180)
     capability_delta = _normalize_text_list(report.get("capability_delta"), limit=180)
     risk_list = _normalize_text_list(report.get("risk_list"), limit=180)
     evidence_list = _normalize_text_list(report.get("validation_evidence"), limit=220)
     lines = [
         f"发布版本: {publish_version}",
-        f"角色能力摘要: {capability_summary}",
-        f"角色知识范围: {knowledge_scope}",
+        f"第一人称摘要: {note_first_person(capability_summary, '我当前的核心能力是：')}",
+        f"角色能力摘要: {note_first_person(capability_summary, '我当前的核心能力是：')}",
+        f"角色知识范围: {note_first_person(knowledge_scope, '我当前覆盖的知识范围是：')}",
         "技能: " + ", ".join(skills[:12]),
         "技能明细:",
     ]
     lines.extend([f"- {item}" for item in skills[:12]])
+    if what_i_can_do:
+        lines.extend(["我当前能做什么:"])
+        lines.extend([f"- {note_first_person(item, '我当前可以：', limit=180)}" for item in what_i_can_do[:5]])
+    if full_capability_inventory:
+        lines.extend(["全量能力清单:"])
+        lines.extend([f"- {note_first_person(item, '我当前可以：', limit=180)}" for item in full_capability_inventory[:12]])
     lines.extend(
         [
-            f"适用场景: {applicable_scenarios}",
-            f"版本说明: {version_notes}",
+            f"适用场景: {note_first_person(applicable_scenarios, '我当前适合用于：')}",
+            f"版本说明: {note_first_person(version_notes, '我本次发布主要更新了：')}",
             "",
             "发布评审摘要:",
-            f"- 工作区基线: {str(report.get('current_workspace_ref') or '').strip() or '-'}",
-            f"- 发布建议: {str(report.get('release_recommendation') or '').strip() or '-'}",
+            f"- 工作区基线: {note_first_person(str(report.get('current_workspace_ref') or '').strip() or '-', '我当前工作区基线是：', limit=120)}",
+            f"- 发布建议: {note_first_person(str(report.get('release_recommendation') or '').strip() or '-', '我当前给出的发布建议是：', limit=120)}",
         ]
     )
     if capability_delta:
-        lines.append("- 能力变化: " + "；".join(capability_delta[:5]))
+        lines.append("- 能力变化: 我本次主要补充/调整了：" + "；".join(capability_delta[:5]))
     if risk_list:
-        lines.append("- 风险提示: " + "；".join(risk_list[:5]))
+        lines.append("- 风险提示: 我当前识别到的风险包括：" + "；".join(risk_list[:5]))
     if evidence_list:
-        lines.append("- 验证证据: " + "；".join(evidence_list[:5]))
+        lines.append("- 验证证据: 我当前已确认的验证证据包括：" + "；".join(evidence_list[:5]))
     if review_comment:
-        lines.append("- 审核意见: " + _short_text(review_comment, 220))
+        lines.append("- 审核意见: " + note_first_person(review_comment, "我本次发布收到的审核意见是：", limit=220))
     next_action = str(report.get("next_action_suggestion") or "").strip()
     if next_action:
-        lines.append("- 下一步建议: " + _short_text(next_action, 220))
+        lines.append("- 下一步建议: " + note_first_person(next_action, "我建议下一步：", limit=220))
     return "\n".join(lines).strip() + "\n"
+
+
+def _bind_release_profile_after_publish(
+    cfg: AppConfig,
+    *,
+    agent_id: str,
+    publish_version: str,
+    review_id: str,
+    analysis_chain: dict[str, Any],
+    public_profile_markdown_path: str,
+    capability_snapshot_json_path: str,
+) -> None:
+    source_agent_id = safe_token(str(agent_id or ""), "", 120)
+    if not source_agent_id:
+        return
+    release_row: dict[str, Any] | None = None
+    conn = connect_db(cfg.root)
+    try:
+        row = conn.execute(
+            """
+            SELECT release_id,version_label,released_at
+            FROM agent_release_history
+            WHERE agent_id=?
+              AND version_label=?
+              AND COALESCE(classification,'normal_commit')='release'
+            ORDER BY released_at DESC, created_at DESC
+            LIMIT 1
+            """,
+            (source_agent_id, str(publish_version or "").strip()),
+        ).fetchone()
+        if row is not None:
+            release_row = {name: row[name] for name in row.keys()}
+            conn.execute(
+                """
+                UPDATE agent_release_history
+                SET release_source_ref=?,
+                    public_profile_ref=?,
+                    capability_snapshot_ref=?
+                WHERE release_id=?
+                """,
+                (
+                    str((analysis_chain or {}).get("report_path") or "").strip(),
+                    str(public_profile_markdown_path or "").strip(),
+                    str(capability_snapshot_json_path or "").strip(),
+                    str(row["release_id"] or "").strip(),
+                ),
+            )
+            conn.execute(
+                """
+                UPDATE agent_registry
+                SET active_role_profile_release_id=?,
+                    active_role_profile_ref=?,
+                    updated_at=?
+                WHERE agent_id=?
+                """,
+                (
+                    str(row["release_id"] or "").strip(),
+                    str(public_profile_markdown_path or capability_snapshot_json_path or "").strip(),
+                    iso_ts(now_local()),
+                    source_agent_id,
+                ),
+            )
+            conn.commit()
+    finally:
+        conn.close()
+    if release_row is not None:
+        append_training_center_audit(
+            cfg.root,
+            action="release_profile_bound",
+            operator="system",
+            target_id=source_agent_id,
+            detail={
+                "review_id": review_id,
+                "release_id": str(release_row.get("release_id") or "").strip(),
+                "publish_version": str(publish_version or "").strip(),
+                "public_profile_ref": str(public_profile_markdown_path or "").strip(),
+                "capability_snapshot_ref": str(capability_snapshot_json_path or "").strip(),
+            },
+        )
+
+
+def _verify_release_note_before_tag(
+    workspace: Path,
+    publish_version: str,
+    release_note_text: str,
+) -> tuple[bool, dict[str, Any], str]:
+    parser = globals().get("parse_release_portrait_fields")
+    validator = globals().get("validate_release_portrait_fields")
+    skills_parser = globals().get("_skills_list")
+    list_workspace_local_skills = globals().get("_list_workspace_local_skills")
+    if not callable(parser) or not callable(validator):
+        return True, {}, ""
+    try:
+        parsed = parser(str(release_note_text or ""))
+    except Exception:
+        parsed = {}
+    if not isinstance(parsed, dict):
+        parsed = {}
+    parsed_skills = skills_parser(parsed.get("skills")) if callable(skills_parser) else []
+    note_text = str(release_note_text or "")
+    if (
+        not parsed_skills
+        and callable(list_workspace_local_skills)
+        and "发布版本:" in note_text
+        and "技能:" in note_text
+    ):
+        try:
+            fallback_skills = list_workspace_local_skills(workspace)
+        except Exception:
+            fallback_skills = []
+        parsed_skills = skills_parser(fallback_skills) if callable(skills_parser) else []
+        if parsed_skills:
+            parsed["skills"] = parsed_skills
+    try:
+        release_valid, invalid_reasons = validator(parsed)
+    except Exception:
+        release_valid, invalid_reasons = False, ["release_note_validate_failed"]
+    reason_list = [str(item or "").strip() for item in invalid_reasons if str(item or "").strip()]
+    payload = {
+        "version_label": str(publish_version or "").strip(),
+        "capability_summary": str(parsed.get("capability_summary") or "").strip(),
+        "knowledge_scope": str(parsed.get("knowledge_scope") or "").strip(),
+        "skills_json": _json_dumps_text(parsed_skills, "[]"),
+        "applicable_scenarios": str(parsed.get("applicable_scenarios") or "").strip(),
+        "version_notes": str(parsed.get("version_notes") or "").strip(),
+        "release_valid": bool(release_valid),
+        "invalid_reasons_json": _json_dumps_text(reason_list, "[]"),
+        "classification": "release" if release_valid else "normal_commit",
+        "raw_notes": _short_text(note_text, 4000),
+    }
+    if release_valid:
+        return True, payload, ""
+    return False, payload, ",".join(reason_list) or "release_note_invalid"
 
 
 def _verify_published_release(workspace: Path, publish_version: str) -> tuple[bool, dict[str, Any], str]:
@@ -980,7 +1527,8 @@ def _latest_release_review_row(conn: sqlite3.Connection, agent_id: str) -> dict[
         SELECT
             review_id,agent_id,target_version,current_workspace_ref,release_review_state,prompt_version,
             analysis_chain_json,report_json,report_error,review_decision,reviewer,review_comment,reviewed_at,
-            publish_version,publish_status,publish_error,execution_log_json,fallback_json,created_at,updated_at
+            publish_version,publish_status,publish_error,execution_log_json,fallback_json,
+            public_profile_markdown_path,capability_snapshot_json_path,created_at,updated_at
         FROM agent_release_review
         WHERE agent_id=?
         ORDER BY created_at DESC
@@ -1055,6 +1603,8 @@ def _release_review_payload(agent: dict[str, Any], row: dict[str, Any] | None) -
         "publish_error": str((row or {}).get("publish_error") or "").strip(),
         "execution_logs": execution_logs,
         "fallback": fallback,
+        "public_profile_markdown_path": str((row or {}).get("public_profile_markdown_path") or "").strip(),
+        "capability_snapshot_json_path": str((row or {}).get("capability_snapshot_json_path") or "").strip(),
         "created_at": str((row or {}).get("created_at") or "").strip(),
         "updated_at": str((row or {}).get("updated_at") or "").strip(),
         "can_enter": _can_enter_release_review(lifecycle_state, current_state),
@@ -1748,8 +2298,9 @@ def enter_training_agent_release_review(
             INSERT INTO agent_release_review (
                 review_id,agent_id,target_version,current_workspace_ref,release_review_state,prompt_version,
                 analysis_chain_json,report_json,report_error,review_decision,reviewer,review_comment,reviewed_at,
-                publish_version,publish_status,publish_error,execution_log_json,fallback_json,created_at,updated_at
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                publish_version,publish_status,publish_error,execution_log_json,fallback_json,
+                public_profile_markdown_path,capability_snapshot_json_path,created_at,updated_at
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """,
             (
                 review_id,
@@ -1770,6 +2321,8 @@ def enter_training_agent_release_review(
                 "",
                 "[]",
                 "{}",
+                "",
+                "",
                 created_at,
                 created_at,
             ),
@@ -1815,12 +2368,23 @@ def enter_training_agent_release_review(
             )
         report = _normalize_release_review_report(
             codex_result.get("parsed_result") if isinstance(codex_result.get("parsed_result"), dict) else {},
+            agent=agent,
             target_version=target_version,
             current_workspace_ref=current_workspace_ref,
             codex_error=codex_error,
         )
         analysis_chain = codex_result.get("analysis_chain") if isinstance(codex_result.get("analysis_chain"), dict) else {}
         analysis_chain["prompt_version"] = RELEASE_REVIEW_PROMPT_VERSION
+        profile_assets = _write_release_review_profile_assets(
+            root=cfg.root,
+            trace_dir=trace_dir,
+            agent=agent,
+            review_id=review_id,
+            report=report,
+            analysis_chain=analysis_chain,
+        )
+        analysis_chain["public_profile_markdown_path"] = str(profile_assets.get("public_profile_markdown_path") or "")
+        analysis_chain["capability_snapshot_json_path"] = str(profile_assets.get("capability_snapshot_json_path") or "")
         _update_release_review_row(
             cfg.root,
             review_id,
@@ -1831,6 +2395,8 @@ def enter_training_agent_release_review(
                 "analysis_chain_json": analysis_chain,
                 "report_json": report,
                 "report_error": "",
+                "public_profile_markdown_path": str(profile_assets.get("public_profile_markdown_path") or ""),
+                "capability_snapshot_json_path": str(profile_assets.get("capability_snapshot_json_path") or ""),
             },
         )
         append_training_center_audit(
@@ -1844,6 +2410,8 @@ def enter_training_agent_release_review(
                 "report_path": str(analysis_chain.get("report_path") or ""),
                 "stdout_path": str(analysis_chain.get("stdout_path") or ""),
                 "stderr_path": str(analysis_chain.get("stderr_path") or ""),
+                "public_profile_markdown_path": str(profile_assets.get("public_profile_markdown_path") or ""),
+                "capability_snapshot_json_path": str(profile_assets.get("capability_snapshot_json_path") or ""),
             },
         )
     except TrainingCenterError as exc:
@@ -2073,6 +2641,34 @@ def _execute_publish_attempt(
             message="工作区无额外改动，跳过提交",
         )
 
+    preverified, precheck_row, precheck_error = _verify_release_note_before_tag(
+        workspace,
+        publish_version,
+        release_note_text,
+    )
+    if not preverified:
+        _append_release_review_log(
+            execution_logs,
+            phase="verify",
+            status="failed",
+            message="发布预校验失败，未创建标签",
+            details={"reason": precheck_error, "publish_version": publish_version},
+        )
+        return {
+            "ok": False,
+            "error": precheck_error,
+            "agent": agent,
+            "publish_row": precheck_row,
+            "release_note_path": _path_for_ui(cfg.root, release_note_path),
+        }
+    _append_release_review_log(
+        execution_logs,
+        phase="verify",
+        status="done",
+        message="发布预校验通过，准备创建标签",
+        details={"publish_version": publish_version},
+    )
+
     ok_tag, tag_out, tag_err = _run_git_mutation(
         workspace,
         ["tag", "-a", publish_version, "-F", release_note_path.as_posix()],
@@ -2292,6 +2888,15 @@ def confirm_training_agent_release_review(
         execution_logs=execution_logs,
     )
     if publish_result.get("ok"):
+        _bind_release_profile_after_publish(
+            cfg,
+            agent_id=source_agent_id,
+            publish_version=str(publish_result.get("publish_version") or publish_version),
+            review_id=review_id,
+            analysis_chain=review_payload.get("analysis_chain") if isinstance(review_payload.get("analysis_chain"), dict) else {},
+            public_profile_markdown_path=str(row.get("public_profile_markdown_path") or "").strip(),
+            capability_snapshot_json_path=str(row.get("capability_snapshot_json_path") or "").strip(),
+        )
         _update_release_review_row(
             cfg.root,
             review_id,
@@ -2318,6 +2923,15 @@ def confirm_training_agent_release_review(
     )
     retry_result = fallback_payload.get("retry_result") if isinstance(fallback_payload.get("retry_result"), dict) else {}
     if retry_result.get("ok"):
+        _bind_release_profile_after_publish(
+            cfg,
+            agent_id=source_agent_id,
+            publish_version=str(retry_result.get("publish_version") or publish_version),
+            review_id=review_id,
+            analysis_chain=review_payload.get("analysis_chain") if isinstance(review_payload.get("analysis_chain"), dict) else {},
+            public_profile_markdown_path=str(row.get("public_profile_markdown_path") or "").strip(),
+            capability_snapshot_json_path=str(row.get("capability_snapshot_json_path") or "").strip(),
+        )
         _update_release_review_row(
             cfg.root,
             review_id,

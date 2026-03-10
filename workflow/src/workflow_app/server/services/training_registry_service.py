@@ -28,7 +28,7 @@ def _resolve_training_agent(conn: sqlite3.Connection, target: str) -> dict[str, 
             lifecycle_state,training_gate_state,parent_agent_id,
             core_capabilities,capability_summary,knowledge_scope,skills_json,applicable_scenarios,version_notes,avatar_uri,
             vector_icon,git_available,pre_release_state,pre_release_reason,pre_release_checked_at,pre_release_git_output,
-            last_release_at,status_tags_json,updated_at
+            last_release_at,status_tags_json,active_role_profile_release_id,active_role_profile_ref,updated_at
         FROM agent_registry
         WHERE agent_id=?
         LIMIT 1
@@ -44,7 +44,7 @@ def _resolve_training_agent(conn: sqlite3.Connection, target: str) -> dict[str, 
                     lifecycle_state,training_gate_state,parent_agent_id,
                     core_capabilities,capability_summary,knowledge_scope,skills_json,applicable_scenarios,version_notes,avatar_uri,
                     vector_icon,git_available,pre_release_state,pre_release_reason,pre_release_checked_at,pre_release_git_output,
-                    last_release_at,status_tags_json,updated_at
+                    last_release_at,status_tags_json,active_role_profile_release_id,active_role_profile_ref,updated_at
                 FROM agent_registry
                 WHERE agent_name=?
                 LIMIT 1
@@ -117,13 +117,24 @@ def sync_training_agent_registry(cfg: AppConfig) -> list[dict[str, Any]]:
                 """
                 SELECT
                     current_version,latest_release_version,bound_release_version,
-                    lifecycle_state,training_gate_state,parent_agent_id,avatar_uri,last_release_at
+                    lifecycle_state,training_gate_state,parent_agent_id,avatar_uri,last_release_at,
+                    active_role_profile_release_id,active_role_profile_ref
                 FROM agent_registry
                 WHERE agent_id=?
                 LIMIT 1
                 """,
                 (agent_id,),
             ).fetchone()
+            existing_release_meta_rows = conn.execute(
+                """
+                SELECT
+                    version_label,commit_ref,classification,
+                    release_source_ref,public_profile_ref,capability_snapshot_ref
+                FROM agent_release_history
+                WHERE agent_id=?
+                """,
+                (agent_id,),
+            ).fetchall()
             vector_icon = build_agent_vector_icon(agent_name, agent_id)
 
             current_version = str(item.get("agents_version") or "").strip()
@@ -180,6 +191,27 @@ def sync_training_agent_registry(cfg: AppConfig) -> list[dict[str, Any]]:
             )
             parent_agent_id = str(existed["parent_agent_id"] or "").strip() if existed is not None else ""
             avatar_uri = str(existed["avatar_uri"] or "").strip() if existed is not None else ""
+            active_role_profile_release_id = (
+                str(existed["active_role_profile_release_id"] or "").strip() if existed is not None else ""
+            )
+            active_role_profile_ref = (
+                str(existed["active_role_profile_ref"] or "").strip() if existed is not None else ""
+            )
+
+            existing_release_meta: dict[tuple[str, str, str], dict[str, str]] = {}
+            existing_release_meta_loose: dict[tuple[str, str], dict[str, str]] = {}
+            for existing_row in existing_release_meta_rows:
+                version_key = str(existing_row["version_label"] or "").strip()
+                commit_key = str(existing_row["commit_ref"] or "").strip()
+                classification_key = str(existing_row["classification"] or "normal_commit").strip() or "normal_commit"
+                meta_payload = {
+                    "release_source_ref": str(existing_row["release_source_ref"] or "").strip(),
+                    "public_profile_ref": str(existing_row["public_profile_ref"] or "").strip(),
+                    "capability_snapshot_ref": str(existing_row["capability_snapshot_ref"] or "").strip(),
+                }
+                if version_key:
+                    existing_release_meta[(version_key, commit_key, classification_key)] = meta_payload
+                    existing_release_meta_loose[(version_key, classification_key)] = meta_payload
 
             if not git_available:
                 latest_release_version = existed_latest
@@ -242,8 +274,8 @@ def sync_training_agent_registry(cfg: AppConfig) -> list[dict[str, Any]]:
                     lifecycle_state,training_gate_state,parent_agent_id,
                     core_capabilities,capability_summary,knowledge_scope,skills_json,applicable_scenarios,version_notes,avatar_uri,
                     vector_icon,git_available,pre_release_state,pre_release_reason,pre_release_checked_at,pre_release_git_output,
-                    last_release_at,status_tags_json,updated_at
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    last_release_at,status_tags_json,active_role_profile_release_id,active_role_profile_ref,updated_at
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 ON CONFLICT(agent_id) DO UPDATE SET
                     agent_name=excluded.agent_name,
                     workspace_path=excluded.workspace_path,
@@ -268,6 +300,8 @@ def sync_training_agent_registry(cfg: AppConfig) -> list[dict[str, Any]]:
                     pre_release_git_output=excluded.pre_release_git_output,
                     last_release_at=excluded.last_release_at,
                     status_tags_json=excluded.status_tags_json,
+                    active_role_profile_release_id=excluded.active_role_profile_release_id,
+                    active_role_profile_ref=excluded.active_role_profile_ref,
                     updated_at=excluded.updated_at
                 """,
                 (
@@ -295,6 +329,8 @@ def sync_training_agent_registry(cfg: AppConfig) -> list[dict[str, Any]]:
                     pre_release_git_output,
                     last_release_at,
                     json.dumps(status_tags, ensure_ascii=False),
+                    active_role_profile_release_id,
+                    active_role_profile_ref,
                     now_text,
                 ),
             )
@@ -304,18 +340,23 @@ def sync_training_agent_registry(cfg: AppConfig) -> list[dict[str, Any]]:
             if release_rows:
                 for idx, rel in enumerate(release_rows, start=1):
                     digest = hashlib.sha1(
-                        f"{agent_id}|{rel.get('commit_ref','')}|{rel.get('version_label','')}|{rel.get('classification','')}|{idx}".encode(
+                        f"{agent_id}|{rel.get('commit_ref','')}|{rel.get('version_label','')}|{rel.get('classification','')}".encode(
                             "utf-8"
                         )
                     ).hexdigest()[:10]
                     release_id = f"rel-{agent_id}-{digest}"
+                    rel_version = str(rel.get("version_label") or "").strip()
+                    rel_commit = str(rel.get("commit_ref") or "").strip()
+                    rel_classification = str(rel.get("classification") or "normal_commit").strip() or "normal_commit"
+                    meta_payload = existing_release_meta.get((rel_version, rel_commit, rel_classification)) or existing_release_meta_loose.get((rel_version, rel_classification)) or {}
                     conn.execute(
                         """
                         INSERT INTO agent_release_history (
                             release_id,agent_id,version_label,released_at,change_summary,commit_ref,
                             capability_summary,knowledge_scope,skills_json,applicable_scenarios,version_notes,
-                            release_valid,invalid_reasons_json,classification,raw_notes,created_at
-                        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                            release_valid,invalid_reasons_json,classification,raw_notes,
+                            release_source_ref,public_profile_ref,capability_snapshot_ref,created_at
+                        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                         """,
                         (
                             release_id,
@@ -333,6 +374,9 @@ def sync_training_agent_registry(cfg: AppConfig) -> list[dict[str, Any]]:
                             str(rel.get("invalid_reasons_json") or "[]"),
                             str(rel.get("classification") or "normal_commit"),
                             str(rel.get("raw_notes") or ""),
+                            str(meta_payload.get("release_source_ref") or ""),
+                            str(meta_payload.get("public_profile_ref") or ""),
+                            str(meta_payload.get("capability_snapshot_ref") or ""),
                             now_text,
                         ),
                     )
@@ -381,7 +425,7 @@ def list_training_agents_overview(
                 lifecycle_state,training_gate_state,parent_agent_id,
                 core_capabilities,capability_summary,knowledge_scope,skills_json,applicable_scenarios,version_notes,avatar_uri,
                 vector_icon,git_available,pre_release_state,pre_release_reason,pre_release_checked_at,pre_release_git_output,
-                last_release_at,status_tags_json,updated_at
+                last_release_at,status_tags_json,active_role_profile_release_id,active_role_profile_ref,updated_at
             FROM agent_registry
             ORDER BY agent_name COLLATE NOCASE ASC
             """
@@ -433,6 +477,8 @@ def list_training_agents_overview(
             "pre_release_git_output": str(row["pre_release_git_output"] or ""),
             "last_release_at": str(row["last_release_at"] or ""),
             "status_tags": [str(tag).strip() for tag in tags if str(tag or "").strip()],
+            "active_role_profile_release_id": str(row["active_role_profile_release_id"] or ""),
+            "active_role_profile_ref": str(row["active_role_profile_ref"] or ""),
             "updated_at": str(row["updated_at"] or ""),
         }
         if not include_test_data and is_system_or_test_workspace(
@@ -480,7 +526,7 @@ def list_training_agent_releases(
                 lifecycle_state,training_gate_state,parent_agent_id,
                 core_capabilities,capability_summary,knowledge_scope,skills_json,applicable_scenarios,version_notes,avatar_uri,
                 vector_icon,git_available,pre_release_state,pre_release_reason,pre_release_checked_at,pre_release_git_output,
-                last_release_at,status_tags_json,updated_at
+                last_release_at,status_tags_json,active_role_profile_release_id,active_role_profile_ref,updated_at
             FROM agent_registry
             WHERE agent_id=?
             LIMIT 1
@@ -513,7 +559,8 @@ def list_training_agent_releases(
             SELECT
                 release_id,agent_id,version_label,released_at,change_summary,commit_ref,
                 capability_summary,knowledge_scope,skills_json,applicable_scenarios,version_notes,
-                release_valid,invalid_reasons_json,classification,raw_notes,created_at
+                release_valid,invalid_reasons_json,classification,raw_notes,
+                release_source_ref,public_profile_ref,capability_snapshot_ref,created_at
             FROM agent_release_history
             WHERE agent_id=?
               AND COALESCE(classification,'normal_commit')='release'
@@ -527,7 +574,8 @@ def list_training_agent_releases(
             SELECT
                 release_id,agent_id,version_label,released_at,change_summary,commit_ref,
                 capability_summary,knowledge_scope,skills_json,applicable_scenarios,version_notes,
-                release_valid,invalid_reasons_json,classification,raw_notes,created_at
+                release_valid,invalid_reasons_json,classification,raw_notes,
+                release_source_ref,public_profile_ref,capability_snapshot_ref,created_at
             FROM agent_release_history
             WHERE agent_id=?
               AND COALESCE(classification,'normal_commit')='normal_commit'
@@ -623,8 +671,177 @@ def list_training_agent_releases(
             "release_valid": bool(int(row["release_valid"] or 0)),
             "invalid_reasons": decode_json_list(row["invalid_reasons_json"]),
             "classification": str(row["classification"] or fallback_classification),
+            "release_source_ref": str(row["release_source_ref"] or ""),
+            "public_profile_ref": str(row["public_profile_ref"] or ""),
+            "capability_snapshot_ref": str(row["capability_snapshot_ref"] or ""),
             "created_at": str(row["created_at"] or ""),
         }
+
+    def profile_text_items(raw: Any, *, limit: int = 6, item_limit: int = 180) -> list[str]:
+        values = raw if isinstance(raw, list) else re.split(r"[\r\n]+|(?<=[。；;!?！？])", str(raw or "").strip())
+        out: list[str] = []
+        seen: set[str] = set()
+        for item in values:
+            text = _short_text(str(item or "").strip().strip("-•* \t"), item_limit)
+            if not text:
+                continue
+            key = re.sub(r"\s+", "", text).lower()
+            if not key or key in seen:
+                continue
+            seen.add(key)
+            out.append(text)
+            if len(out) >= max(1, int(limit or 1)):
+                break
+        return out
+
+    def ensure_first_person(text: Any, prefix: str, *, limit: int = 320) -> str:
+        value = _short_text(str(text or "").strip(), limit)
+        if not value:
+            return ""
+        if value.startswith(("我是", "我当前", "我能", "我已", "我会", "我建议", "本次发布", "当前工作区")):
+            return value
+        if value.startswith("你是"):
+            return "我" + value[1:]
+        if value.startswith("作为"):
+            return "我" + value
+        return prefix + value
+
+    def load_json_ref(ref: Any) -> dict[str, Any]:
+        ref_text = str(ref or "").strip()
+        if not ref_text:
+            return {}
+        base_root = root.resolve(strict=False)
+        try:
+            target = (base_root / ref_text).resolve(strict=False)
+        except Exception:
+            try:
+                target = Path(ref_text).resolve(strict=False)
+            except Exception:
+                return {}
+        if not path_in_scope(target, base_root):
+            return {}
+        if not target.exists() or not target.is_file():
+            return {}
+        try:
+            payload = json.loads(target.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+        return payload if isinstance(payload, dict) else {}
+
+    def fallback_role_profile(release_payload: dict[str, Any] | None, *, reason: str) -> dict[str, Any]:
+        current_release = release_payload if isinstance(release_payload, dict) else {}
+        summary_source = (
+            str(current_release.get("capability_summary") or "").strip()
+            or str(meta["capability_summary"] or "").strip()
+            or str(meta["core_capabilities"] or "").strip()
+        )
+        first_person_summary = ensure_first_person(summary_source, "我当前的核心能力是：", limit=320)
+        full_capability_inventory = profile_text_items(
+            str(current_release.get("capability_summary") or "").strip() or str(meta["core_capabilities"] or "").strip(),
+            limit=10,
+            item_limit=220,
+        )
+        if not full_capability_inventory and first_person_summary:
+            full_capability_inventory = [ensure_first_person(first_person_summary, "我当前可以：", limit=220)]
+        knowledge_scope = ensure_first_person(
+            str(current_release.get("knowledge_scope") or meta["knowledge_scope"] or "").strip(),
+            "我当前覆盖的知识范围是：",
+            limit=320,
+        )
+        scenario_items = profile_text_items(
+            current_release.get("applicable_scenarios") or meta["applicable_scenarios"] or "",
+            limit=6,
+            item_limit=140,
+        )
+        profile_skills = (
+            _skills_list(current_release.get("skills"))
+            or _skills_list(meta_skills)
+            or list(agent_skills)
+        )
+        what_i_can_do = [ensure_first_person(item, "我当前可以：", limit=180) for item in full_capability_inventory[:5]]
+        if not what_i_can_do and first_person_summary:
+            what_i_can_do = profile_text_items(first_person_summary, limit=5, item_limit=180)
+            what_i_can_do = [ensure_first_person(item, "我当前可以：", limit=180) for item in what_i_can_do]
+        return {
+            "profile_source": "structured_fields_fallback",
+            "fallback_reason": reason,
+            "source_release_id": str(current_release.get("release_id") or "").strip(),
+            "source_release_version": str(current_release.get("version_label") or meta["latest_release_version"] or "").strip(),
+            "source_ref": str(current_release.get("public_profile_ref") or current_release.get("capability_snapshot_ref") or meta["active_role_profile_ref"] or "").strip(),
+            "first_person_summary": first_person_summary or "我当前暂无可展示的正式发布角色介绍。",
+            "what_i_can_do": what_i_can_do,
+            "full_capability_inventory": [ensure_first_person(item, "我当前可以：", limit=220) for item in full_capability_inventory],
+            "knowledge_scope": knowledge_scope,
+            "agent_skills": profile_skills,
+            "applicable_scenarios": scenario_items,
+            "version_notes": str(current_release.get("version_notes") or current_release.get("change_summary") or meta["version_notes"] or "").strip(),
+            "public_profile_ref": str(current_release.get("public_profile_ref") or "").strip(),
+            "capability_snapshot_ref": str(current_release.get("capability_snapshot_ref") or "").strip(),
+        }
+
+    release_payloads = [build_release_payload(row, fallback_classification="release") for row in rows]
+    normal_commit_payloads = [build_release_payload(row, fallback_classification="normal_commit") for row in normal_rows]
+
+    active_profile_release_id = str(meta["active_role_profile_release_id"] or "").strip()
+    latest_release_version = str(meta["latest_release_version"] or "").strip()
+    active_release_payload = None
+    if active_profile_release_id:
+        active_release_payload = next(
+            (item for item in release_payloads if str(item.get("release_id") or "").strip() == active_profile_release_id),
+            None,
+        )
+    if active_release_payload is None and latest_release_version:
+        active_release_payload = next(
+            (item for item in release_payloads if str(item.get("version_label") or "").strip() == latest_release_version),
+            None,
+        )
+    if active_release_payload is None:
+        active_release_payload = release_payloads[0] if release_payloads else None
+
+    role_profile_payload: dict[str, Any]
+    snapshot_payload = load_json_ref(
+        (active_release_payload or {}).get("capability_snapshot_ref") or meta["active_role_profile_ref"]
+    )
+    if snapshot_payload and (
+        str(snapshot_payload.get("first_person_summary") or "").strip()
+        or isinstance(snapshot_payload.get("full_capability_inventory"), list)
+    ):
+        role_profile_payload = {
+            "profile_source": "latest_release_report",
+            "fallback_reason": "",
+            "source_release_id": str((active_release_payload or {}).get("release_id") or active_profile_release_id or "").strip(),
+            "source_release_version": str((active_release_payload or {}).get("version_label") or latest_release_version or "").strip(),
+            "source_ref": str(
+                (active_release_payload or {}).get("public_profile_ref")
+                or (active_release_payload or {}).get("capability_snapshot_ref")
+                or meta["active_role_profile_ref"]
+                or ""
+            ).strip(),
+            "first_person_summary": ensure_first_person(snapshot_payload.get("first_person_summary"), "我当前的核心能力是：", limit=320),
+            "what_i_can_do": [
+                ensure_first_person(item, "我当前可以：", limit=180)
+                for item in profile_text_items(snapshot_payload.get("what_i_can_do") or snapshot_payload.get("full_capability_inventory"), limit=5, item_limit=180)
+            ],
+            "full_capability_inventory": [
+                ensure_first_person(item, "我当前可以：", limit=220)
+                for item in profile_text_items(snapshot_payload.get("full_capability_inventory"), limit=12, item_limit=220)
+            ],
+            "knowledge_scope": ensure_first_person(snapshot_payload.get("knowledge_scope"), "我当前覆盖的知识范围是：", limit=320),
+            "agent_skills": _skills_list(snapshot_payload.get("agent_skills") or (active_release_payload or {}).get("skills") or meta_skills or agent_skills),
+            "applicable_scenarios": profile_text_items(snapshot_payload.get("applicable_scenarios"), limit=6, item_limit=140),
+            "version_notes": str(snapshot_payload.get("version_notes") or snapshot_payload.get("change_summary") or "").strip(),
+            "public_profile_ref": str((active_release_payload or {}).get("public_profile_ref") or "").strip(),
+            "capability_snapshot_ref": str((active_release_payload or {}).get("capability_snapshot_ref") or "").strip(),
+        }
+        if not role_profile_payload["what_i_can_do"] and role_profile_payload["full_capability_inventory"]:
+            role_profile_payload["what_i_can_do"] = role_profile_payload["full_capability_inventory"][:5]
+        if not role_profile_payload["applicable_scenarios"]:
+            role_profile_payload["applicable_scenarios"] = profile_text_items(meta["applicable_scenarios"], limit=6, item_limit=140)
+    else:
+        fallback_reason = "latest_release_report_missing" if active_release_payload else "no_released_profile"
+        if active_release_payload and str((active_release_payload or {}).get("capability_snapshot_ref") or "").strip():
+            fallback_reason = "latest_release_report_invalid"
+        role_profile_payload = fallback_role_profile(active_release_payload, reason=fallback_reason)
 
     return {
         "agent": {
@@ -652,10 +869,13 @@ def list_training_agent_releases(
             "pre_release_checked_at": str(meta["pre_release_checked_at"] or ""),
             "pre_release_git_output": str(meta["pre_release_git_output"] or ""),
             "last_release_at": str(meta["last_release_at"] or ""),
+            "active_role_profile_release_id": str(meta["active_role_profile_release_id"] or ""),
+            "active_role_profile_ref": str(meta["active_role_profile_ref"] or ""),
+            "role_profile": role_profile_payload,
             "updated_at": str(meta["updated_at"] or ""),
         },
-        "releases": [build_release_payload(row, fallback_classification="release") for row in rows],
-        "normal_commits": [build_release_payload(row, fallback_classification="normal_commit") for row in normal_rows],
+        "releases": release_payloads,
+        "normal_commits": normal_commit_payloads,
         "page": safe_page,
         "page_size": safe_size,
         "release_total": release_total,

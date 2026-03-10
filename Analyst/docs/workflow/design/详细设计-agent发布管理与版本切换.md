@@ -4,6 +4,7 @@
 1. 在训练中心内实现“全部 agent 统一发布管理 + 已发布版本切换”。
 2. 将“切换门禁、训练门禁、预发布治理、发布评审、人工审核、确认发布”串成可执行生命周期。
 3. 维持当前阶段“对应工作区 agent 生成发布报告 + 人工审核 + 人工确认发布”的门禁模式，并预留后续自动评估/自动发布扩展位。
+4. 让发布报告在正式发布成功后可直接作为角色详情页的最新正式发布介绍来源。
 
 ## 2. 设计范围与非范围
 1. 设计范围：
@@ -72,7 +73,9 @@
    8. `training_gate_state`（`trainable|frozen_switched`）
    9. `parent_agent_id`（克隆来源，可空）
    10. `release_review_state`（`idle|report_generating|report_ready|review_approved|review_rejected|publish_running|publish_failed|report_failed`）
-   11. `updated_at`
+   11. `active_role_profile_release_id`（当前角色详情绑定的正式发布版本，可空）
+   12. `active_role_profile_ref`（当前角色详情绑定的正式发布介绍快照路径，可空）
+   13. `updated_at`
 2. 扩展 `agent_release_history`（保持对外只读口径）：
    1. `release_id`（PK）
    2. `agent_id`
@@ -80,6 +83,8 @@
    4. `released_at`
    5. `change_summary`
    6. `release_source_ref`（内部追溯字段，不在视图展示）
+   7. `public_profile_ref`（角色详情展示用的公开发布报告快照）
+   8. `capability_snapshot_ref`（全量能力结构化快照）
 3. 新增 `agent_release_review`：
    1. `review_id`（PK）
    2. `agent_id`
@@ -90,16 +95,18 @@
    7. `report_prompt_version`
    8. `report_markdown_path`
    9. `report_json_path`
-   10. `analysis_chain_ref`
-   11. `review_decision`（`approve_publish|reject_continue_training|reject_discard_pre_release`）
-   12. `reviewer`
-   13. `review_comment`
-   14. `reviewed_at`
-   15. `publish_verification_status`（`pending|passed|failed`）
-   16. `publish_log_ref`
-   17. `fallback_task_id`
-   18. `fallback_status`（`idle|running|succeeded|failed`）
-   19. `created_at`
+   10. `public_profile_markdown_path`
+   11. `capability_snapshot_json_path`
+   12. `analysis_chain_ref`
+   13. `review_decision`（`approve_publish|reject_continue_training|reject_discard_pre_release`）
+   14. `reviewer`
+   15. `review_comment`
+   16. `reviewed_at`
+   17. `publish_verification_status`（`pending|passed|failed`）
+   18. `publish_log_ref`
+   19. `fallback_task_id`
+   20. `fallback_status`（`idle|running|succeeded|failed`）
+   21. `created_at`
 4. 新增 `agent_release_publish_log`：
    1. `log_id`（PK）
    2. `review_id`
@@ -135,13 +142,21 @@
    2. 执行方式固定复用“会话入口 agent 分析”链路：`codex exec` + 提示词版本 + 证据落盘 + 分析链路可见。
    3. 发布报告输出契约至少包含：
       1. `target_version/current_workspace_ref`
-      2. `change_summary`
-      3. `capability_delta`
-      4. `risk_list`
-      5. `validation_evidence`
-      6. `release_recommendation`
-      7. `next_action_suggestion`
-   4. 若 Codex 执行失败、超时或输出不符合契约，则设置 `release_review_state=report_failed`，并阻断确认发布。
+      2. `first_person_summary`
+      3. `full_capability_inventory`
+      4. `knowledge_scope`
+      5. `agent_skills`
+      6. `applicable_scenarios`
+      7. `change_summary`
+      8. `capability_delta`
+      9. `risk_list`
+      10. `validation_evidence`
+      11. `release_recommendation`
+      12. `next_action_suggestion`
+   4. `first_person_summary/change_summary/risk_list/validation_evidence/next_action_suggestion` 等自然语言字段统一使用第一人称视角。
+   5. 发布报告必须同时输出“全量能力清单快照”与“版本增量说明”；前者用于角色详情，后者用于评审判断。
+   6. 成功生成报告后，需落盘 `public_profile_markdown_path` 与 `capability_snapshot_json_path`，但在正式发布成功前不得激活到角色详情页。
+   7. 若 Codex 执行失败、超时或输出不符合契约，则设置 `release_review_state=report_failed`，并阻断确认发布。
 8. 人工审核：
    1. 仅当 `release_review_state=report_ready` 时允许提交审核结论。
    2. 审核通过后设置 `release_review_state=review_approved`。
@@ -159,7 +174,8 @@
       1. 新发布版本可被当前“已发布版本识别器”读到；
       2. 新版本已进入该 agent 的已发布版本时间线；
       3. `publish_verification_status=passed`；
-      4. 仅在满足上述条件后，才写入 `agent_release_history` 并将状态切回 `released + idle`。
+      4. 当前评审记录已落盘 `public_profile_markdown_path` 与 `capability_snapshot_json_path`；
+      5. 仅在满足上述条件后，才写入 `agent_release_history`、更新 `agent_registry.active_role_profile_release_id/active_role_profile_ref`，并将状态切回 `released + idle`。
    6. 全过程必须写入 `agent_release_publish_log`。
    7. 任一阶段失败时，设置 `release_review_state=publish_failed`、`publish_verification_status=failed`。
    8. 失败后必须自动启动 `../workflow` 工作区 agent 进行兜底。
@@ -213,7 +229,8 @@
    2. 点击后页面进入四步状态条：`进入发布评审 -> 生成发布报告 -> 人工审核 -> 确认发布`。
 6. 发布报告展示：
    1. 报告生成阶段必须展示排队中/执行中/已完成/失败状态。
-   2. 报告正文、提示词、Codex 执行摘要、stdout/stderr、结构化结果默认折叠展示，但必须支持完整下钻。
+   2. 报告顶部优先展示“第一人称述职摘要 + 全量能力清单”，再展示版本增量、风险与证据。
+   3. 报告正文、提示词、Codex 执行摘要、stdout/stderr、结构化结果默认折叠展示，但必须支持完整下钻。
 7. 人工审核入口：
    1. 仅在 `release_review_state=report_ready` 时可提交。
 8. 确认发布按钮：
@@ -224,6 +241,9 @@
 9. 发布执行日志展示：
    1. 发布评审详情需提供“发布执行日志”区块，默认折叠。
    2. 展开后至少可查看 Git 命令摘要、release note 引用、成功校验结果、兜底任务引用与结果摘要。
+10. 角色详情联动：
+   1. 正式发布成功后，角色详情页优先读取 `agent_registry.active_role_profile_ref`。
+   2. 预发布报告在正式发布成功前仅显示于发布评审页，不得覆盖当前正式发布角色详情。
 
 ## 9. 异常处理
 1. 切换目标版本不存在：
@@ -267,11 +287,14 @@
    1. 发布报告生成直接复用其 `Codex` 执行链路、提示词版本化、证据落盘与默认折叠下钻展示模式，避免另起一套分析框架。
 4. 与 `../workflow` 工作区 agent 关系：
    1. 当确认发布失败时，直接复用该工作区 agent 作为兜底执行器，承担失败诊断、自动重试一次发布与结果回传。
+5. 与“角色画像发布格式与预发布判定”关系：
+   1. 正式发布成功后，本设计产出的 `active_role_profile_ref` 将成为角色详情页优先展示的数据源。
 
 ## 12. 推断/假设与确认项
 1. 推断/假设（置信度: 中）：
    1. “真实使用记录”短期可用会话数量/时长做最小代理指标，正式指标后续再定。
    2. “对应工作区 agent” 默认按 `agent_id -> workspace_path -> AGENTS.md` 映射确定。
+   3. 历史正式发布版本若无公开发布报告，可先回退到结构化字段渲染角色详情。
 2. 已确认：
    1. 当前正式发布前必须先进入发布评审。
    2. 发布报告由对应工作区 agent 通过 `Codex` 生成。

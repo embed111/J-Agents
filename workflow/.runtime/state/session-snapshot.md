@@ -1,6 +1,6 @@
 # Session Snapshot
 
-- last_update: 2026-03-09 22:38:50+0800
+- last_update: 2026-03-09 23:10:07+0800
 - current_track: runtime-baseline
 - current_focus: Workflow baseline: minimal web chat page + closed loop ops
 
@@ -10,7 +10,7 @@
 3. Largest blocker: none
 
 ## Key Metrics
-1. new_sessions: 1
+1. new_sessions: 2
 2. pending_analysis: 3
 3. pending_training: 0
 4. ab_switch_count: 0
