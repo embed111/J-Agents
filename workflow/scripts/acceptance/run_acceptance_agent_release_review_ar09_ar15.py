@@ -9,6 +9,7 @@ import shutil
 import sqlite3
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from datetime import datetime
@@ -65,6 +66,109 @@ def dump_sql(db_path: Path, sql: str, params: tuple[Any, ...], out_path: Path) -
     finally:
         conn.close()
     write_json(out_path, [{"_row_index": i + 1, **{k: row[k] for k in row.keys()}} for i, row in enumerate(rows)])
+
+
+def ui_rel(root: Path, path: Path) -> str:
+    try:
+        return path.resolve(strict=False).relative_to(root.resolve(strict=False)).as_posix()
+    except Exception:
+        return path.resolve(strict=False).as_posix()
+
+
+def seed_release_report_assets(root: Path, agent_name: str, version_label: str) -> dict[str, str]:
+    seed_dir = root / "logs" / "release-review" / "seeded-history" / agent_name / version_label
+    report_path = seed_dir / "parsed-result.json"
+    capability_snapshot_path = seed_dir / "capability-snapshot.json"
+    public_profile_path = seed_dir / "public-profile.md"
+    report_payload = {
+        "target_version": version_label,
+        "current_workspace_ref": f"{agent_name}-{version_label}-baseline",
+        "previous_release_version": "",
+        "first_person_summary": f"我是 {agent_name} {version_label}，我当前负责该正式版本的发布治理基线与能力说明。",
+        "full_capability_inventory": [
+            f"我当前可以围绕 {version_label} 输出完整的第一人称角色能力介绍。",
+            "我当前可以对外说明本版本的发布治理职责、风险边界与验证依据。",
+            "我当前可以为历史正式版本提供可追溯的发布报告展示来源。",
+        ],
+        "knowledge_scope": "我当前覆盖发布治理基线、角色画像整理、验证证据归档与正式版本说明。",
+        "agent_skills": ["release-governance", "historical-report-binding"],
+        "applicable_scenarios": ["历史发布报告查看", "角色详情回溯", "正式版本差异说明"],
+        "change_summary": f"我在 {version_label} 中沉淀了历史正式版本可读的发布报告与角色能力说明。",
+        "capability_delta": [
+            f"我在 {version_label} 中补齐了历史发布报告的第一人称全量能力描述。",
+            "我补充了历史版本可回溯的风险与验证证据说明。",
+        ],
+        "risk_list": ["我当前识别到的风险是：若历史报告文件缺失，将无法按版本查看历史评审内容。"],
+        "validation_evidence": [
+            f"我当前已确认的验证证据是：{version_label} 的结构化发布报告、能力快照与公开介绍文件均已落盘。"
+        ],
+        "release_recommendation": "approve",
+        "next_action_suggestion": f"我建议在查看 {version_label} 历史版本时直接复用这份发布报告。",
+        "warnings": [],
+    }
+    capability_snapshot_payload = {
+        "target_version": version_label,
+        "first_person_summary": report_payload["first_person_summary"],
+        "full_capability_inventory": report_payload["full_capability_inventory"],
+        "knowledge_scope": report_payload["knowledge_scope"],
+        "agent_skills": report_payload["agent_skills"],
+        "applicable_scenarios": report_payload["applicable_scenarios"],
+    }
+    write_json(report_path, report_payload)
+    write_json(capability_snapshot_path, capability_snapshot_payload)
+    public_profile_path.parent.mkdir(parents=True, exist_ok=True)
+    public_profile_path.write_text(
+        "\n".join(
+            [
+                f"# {agent_name} {version_label}",
+                "",
+                report_payload["first_person_summary"],
+                "",
+                "## 我能做什么",
+                *[f"- {item}" for item in report_payload["full_capability_inventory"]],
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return {
+        "release_source_ref": ui_rel(root, report_path),
+        "public_profile_ref": ui_rel(root, public_profile_path),
+        "capability_snapshot_ref": ui_rel(root, capability_snapshot_path),
+    }
+
+
+def seed_release_history_refs(
+    db_path: Path,
+    agent_id: str,
+    version_label: str,
+    refs: dict[str, str],
+) -> None:
+    conn = sqlite3.connect(db_path.as_posix())
+    try:
+        cur = conn.execute(
+            """
+            UPDATE agent_release_history
+            SET release_source_ref=?,
+                public_profile_ref=?,
+                capability_snapshot_ref=?
+            WHERE agent_id=?
+              AND version_label=?
+              AND COALESCE(classification,'normal_commit')='release'
+            """,
+            (
+                str(refs.get("release_source_ref") or ""),
+                str(refs.get("public_profile_ref") or ""),
+                str(refs.get("capability_snapshot_ref") or ""),
+                str(agent_id or ""),
+                str(version_label or ""),
+            ),
+        )
+        if int(cur.rowcount or 0) < 1:
+            raise RuntimeError(f"seed release refs failed: {agent_id} {version_label}")
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def run_cmd(args: list[str], cwd: Path, env: dict[str, str] | None = None) -> None:
@@ -231,35 +335,43 @@ def find_browser() -> Path:
 
 def edge_shot(browser_path: Path, url: str, shot_path: Path, width: int = 1440, height: int = 1500, budget_ms: int = 15000) -> None:
     shot_path.parent.mkdir(parents=True, exist_ok=True)
-    cmd = [
-        str(browser_path),
-        "--headless=new",
-        "--disable-gpu",
-        "--no-first-run",
-        "--no-default-browser-check",
-        f"--window-size={width},{height}",
-        f"--virtual-time-budget={max(1000, int(budget_ms))}",
-        f"--screenshot={shot_path.as_posix()}",
-        url,
-    ]
-    proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", timeout=180)
+    with tempfile.TemporaryDirectory(prefix="workflow-edge-shot-") as user_data_dir:
+        cmd = [
+            str(browser_path),
+            "--headless=new",
+            "--disable-gpu",
+            "--disable-background-networking",
+            "--disable-extensions",
+            "--no-first-run",
+            "--no-default-browser-check",
+            f"--user-data-dir={Path(user_data_dir).as_posix()}",
+            f"--window-size={width},{height}",
+            f"--virtual-time-budget={max(1000, int(budget_ms))}",
+            f"--screenshot={shot_path.as_posix()}",
+            url,
+        ]
+        proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", timeout=180)
     if proc.returncode != 0:
         raise RuntimeError(f"browser screenshot failed: {proc.stderr}")
 
 
 def edge_dom(browser_path: Path, url: str, width: int = 1440, height: int = 1500, budget_ms: int = 15000) -> str:
-    cmd = [
-        str(browser_path),
-        "--headless=new",
-        "--disable-gpu",
-        "--no-first-run",
-        "--no-default-browser-check",
-        f"--window-size={width},{height}",
-        f"--virtual-time-budget={max(1000, int(budget_ms))}",
-        "--dump-dom",
-        url,
-    ]
-    proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", timeout=180)
+    with tempfile.TemporaryDirectory(prefix="workflow-edge-dom-") as user_data_dir:
+        cmd = [
+            str(browser_path),
+            "--headless=new",
+            "--disable-gpu",
+            "--disable-background-networking",
+            "--disable-extensions",
+            "--no-first-run",
+            "--no-default-browser-check",
+            f"--user-data-dir={Path(user_data_dir).as_posix()}",
+            f"--window-size={width},{height}",
+            f"--virtual-time-budget={max(1000, int(budget_ms))}",
+            "--dump-dom",
+            url,
+        ]
+        proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", timeout=180)
     if proc.returncode != 0:
         raise RuntimeError(f"browser dump-dom failed: {proc.stderr}")
     return proc.stdout
@@ -494,6 +606,12 @@ def main() -> int:
         report_fail_id = str(find_agent(items, "report-fail-agent").get("agent_id") or "")
         no_git_id = str(find_agent(items, "no-git-agent").get("agent_id") or "")
         legacy_analyst2_id = str(find_agent(items, "legacy-analyst2-agent").get("agent_id") or "")
+        seed_release_history_refs(
+            db_path,
+            success_id,
+            "v1.0.0",
+            seed_release_report_assets(runtime_root, "success-agent", "v1.0.0"),
+        )
 
         enter_results: dict[str, tuple[int, dict[str, Any]]] = {}
 
@@ -660,6 +778,105 @@ def main() -> int:
         }
         ac_ev["AC-AR-12"] = {"screenshots": [shot12], "recordings": [], "api": [api12c, api12a, api12r], "db_or_logs": [probe12, (db_dir / "ac_ar_12_agent_registry.db.json").as_posix(), (db_dir / "ac_ar_12_release_history.db.json").as_posix()], "code": code_refs_common}
 
+        report_bound_versions12 = [
+            str(row.get("version_label") or "").strip()
+            for row in releases12
+            if str((row.get("release_source_ref") or row.get("capability_snapshot_ref") or "")).strip()
+        ]
+        latest_report_version12 = report_bound_versions12[0] if len(report_bound_versions12) >= 1 else ""
+        previous_report_version12 = report_bound_versions12[1] if len(report_bound_versions12) >= 2 else ""
+        shot19_latest = ""
+        probe19_latest = ""
+        probe19_latest_payload: dict[str, Any] = {}
+        shot19_previous = ""
+        probe19_previous = ""
+        probe19_previous_payload: dict[str, Any] = {}
+        if latest_report_version12:
+            shot19_latest, probe19_latest, probe19_latest_payload = capture_probe(
+                browser,
+                base_url,
+                evidence_root,
+                "ac_ar_19_latest_release_report_dialog",
+                "ac_ar_rr_19",
+                {"tc_probe_agent": "success-agent", "tc_probe_release_version": latest_report_version12},
+            )
+        if previous_report_version12:
+            shot19_previous, probe19_previous, probe19_previous_payload = capture_probe(
+                browser,
+                base_url,
+                evidence_root,
+                "ac_ar_19_previous_release_report_dialog",
+                "ac_ar_rr_19",
+                {"tc_probe_agent": "success-agent", "tc_probe_release_version": previous_report_version12},
+            )
+        ac["AC-AR-19"] = {
+            "pass": bool(
+                st12r == 200
+                and len(report_bound_versions12) >= 2
+                and probe19_latest_payload.get("pass")
+                and probe19_previous_payload.get("pass")
+                and latest_report_version12 != previous_report_version12
+                and str(probe19_latest_payload.get("release_report_dialog_version") or "").strip() == latest_report_version12
+                and str(probe19_previous_payload.get("release_report_dialog_version") or "").strip() == previous_report_version12
+                and str(probe19_latest_payload.get("release_report_dialog_text") or "").strip()
+                != str(probe19_previous_payload.get("release_report_dialog_text") or "").strip()
+            ),
+            "api": [api12r],
+        }
+        ac_ev["AC-AR-19"] = {
+            "screenshots": [item for item in (shot19_latest, shot19_previous) if item],
+            "recordings": [],
+            "api": [api12r],
+            "db_or_logs": [item for item in (probe19_latest, probe19_previous, (db_dir / "ac_ar_12_release_history.db.json").as_posix()) if item],
+            "code": code_refs_common,
+        }
+
+        st20r, body20r = call(base_url, "GET", f"/api/training/agents/{reject_id}/releases?page=1&page_size=20")
+        api20r = api_file(api_dir, "ac_ar_20_reject_releases_without_report", "GET", f"/api/training/agents/{reject_id}/releases?page=1&page_size=20", None, st20r, body20r)
+        reject_releases20 = list(body20r.get("releases") or []) if isinstance(body20r, dict) else []
+        unavailable_release20 = next(
+            (
+                str(row.get("version_label") or "").strip()
+                for row in reject_releases20
+                if not str((row.get("release_source_ref") or row.get("capability_snapshot_ref") or "")).strip()
+            ),
+            "",
+        )
+        shot20 = ""
+        probe20 = ""
+        probe20_payload: dict[str, Any] = {}
+        if unavailable_release20:
+            shot20, probe20, probe20_payload = capture_probe(
+                browser,
+                base_url,
+                evidence_root,
+                "ac_ar_20_release_without_report_hint",
+                "ac_ar_rr_20",
+                {"tc_probe_agent": "reject-agent", "tc_probe_release_version": unavailable_release20},
+            )
+        dump_sql(
+            db_path,
+            "SELECT release_id,agent_id,version_label,classification,release_source_ref,public_profile_ref,capability_snapshot_ref FROM agent_release_history WHERE agent_id=? ORDER BY created_at DESC",
+            (reject_id,),
+            db_dir / "ac_ar_20_reject_release_history.db.json",
+        )
+        ac["AC-AR-20"] = {
+            "pass": bool(
+                st20r == 200
+                and bool(unavailable_release20)
+                and probe20_payload.get("pass")
+                and int(probe20_payload.get("release_report_button_count") or 0) == 0
+            ),
+            "api": [api20r],
+        }
+        ac_ev["AC-AR-20"] = {
+            "screenshots": [item for item in (shot20,) if item],
+            "recordings": [],
+            "api": [api20r],
+            "db_or_logs": [item for item in (probe20, (db_dir / "ac_ar_20_reject_release_history.db.json").as_posix()) if item],
+            "code": code_refs_common,
+        }
+
         st12g_e, body12g_e = call(base_url, "POST", f"/api/training/agents/{no_git_id}/release-review/enter", {"operator": "ar-reviewer"})
         api12g_e = api_file(api_dir, "reg_git_01_enter_no_git_agent", "POST", f"/api/training/agents/{no_git_id}/release-review/enter", {"operator": "ar-reviewer"}, st12g_e, body12g_e)
         st12g_m, body12g_m = call(base_url, "POST", f"/api/training/agents/{no_git_id}/release-review/manual", approve_payload)
@@ -806,7 +1023,7 @@ def main() -> int:
         write_json(manifest, ac_ev)
         summary_md = evidence_root / "ac_ar_09_15_summary.md"
         summary_lines = [
-            f"# AC-AR-09~15 + AC-AR-17 + REG-A2-01 Acceptance Summary ({ts})",
+            f"# AC-AR-09~15 + AC-AR-17 + AC-AR-19/20 + REG-A2-01 Acceptance Summary ({ts})",
             "",
             f"- runtime_root: {runtime_root.as_posix()}",
             f"- workspace_root: {workspace_root.as_posix()}",
@@ -822,7 +1039,7 @@ def main() -> int:
             "| AC | pass | evidence |",
             "|---|---|---|",
         ]
-        for ac_id in [*(f"AC-AR-{i:02d}" for i in range(9, 16)), "AC-AR-17", "REG-A2-01", "REG-GIT-01", "REG-RETRY-01"]:
+        for ac_id in [*(f"AC-AR-{i:02d}" for i in range(9, 16)), "AC-AR-17", "AC-AR-19", "AC-AR-20", "REG-A2-01", "REG-GIT-01", "REG-RETRY-01"]:
             row = ac.get(ac_id, {"pass": False})
             evidence = ac_ev.get(ac_id, {})
             refs: list[str] = []
@@ -840,7 +1057,7 @@ def main() -> int:
         summary_md.write_text("\n".join(summary_lines) + "\n", encoding="utf-8")
         write_json(evidence_root / "ac_ar_09_15_summary.json", ac)
         print(summary_md.as_posix())
-        required_ids = [*(f"AC-AR-{i:02d}" for i in range(9, 16)), "AC-AR-17", "REG-A2-01", "REG-GIT-01", "REG-RETRY-01"]
+        required_ids = [*(f"AC-AR-{i:02d}" for i in range(9, 16)), "AC-AR-17", "AC-AR-19", "AC-AR-20", "REG-A2-01", "REG-GIT-01", "REG-RETRY-01"]
         return 0 if all(bool(ac.get(ac_id, {}).get("pass")) for ac_id in required_ids) else 1
     finally:
         if proc.poll() is None:

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Windows Desktop Control Gate"
+  short_description: "为本地仓库补齐桌面控制审批、提示条、抢前台与留痕能力"
+  default_prompt: "Use $windows-desktop-control-gate to install a repository-local Windows desktop control gate with approval UI, operation banner, foreground activation, and audit logs. Keep everything scoped to the target workspace."

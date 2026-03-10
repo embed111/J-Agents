@@ -1,0 +1,1118 @@
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 60087)
+Traceback (most recent call last):
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 496, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 484, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 1087, in do_GET
+    dispatch_get(self, cfg, state)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\router.py", line 33, in dispatch_get
+    legacy.handle_get_legacy(handler, cfg, state)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\legacy_route_handlers.py", line 10, in handle_get_legacy
+    _handle_get_legacy(self, cfg, state)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\legacy_chat_handlers.py", line 347, in handle_get_legacy
+            },
+            ^^
+    ...<2 lines>...
+    include_removed = parse_query_bool(query, "include_removed", default=True)
+    ^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_workflow.py", line 71, in list_training_workflows
+    sync_training_workflows(root)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_workflow.py", line 41, in sync_training_workflows
+    ret = conn.execute(
+        """
+    ...<4 lines>...
+        (workflow_id, analysis_id, session_id, "queued", created_at, updated_at),
+    )
+sqlite3.OperationalError: database is locked
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 63150)
+Traceback (most recent call last):
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 496, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 484, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 1087, in do_GET
+    dispatch_get(self, cfg, state)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\router.py", line 33, in dispatch_get
+    legacy.handle_get_legacy(handler, cfg, state)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\legacy_route_handlers.py", line 10, in handle_get_legacy
+    _handle_get_legacy(self, cfg, state)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\legacy_chat_handlers.py", line 347, in handle_get_legacy
+            },
+            ^^
+    ...<2 lines>...
+    include_removed = parse_query_bool(query, "include_removed", default=True)
+    ^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_workflow.py", line 71, in list_training_workflows
+    sync_training_workflows(root)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_workflow.py", line 41, in sync_training_workflows
+    ret = conn.execute(
+        """
+    ...<4 lines>...
+        (workflow_id, analysis_id, session_id, "queued", created_at, updated_at),
+    )
+sqlite3.OperationalError: database is locked
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 59315)
+Traceback (most recent call last):
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 496, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 484, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 1087, in do_GET
+    dispatch_get(self, cfg, state)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\router.py", line 28, in dispatch_get
+    if training.try_handle_get(handler, cfg, state, ctx):
+       ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\training.py", line 36, in try_handle_get
+    data = ws.list_training_agents_overview(cfg, include_test_data=include_test_data)
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 401, in list_training_agents_overview
+    sync_training_agent_registry(cfg)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 270, in sync_training_agent_registry
+    conn.execute(
+    ~~~~~~~~~~~~^
+        """
+        ^^^
+    ...<63 lines>...
+        ),
+        ^^
+    )
+    ^
+sqlite3.OperationalError: database is locked
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 62809)
+Traceback (most recent call last):
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 496, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 484, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 1087, in do_GET
+    dispatch_get(self, cfg, state)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\router.py", line 28, in dispatch_get
+    if training.try_handle_get(handler, cfg, state, ctx):
+       ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\training.py", line 36, in try_handle_get
+    data = ws.list_training_agents_overview(cfg, include_test_data=include_test_data)
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 401, in list_training_agents_overview
+    sync_training_agent_registry(cfg)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 270, in sync_training_agent_registry
+    conn.execute(
+    ~~~~~~~~~~~~^
+        """
+        ^^^
+    ...<63 lines>...
+        ),
+        ^^
+    )
+    ^
+sqlite3.OperationalError: database is locked
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 60454)
+Traceback (most recent call last):
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 496, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 484, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 1087, in do_GET
+    dispatch_get(self, cfg, state)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\router.py", line 28, in dispatch_get
+    if training.try_handle_get(handler, cfg, state, ctx):
+       ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\training.py", line 36, in try_handle_get
+    data = ws.list_training_agents_overview(cfg, include_test_data=include_test_data)
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 401, in list_training_agents_overview
+    sync_training_agent_registry(cfg)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 270, in sync_training_agent_registry
+    conn.execute(
+    ~~~~~~~~~~~~^
+        """
+        ^^^
+    ...<63 lines>...
+        ),
+        ^^
+    )
+    ^
+sqlite3.OperationalError: database is locked
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 59692)
+Traceback (most recent call last):
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 496, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 484, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 1087, in do_GET
+    dispatch_get(self, cfg, state)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\router.py", line 28, in dispatch_get
+    if training.try_handle_get(handler, cfg, state, ctx):
+       ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\training.py", line 36, in try_handle_get
+    data = ws.list_training_agents_overview(cfg, include_test_data=include_test_data)
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 401, in list_training_agents_overview
+    sync_training_agent_registry(cfg)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 270, in sync_training_agent_registry
+    conn.execute(
+    ~~~~~~~~~~~~^
+        """
+        ^^^
+    ...<63 lines>...
+        ),
+        ^^
+    )
+    ^
+sqlite3.OperationalError: database is locked
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 52579)
+Traceback (most recent call last):
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 496, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 484, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 1087, in do_GET
+    dispatch_get(self, cfg, state)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\router.py", line 28, in dispatch_get
+    if training.try_handle_get(handler, cfg, state, ctx):
+       ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\training.py", line 36, in try_handle_get
+    data = ws.list_training_agents_overview(cfg, include_test_data=include_test_data)
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 401, in list_training_agents_overview
+    sync_training_agent_registry(cfg)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 270, in sync_training_agent_registry
+    conn.execute(
+    ~~~~~~~~~~~~^
+        """
+        ^^^
+    ...<63 lines>...
+        ),
+        ^^
+    )
+    ^
+sqlite3.OperationalError: database is locked
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 59084)
+Traceback (most recent call last):
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 496, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 484, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 1087, in do_GET
+    dispatch_get(self, cfg, state)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\router.py", line 28, in dispatch_get
+    if training.try_handle_get(handler, cfg, state, ctx):
+       ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\training.py", line 36, in try_handle_get
+    data = ws.list_training_agents_overview(cfg, include_test_data=include_test_data)
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 401, in list_training_agents_overview
+    sync_training_agent_registry(cfg)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 270, in sync_training_agent_registry
+    conn.execute(
+    ~~~~~~~~~~~~^
+        """
+        ^^^
+    ...<63 lines>...
+        ),
+        ^^
+    )
+    ^
+sqlite3.OperationalError: database is locked
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 53102)
+Traceback (most recent call last):
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 496, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 484, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 1087, in do_GET
+    dispatch_get(self, cfg, state)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\router.py", line 28, in dispatch_get
+    if training.try_handle_get(handler, cfg, state, ctx):
+       ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\training.py", line 36, in try_handle_get
+    data = ws.list_training_agents_overview(cfg, include_test_data=include_test_data)
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 401, in list_training_agents_overview
+    sync_training_agent_registry(cfg)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 270, in sync_training_agent_registry
+    conn.execute(
+    ~~~~~~~~~~~~^
+        """
+        ^^^
+    ...<63 lines>...
+        ),
+        ^^
+    )
+    ^
+sqlite3.OperationalError: database is locked
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 61736)
+Traceback (most recent call last):
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 496, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 484, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 1087, in do_GET
+    dispatch_get(self, cfg, state)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\router.py", line 28, in dispatch_get
+    if training.try_handle_get(handler, cfg, state, ctx):
+       ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\training.py", line 36, in try_handle_get
+    data = ws.list_training_agents_overview(cfg, include_test_data=include_test_data)
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 401, in list_training_agents_overview
+    sync_training_agent_registry(cfg)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 270, in sync_training_agent_registry
+    conn.execute(
+    ~~~~~~~~~~~~^
+        """
+        ^^^
+    ...<63 lines>...
+        ),
+        ^^
+    )
+    ^
+sqlite3.OperationalError: database is locked
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 59638)
+Traceback (most recent call last):
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 496, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 484, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 1087, in do_GET
+    dispatch_get(self, cfg, state)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\router.py", line 28, in dispatch_get
+    if training.try_handle_get(handler, cfg, state, ctx):
+       ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\training.py", line 36, in try_handle_get
+    data = ws.list_training_agents_overview(cfg, include_test_data=include_test_data)
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 401, in list_training_agents_overview
+    sync_training_agent_registry(cfg)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 270, in sync_training_agent_registry
+    conn.execute(
+    ~~~~~~~~~~~~^
+        """
+        ^^^
+    ...<63 lines>...
+        ),
+        ^^
+    )
+    ^
+sqlite3.OperationalError: database is locked
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 49672)
+Traceback (most recent call last):
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 496, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 484, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 1087, in do_GET
+    dispatch_get(self, cfg, state)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\router.py", line 28, in dispatch_get
+    if training.try_handle_get(handler, cfg, state, ctx):
+       ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\training.py", line 36, in try_handle_get
+    data = ws.list_training_agents_overview(cfg, include_test_data=include_test_data)
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 401, in list_training_agents_overview
+    sync_training_agent_registry(cfg)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 270, in sync_training_agent_registry
+    conn.execute(
+    ~~~~~~~~~~~~^
+        """
+        ^^^
+    ...<63 lines>...
+        ),
+        ^^
+    )
+    ^
+sqlite3.OperationalError: database is locked
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 57249)
+Traceback (most recent call last):
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 496, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 484, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 1087, in do_GET
+    dispatch_get(self, cfg, state)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\router.py", line 28, in dispatch_get
+    if training.try_handle_get(handler, cfg, state, ctx):
+       ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\training.py", line 36, in try_handle_get
+    data = ws.list_training_agents_overview(cfg, include_test_data=include_test_data)
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 401, in list_training_agents_overview
+    sync_training_agent_registry(cfg)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 270, in sync_training_agent_registry
+    conn.execute(
+    ~~~~~~~~~~~~^
+        """
+        ^^^
+    ...<63 lines>...
+        ),
+        ^^
+    )
+    ^
+sqlite3.OperationalError: database is locked
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 62704)
+Traceback (most recent call last):
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 496, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 484, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 1087, in do_GET
+    dispatch_get(self, cfg, state)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\router.py", line 28, in dispatch_get
+    if training.try_handle_get(handler, cfg, state, ctx):
+       ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\training.py", line 36, in try_handle_get
+    data = ws.list_training_agents_overview(cfg, include_test_data=include_test_data)
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 401, in list_training_agents_overview
+    sync_training_agent_registry(cfg)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 270, in sync_training_agent_registry
+    conn.execute(
+    ~~~~~~~~~~~~^
+        """
+        ^^^
+    ...<63 lines>...
+        ),
+        ^^
+    )
+    ^
+sqlite3.OperationalError: database is locked
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 50596)
+Traceback (most recent call last):
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 496, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 484, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 1087, in do_GET
+    dispatch_get(self, cfg, state)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\router.py", line 28, in dispatch_get
+    if training.try_handle_get(handler, cfg, state, ctx):
+       ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\training.py", line 36, in try_handle_get
+    data = ws.list_training_agents_overview(cfg, include_test_data=include_test_data)
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 401, in list_training_agents_overview
+    sync_training_agent_registry(cfg)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 270, in sync_training_agent_registry
+    conn.execute(
+    ~~~~~~~~~~~~^
+        """
+        ^^^
+    ...<63 lines>...
+        ),
+        ^^
+    )
+    ^
+sqlite3.OperationalError: database is locked
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 53327)
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 56980)
+Traceback (most recent call last):
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 496, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 484, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 1087, in do_GET
+    dispatch_get(self, cfg, state)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\router.py", line 28, in dispatch_get
+    if training.try_handle_get(handler, cfg, state, ctx):
+       ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\training.py", line 36, in try_handle_get
+    data = ws.list_training_agents_overview(cfg, include_test_data=include_test_data)
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 401, in list_training_agents_overview
+    sync_training_agent_registry(cfg)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 270, in sync_training_agent_registry
+    conn.execute(
+    ~~~~~~~~~~~~^
+        """
+        ^^^
+    ...<63 lines>...
+        ),
+        ^^
+    )
+    ^
+sqlite3.OperationalError: database is locked
+----------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 496, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 484, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 1087, in do_GET
+    dispatch_get(self, cfg, state)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\router.py", line 28, in dispatch_get
+    if training.try_handle_get(handler, cfg, state, ctx):
+       ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\training.py", line 36, in try_handle_get
+    data = ws.list_training_agents_overview(cfg, include_test_data=include_test_data)
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 401, in list_training_agents_overview
+    sync_training_agent_registry(cfg)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 270, in sync_training_agent_registry
+    conn.execute(
+    ~~~~~~~~~~~~^
+        """
+        ^^^
+    ...<63 lines>...
+        ),
+        ^^
+    )
+    ^
+sqlite3.OperationalError: database is locked
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 62105)
+Traceback (most recent call last):
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 496, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 484, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 1087, in do_GET
+    dispatch_get(self, cfg, state)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\router.py", line 28, in dispatch_get
+    if training.try_handle_get(handler, cfg, state, ctx):
+       ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\training.py", line 37, in try_handle_get
+    handler.send_json(
+    ~~~~~~~~~~~~~~~~~^
+        200,
+        ^^^^
+    ...<8 lines>...
+        },
+        ^^
+    )
+    ^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 899, in send_json
+    self.end_headers()
+    ~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 598, in end_headers
+    self.flush_headers()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 602, in flush_headers
+    self.wfile.write(b"".join(self._headers_buffer))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 845, in write
+    self._sock.sendall(b)
+    ~~~~~~~~~~~~~~~~~~^^^
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 56687)
+Traceback (most recent call last):
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 496, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 484, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 1087, in do_GET
+    dispatch_get(self, cfg, state)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\router.py", line 28, in dispatch_get
+    if training.try_handle_get(handler, cfg, state, ctx):
+       ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\training.py", line 37, in try_handle_get
+    handler.send_json(
+    ~~~~~~~~~~~~~~~~~^
+        200,
+        ^^^^
+    ...<8 lines>...
+        },
+        ^^
+    )
+    ^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 899, in send_json
+    self.end_headers()
+    ~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 598, in end_headers
+    self.flush_headers()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 602, in flush_headers
+    self.wfile.write(b"".join(self._headers_buffer))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 845, in write
+    self._sock.sendall(b)
+    ~~~~~~~~~~~~~~~~~~^^^
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 49707)
+Traceback (most recent call last):
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 496, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 484, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 1087, in do_GET
+    dispatch_get(self, cfg, state)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\router.py", line 28, in dispatch_get
+    if training.try_handle_get(handler, cfg, state, ctx):
+       ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\training.py", line 37, in try_handle_get
+    handler.send_json(
+    ~~~~~~~~~~~~~~~~~^
+        200,
+        ^^^^
+    ...<8 lines>...
+        },
+        ^^
+    )
+    ^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 899, in send_json
+    self.end_headers()
+    ~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 598, in end_headers
+    self.flush_headers()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 602, in flush_headers
+    self.wfile.write(b"".join(self._headers_buffer))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 845, in write
+    self._sock.sendall(b)
+    ~~~~~~~~~~~~~~~~~~^^^
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 50366)
+Traceback (most recent call last):
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 496, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 484, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 1087, in do_GET
+    dispatch_get(self, cfg, state)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\router.py", line 28, in dispatch_get
+    if training.try_handle_get(handler, cfg, state, ctx):
+       ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\training.py", line 37, in try_handle_get
+    handler.send_json(
+    ~~~~~~~~~~~~~~~~~^
+        200,
+        ^^^^
+    ...<8 lines>...
+        },
+        ^^
+    )
+    ^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 899, in send_json
+    self.end_headers()
+    ~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 598, in end_headers
+    self.flush_headers()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 602, in flush_headers
+    self.wfile.write(b"".join(self._headers_buffer))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 845, in write
+    self._sock.sendall(b)
+    ~~~~~~~~~~~~~~~~~~^^^
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 55039)
+Traceback (most recent call last):
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 496, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 484, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 1087, in do_GET
+    dispatch_get(self, cfg, state)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\router.py", line 28, in dispatch_get
+    if training.try_handle_get(handler, cfg, state, ctx):
+       ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\training.py", line 37, in try_handle_get
+    handler.send_json(
+    ~~~~~~~~~~~~~~~~~^
+        200,
+        ^^^^
+    ...<8 lines>...
+        },
+        ^^
+    )
+    ^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 899, in send_json
+    self.end_headers()
+    ~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 598, in end_headers
+    self.flush_headers()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 602, in flush_headers
+    self.wfile.write(b"".join(self._headers_buffer))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 845, in write
+    self._sock.sendall(b)
+    ~~~~~~~~~~~~~~~~~~^^^
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 54289)
+Traceback (most recent call last):
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 496, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 484, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 1087, in do_GET
+    dispatch_get(self, cfg, state)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\router.py", line 28, in dispatch_get
+    if training.try_handle_get(handler, cfg, state, ctx):
+       ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\training.py", line 37, in try_handle_get
+    handler.send_json(
+    ~~~~~~~~~~~~~~~~~^
+        200,
+        ^^^^
+    ...<8 lines>...
+        },
+        ^^
+    )
+    ^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 899, in send_json
+    self.end_headers()
+    ~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 598, in end_headers
+    self.flush_headers()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 602, in flush_headers
+    self.wfile.write(b"".join(self._headers_buffer))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 845, in write
+    self._sock.sendall(b)
+    ~~~~~~~~~~~~~~~~~~^^^
+ConnectionResetError: [WinError 10054] 远程主机强迫关闭了一个现有的连接。
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 62157)
+Traceback (most recent call last):
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 496, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 484, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 1087, in do_GET
+    dispatch_get(self, cfg, state)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\router.py", line 33, in dispatch_get
+    legacy.handle_get_legacy(handler, cfg, state)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\legacy_route_handlers.py", line 10, in handle_get_legacy
+    _handle_get_legacy(self, cfg, state)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\legacy_chat_handlers.py", line 347, in handle_get_legacy
+            },
+            ^^
+    ...<2 lines>...
+    include_removed = parse_query_bool(query, "include_removed", default=True)
+    ^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_workflow.py", line 71, in list_training_workflows
+    sync_training_workflows(root)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_workflow.py", line 41, in sync_training_workflows
+    ret = conn.execute(
+        """
+    ...<4 lines>...
+        (workflow_id, analysis_id, session_id, "queued", created_at, updated_at),
+    )
+sqlite3.OperationalError: database is locked
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 55215)
+Traceback (most recent call last):
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 496, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 484, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 1087, in do_GET
+    dispatch_get(self, cfg, state)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\router.py", line 28, in dispatch_get
+    if training.try_handle_get(handler, cfg, state, ctx):
+       ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\training.py", line 36, in try_handle_get
+    data = ws.list_training_agents_overview(cfg, include_test_data=include_test_data)
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 401, in list_training_agents_overview
+    sync_training_agent_registry(cfg)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\services\training_registry_service.py", line 270, in sync_training_agent_registry
+    conn.execute(
+    ~~~~~~~~~~~~^
+        """
+        ^^^
+    ...<63 lines>...
+        ),
+        ^^
+    )
+    ^
+sqlite3.OperationalError: database is locked
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 57181)
+Traceback (most recent call last):
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 496, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\http\server.py", line 484, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 1087, in do_GET
+    dispatch_get(self, cfg, state)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\router.py", line 28, in dispatch_get
+    if training.try_handle_get(handler, cfg, state, ctx):
+       ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\api\training.py", line 37, in try_handle_get
+    handler.send_json(
+    ~~~~~~~~~~~~~~~~~^
+        200,
+        ^^^^
+    ...<8 lines>...
+        },
+        ^^
+    )
+    ^
+  File "C:\work\J-Agents\workflow\src\workflow_app\server\bootstrap\web_server_runtime.py", line 900, in send_json
+    self.wfile.write(raw)
+    ~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\think\AppData\Local\Programs\Python\Python314\Lib\socketserver.py", line 845, in write
+    self._sock.sendall(b)
+    ~~~~~~~~~~~~~~~~~~^^^
+ConnectionAbortedError: [WinError 10053] 你的主机中的软件中止了一个已建立的连接。
+----------------------------------------

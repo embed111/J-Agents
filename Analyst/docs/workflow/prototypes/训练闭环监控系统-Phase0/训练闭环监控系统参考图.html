@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>训练闭环监控系统参考图</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --panel: #ffffff;
+      --line: #d9dde3;
+      --text: #1f2329;
+      --muted: #667085;
+      --accent: #1f6feb;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #f8fafc, var(--bg));
+      color: var(--text);
+      font: 14px/1.6 "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    .wrap {
+      width: min(1200px, calc(100vw - 32px));
+      margin: 24px auto 40px;
+    }
+    .hero,
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    }
+    .hero {
+      padding: 20px 22px;
+      margin-bottom: 18px;
+    }
+    h1, h2, p { margin: 0; }
+    h1 { font-size: 24px; line-height: 1.2; }
+    .meta {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+    .card {
+      overflow: hidden;
+    }
+    .card-body {
+      padding: 16px 18px 18px;
+    }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 10px;
+      border-radius: 999px;
+      background: #eef4ff;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .desc {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-top: 1px solid var(--line);
+      background: #f7f8fa;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1>训练闭环监控系统参考图</h1>
+      <p class="meta">主题对应：Legacy 基线 `需求详情-训练闭环监控系统-Phase0.md`。本页仅补齐当前仍可见、仍在产品中承载的界面参考图；细分能力已分别映射到统一入口、发布治理和测试数据治理等现行主题。</p>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <div class="card-body">
+          <div class="tag">当前运行态截图</div>
+          <h2>对话页</h2>
+          <p class="desc">对应页面内对话、会话入口、会话列表与主聊天区的当前布局。</p>
+        </div>
+        <img src="./训练闭环监控系统参考图-对话页.png" alt="训练闭环监控系统参考图-对话页" />
+      </article>
+
+      <article class="card">
+        <div class="card-body">
+          <div class="tag">当前运行态截图</div>
+          <h2>工作记录与训练页</h2>
+          <p class="desc">对应工作记录列表、分析与训练操作区、事件流与结果区的当前布局。</p>
+        </div>
+        <img src="./训练闭环监控系统参考图-工作记录与训练页.png" alt="训练闭环监控系统参考图-工作记录与训练页" />
+      </article>
+
+      <article class="card">
+        <div class="card-body">
+          <div class="tag">当前运行态截图</div>
+          <h2>设置页</h2>
+          <p class="desc">对应全局配置、根路径设置、测试数据开关与历史清理区的当前布局。</p>
+        </div>
+        <img src="./训练闭环监控系统参考图-设置页.png" alt="训练闭环监控系统参考图-设置页" />
+      </article>
+    </section>
+  </div>
+</body>
+</html>

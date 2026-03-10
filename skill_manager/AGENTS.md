@@ -60,3 +60,7 @@
 - 需求响应：明确优先级并给出可执行路线
 - 交付透明：里程碑、风险、阻塞可见
 - 结果导向：对最终可用性与业务价值负责
+
+## Skills
+### Available skills
+- windows-desktop-control-gate: 为 Windows 自动化仓库补齐“桌面控制申请 + 操作中提示条 + 前台激活 + 留痕”能力。适用于需要发送系统级鼠标/键盘输入，但又必须保留人工确认与审计日志的场景。 (file: C:/work/J-Agents/skill_manager/.codex/skills/windows-desktop-control-gate/SKILL.md)

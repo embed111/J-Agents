@@ -193,6 +193,14 @@
     return normalizeTrainingCenterReleaseReviewPayload(key, {});
   }
 
+  function trainingCenterReleaseReviewIsActive(review) {
+    const node = review && typeof review === 'object' ? review : {};
+    const reviewId = safe(node.review_id).trim();
+    const stateKey = safe(node.release_review_state).trim().toLowerCase();
+    if (!reviewId) return false;
+    return stateKey !== 'idle' && stateKey !== 'review_discarded';
+  }
+
   function trainingCenterReleaseReviewProgressTemplates(mode) {
     const key = safe(mode).trim().toLowerCase();
     if (key === 'confirm') {
@@ -1099,7 +1107,10 @@
     if (!path) {
       throw new Error('当前发布版本未绑定发布报告文件。');
     }
-    const resp = await fetch(path, { cache: 'no-store' });
+    const requestUrl = /^https?:\/\//i.test(path)
+      ? path
+      : '/api/runtime-file?path=' + encodeURIComponent(path);
+    const resp = await fetch(requestUrl, { cache: 'no-store' });
     const text = await resp.text();
     if (!resp.ok) {
       throw new Error('读取发布报告失败：' + path);
@@ -1203,6 +1214,10 @@
     if (refs.dialog && !refs.dialog.open && typeof refs.dialog.showModal === 'function') {
       refs.dialog.showModal();
     }
+    if (refs.dialog) {
+      refs.dialog.dataset.releaseVersion = safe(release.version_label).trim();
+      refs.dialog.dataset.agentId = safe(detail.agent_id || release.agent_id).trim();
+    }
     const report = await fetchTrainingCenterJsonRef(reportRef);
     const review = defaultTrainingCenterReleaseReview(detail);
     review.review_id = safe(release.release_id).trim();
@@ -1245,6 +1260,7 @@
     const reviewerInput = $('tcEvalReviewerInput');
     const summaryInput = $('tcEvalSummaryInput');
     const submitBtn = $('tcSubmitEvalBtn');
+    const reviewGrids = reviewCard ? Array.from(reviewCard.querySelectorAll('.tc-release-review-grid')) : [];
     if (!reviewCard) return;
 
     const key = safe(agentId).trim();
@@ -1259,9 +1275,22 @@
     const hasAgent = !!key;
     const hasPublishedRelease = !!currentTrainingCenterPublishedRelease(detail);
     const canReview = !!effectiveReview.can_review && !progress;
+    const hasActiveReview = trainingCenterReleaseReviewIsActive(effectiveReview);
+    const contextLoading =
+      !!state.tcSelectedAgentContextLoading &&
+      safe(state.tcSelectedAgentId).trim() === key;
+
+    reviewCard.dataset.reviewMode = hasActiveReview ? 'active' : 'inactive';
+    [stepperNode, progressNode, substageNode].forEach((node) => {
+      if (node) node.hidden = !hasActiveReview;
+    });
+    reviewGrids.forEach((node) => {
+      node.hidden = !hasActiveReview;
+    });
 
     reviewCard.classList.toggle('disabled', !hasAgent);
     if (!hasAgent) {
+      reviewCard.dataset.reviewMode = 'inactive';
       if (hintNode) hintNode.textContent = '请选择左侧角色后查看发布评审链路';
       renderTrainingCenterReleaseReviewProgress(progressNode, null);
       renderTrainingCenterReleaseReviewSteps(stepperNode, [], '未选择角色');
@@ -1285,7 +1314,20 @@
     }
 
     if (hintNode) {
-      if (progress) {
+      if (contextLoading && !safe(review.review_id).trim() && !progress) {
+        hintNode.textContent = '正在同步发布版本与评审上下文...';
+      } else if (!hasActiveReview) {
+        const stateKey = safe(effectiveReview.release_review_state).trim().toLowerCase();
+        if (stateKey === 'review_discarded') {
+          hintNode.textContent = '当前没有进行中的发布评审；上一条评审已废弃，如需继续请重新进入发布评审。历史正式发布记录请从“发布版本”列表点击“查看发布报告”查看。';
+        } else if (safe(effectiveReview.publish_status).trim().toLowerCase() === 'success') {
+          hintNode.textContent = '当前没有进行中的发布评审；本次发布已完成。历史正式发布记录请从“发布版本”列表点击“查看发布报告”查看。';
+        } else if (effectiveReview.can_enter) {
+          hintNode.textContent = '当前还没有进行中的发布评审；点击“进入发布评审”后，这里会展示完整评审链路。';
+        } else {
+          hintNode.textContent = '当前没有进行中的发布评审；历史正式发布记录请从“发布版本”列表点击“查看发布报告”查看。';
+        }
+      } else if (progress) {
         const snapshot = describeTrainingCenterReleaseReviewProgress(progress);
         hintNode.textContent = snapshot.headline + ' · ' + (snapshot.detail || '请稍候...');
       } else {
@@ -1321,6 +1363,7 @@
     if (discardBtn) {
       discardBtn.disabled = !!progress || !effectiveReview.can_discard;
       discardBtn.textContent = '废弃当前评审';
+      discardBtn.hidden = !hasActiveReview;
     }
     if (confirmBtn) {
       confirmBtn.disabled = !!progress || !effectiveReview.can_confirm;
@@ -1332,6 +1375,7 @@
             : safe(effectiveReview.release_review_state).trim() === 'publish_failed'
               ? '重试发布'
               : '确认发布';
+      confirmBtn.hidden = !hasActiveReview;
     }
     if (decisionSelect) {
       const rejectDiscardOption = Array.from(decisionSelect.options || []).find(
@@ -1361,6 +1405,31 @@
           : canReview
             ? '提交审核结论'
             : '等待发布报告完成';
+    }
+
+    if (!hasActiveReview) {
+      const emptyStateText =
+        contextLoading && !safe(review.review_id).trim() && !progress
+          ? '正在同步发布评审链路'
+          : '当前没有进行中的发布评审';
+      const emptyHintText =
+        contextLoading && !safe(review.review_id).trim() && !progress
+          ? '正在同步历史发布版本与评审上下文，请稍候...'
+          : '历史正式发布记录请从“发布版本”列表点击“查看发布报告”查看';
+      renderTrainingCenterReleaseReviewProgress(progressNode, null);
+      renderTrainingCenterReleaseReviewSteps(stepperNode, [], emptyStateText);
+      renderTrainingCenterReleaseReviewPills(substageNode, [], emptyHintText);
+      [reportNode, chainNode, manualMetaNode, logsNode, fallbackNode].forEach((node) => {
+        if (!node) return;
+        node.innerHTML = '';
+        if (contextLoading && !safe(review.review_id).trim() && !progress) {
+          const empty = document.createElement('div');
+          empty.className = 'tc-empty';
+          empty.textContent = '正在同步发布评审链路...';
+          node.appendChild(empty);
+        }
+      });
+      return;
     }
 
     renderTrainingCenterReleaseReport(reportNode, effectiveReview, progress, reportFailure);
@@ -2282,7 +2351,6 @@
         syncTrainingCenterPlanAgentOptions();
         updateTrainingCenterSelectedMeta();
         renderTrainingCenterAgentList();
-        renderTrainingCenterAgentDetail();
         refreshTrainingCenterSelectedAgentContext(agentId).catch((err) => {
           setTrainingCenterDetailError(err.message || String(err));
         });
@@ -2302,7 +2370,10 @@
     if (!releases.length) {
       const empty = document.createElement('div');
       empty.className = 'tc-empty';
-      empty.textContent = '暂无符合发布格式的版本';
+      empty.textContent =
+        state.tcSelectedAgentContextLoading && safe(state.tcSelectedAgentId).trim() === key
+          ? '正在同步发布版本...'
+          : '暂无符合发布格式的版本';
       box.appendChild(empty);
       return;
     }
@@ -2328,6 +2399,7 @@
       summaryNode.className = 'tc-item-sub';
       summaryNode.textContent = '发布说明：' + safe(row.version_notes || row.change_summary || '-');
       node.appendChild(summaryNode);
+      node.dataset.releaseVersion = safe(row.version_label || '').trim();
 
       const reportRef = safe(row.release_source_ref || row.capability_snapshot_ref).trim();
       if (reportRef) {
@@ -2337,6 +2409,7 @@
         reportBtn.type = 'button';
         reportBtn.className = 'alt';
         reportBtn.textContent = '查看发布报告';
+        reportBtn.dataset.releaseVersion = safe(row.version_label || '').trim();
         reportBtn.onclick = async () => {
           try {
             reportBtn.disabled = true;
@@ -2364,6 +2437,7 @@
         const hintNode = document.createElement('div');
         hintNode.className = 'tc-item-sub';
         hintNode.textContent = '发布报告：当前版本未绑定可展示的发布报告文件';
+        hintNode.dataset.releaseVersion = safe(row.version_label || '').trim();
         node.appendChild(hintNode);
       }
       box.appendChild(node);
@@ -2432,6 +2506,10 @@
     const discardBtn = $('tcDiscardPreReleaseBtn');
     const evalDecisionSelect = $('tcEvalDecisionSelect');
     const item = state.tcSelectedAgentDetail || null;
+    const contextLoading =
+      !!item &&
+      !!state.tcSelectedAgentContextLoading &&
+      safe(state.tcSelectedAgentId).trim() === safe(item.agent_id).trim();
     if (detailNode instanceof HTMLElement) {
       detailNode.style.minWidth = '0';
       detailNode.style.maxWidth = '100%';
@@ -2563,6 +2641,9 @@
       if (preCheckedAt) {
         lines.push('预发布判定时间=' + preCheckedAt);
       }
+      if (contextLoading) {
+        lines.push('上下文同步=正在刷新发布版本与评审信息');
+      }
       metaNode.innerHTML = '';
       for (const lineText of lines) {
         const lineNode = document.createElement('div');
@@ -2610,49 +2691,121 @@
     updateTrainingCenterOpsGateState();
   }
 
-  async function refreshTrainingCenterReleases(agentId) {
+  function beginTrainingCenterSelectedAgentContext(agentId) {
     const key = safe(agentId).trim();
+    if (!key || safe(state.tcSelectedAgentId).trim() !== key) {
+      state.tcSelectedAgentContextLoading = false;
+      return 0;
+    }
+    const nextSeq = Number(state.tcSelectedAgentContextRequestSeq || 0) + 1;
+    state.tcSelectedAgentContextRequestSeq = nextSeq;
+    state.tcSelectedAgentContextLoading = true;
+    return nextSeq;
+  }
+
+  function isTrainingCenterSelectedAgentContextCurrent(agentId, requestSeq) {
+    const key = safe(agentId).trim();
+    if (!key || safe(state.tcSelectedAgentId).trim() !== key) {
+      return false;
+    }
+    const seq = Number(requestSeq || 0);
+    if (!seq) {
+      return true;
+    }
+    return Number(state.tcSelectedAgentContextRequestSeq || 0) === seq;
+  }
+
+  function syncTrainingCenterSelectedAgentFromPayload(agentId, agentPayload) {
+    const key = safe(agentId).trim();
+    if (!key || safe(state.tcSelectedAgentId).trim() !== key || !agentPayload || typeof agentPayload !== 'object') {
+      return;
+    }
+    state.tcSelectedAgentDetail = Object.assign({}, state.tcSelectedAgentDetail || {}, agentPayload);
+    state.tcSelectedAgentId = safe(agentPayload.agent_id || key);
+    state.tcSelectedAgentName = safe(agentPayload.agent_name || state.tcSelectedAgentName);
+    updateTrainingCenterSelectedMeta();
+  }
+
+  async function refreshTrainingCenterReleases(agentId, options) {
+    const key = safe(agentId).trim();
+    const opts = options && typeof options === 'object' ? options : {};
     if (!key) {
-      renderTrainingCenterAgentDetail();
+      if (!opts.skipRender) {
+        renderTrainingCenterAgentDetail();
+      }
       return;
     }
     const data = await getJSON('/api/training/agents/' + encodeURIComponent(key) + '/releases?page=1&page_size=120');
+    if (opts.requestSeq && !isTrainingCenterSelectedAgentContextCurrent(key, opts.requestSeq)) {
+      return data;
+    }
     if (!state.tcNormalCommitsByAgent || typeof state.tcNormalCommitsByAgent !== 'object') {
       state.tcNormalCommitsByAgent = {};
     }
     state.tcReleasesByAgent[key] = Array.isArray(data.releases) ? data.releases : [];
     state.tcNormalCommitsByAgent[key] = Array.isArray(data.normal_commits) ? data.normal_commits : [];
     if (data.agent && typeof data.agent === 'object') {
-      state.tcSelectedAgentDetail = Object.assign({}, state.tcSelectedAgentDetail || {}, data.agent);
-      state.tcSelectedAgentId = safe(data.agent.agent_id || key);
-      state.tcSelectedAgentName = safe(data.agent.agent_name || state.tcSelectedAgentName);
+      syncTrainingCenterSelectedAgentFromPayload(key, data.agent);
     }
-    updateTrainingCenterSelectedMeta();
-    renderTrainingCenterAgentDetail();
+    if (!opts.skipRender && safe(state.tcSelectedAgentId).trim() === key) {
+      renderTrainingCenterAgentDetail();
+    }
+    return data;
   }
 
-  async function refreshTrainingCenterReleaseReview(agentId) {
+  async function refreshTrainingCenterReleaseReview(agentId, options) {
     const key = safe(agentId).trim();
+    const opts = options && typeof options === 'object' ? options : {};
     if (!key) {
-      renderTrainingCenterReleaseReview('');
+      if (!opts.skipRender) {
+        renderTrainingCenterReleaseReview('');
+      }
       return;
     }
     const data = await getJSON('/api/training/agents/' + encodeURIComponent(key) + '/release-review');
+    if (opts.requestSeq && !isTrainingCenterSelectedAgentContextCurrent(key, opts.requestSeq)) {
+      return data;
+    }
     if (!state.tcReleaseReviewByAgent || typeof state.tcReleaseReviewByAgent !== 'object') {
       state.tcReleaseReviewByAgent = {};
     }
     state.tcReleaseReviewByAgent[key] = normalizeTrainingCenterReleaseReviewPayload(key, data);
-    renderTrainingCenterReleaseReview(key);
+    if (!opts.skipRender && safe(state.tcSelectedAgentId).trim() === key) {
+      renderTrainingCenterReleaseReview(key);
+    }
+    return data;
   }
 
-  async function refreshTrainingCenterSelectedAgentContext(agentId) {
+  async function refreshTrainingCenterSelectedAgentContext(agentId, options) {
     const key = safe(agentId).trim();
+    const opts = options && typeof options === 'object' ? options : {};
     if (!key) {
+      state.tcSelectedAgentContextLoading = false;
       renderTrainingCenterAgentDetail();
       return;
     }
-    await refreshTrainingCenterReleases(key);
-    await refreshTrainingCenterReleaseReview(key);
+    const requestSeq = beginTrainingCenterSelectedAgentContext(key);
+    if (!opts.skipRender && safe(state.tcSelectedAgentId).trim() === key) {
+      renderTrainingCenterAgentDetail();
+    }
+    const results = await Promise.allSettled([
+      refreshTrainingCenterReleases(key, { skipRender: true, requestSeq: requestSeq }),
+      refreshTrainingCenterReleaseReview(key, { skipRender: true, requestSeq: requestSeq }),
+    ]);
+    if (requestSeq && !isTrainingCenterSelectedAgentContextCurrent(key, requestSeq)) {
+      return results;
+    }
+    if (requestSeq) {
+      state.tcSelectedAgentContextLoading = false;
+    }
+    if (!opts.skipRender && safe(state.tcSelectedAgentId).trim() === key) {
+      renderTrainingCenterAgentDetail();
+    }
+    const rejected = results.find((entry) => entry && entry.status === 'rejected');
+    if (rejected && rejected.reason) {
+      throw rejected.reason;
+    }
+    return results;
   }
 
   async function refreshTrainingCenterAgents() {
@@ -2707,6 +2860,7 @@
       state.tcSelectedAgentId = '';
       state.tcSelectedAgentName = '';
       state.tcSelectedAgentDetail = null;
+      state.tcSelectedAgentContextLoading = false;
     } else {
       state.tcSelectedAgentDetail = matched;
       state.tcSelectedAgentName = safe(matched.agent_name || '');
@@ -2714,10 +2868,11 @@
     syncTrainingCenterPlanAgentOptions();
     updateTrainingCenterSelectedMeta();
     renderTrainingCenterAgentList();
-    renderTrainingCenterAgentDetail();
     if (state.tcSelectedAgentId) {
       await refreshTrainingCenterSelectedAgentContext(state.tcSelectedAgentId);
+      return;
     }
+    renderTrainingCenterAgentDetail();
   }
 
   function renderTrainingCenterTrainerList() {
@@ -3207,10 +3362,17 @@
       publish_status: '',
       publish_error: '',
       fallback_status: '',
+      release_review_card_mode: '',
+      release_review_visible_grid_count: 0,
       release_report_ref_count: 0,
       release_report_button_count: 0,
+      release_report_button_versions: [],
+      release_report_unavailable_count: 0,
+      release_report_unavailable_versions: [],
       release_report_dialog_open: false,
       release_report_dialog_title: '',
+      release_report_dialog_version: '',
+      release_report_dialog_text: '',
       release_review_current_pills: [],
       report_first_person_summary: '',
       report_change_summary: '',
@@ -3254,7 +3416,6 @@
           syncTrainingCenterPlanAgentOptions();
           updateTrainingCenterSelectedMeta();
           renderTrainingCenterAgentList();
-          renderTrainingCenterAgentDetail();
           await refreshTrainingCenterSelectedAgentContext(aid);
           const detail = state.tcSelectedAgentDetail || {};
           const releases = Array.isArray(state.tcReleasesByAgent[aid]) ? state.tcReleasesByAgent[aid] : [];
@@ -3561,9 +3722,24 @@
       output.publish_status = safe(currentReview.publish_status || '').toLowerCase();
       output.publish_error = safe(currentReview.publish_error || '').trim();
       output.fallback_status = safe(currentReview.fallback && currentReview.fallback.status).toLowerCase();
+      const releaseReviewCard = $('tcReleaseReviewCard');
+      output.release_review_card_mode = safe(releaseReviewCard && releaseReviewCard.dataset && releaseReviewCard.dataset.reviewMode).trim().toLowerCase();
+      output.release_review_visible_grid_count = Array.from(document.querySelectorAll('#tcReleaseReviewCard .tc-release-review-grid'))
+        .filter((node) => !!node && !node.hidden)
+        .length;
+      const releaseReportButtons = Array.from(document.querySelectorAll('#tcReleaseList button'))
+        .filter((node) => safe(node && node.textContent).trim() === '查看发布报告');
+      const releaseReportUnavailableNodes = Array.from(document.querySelectorAll('#tcReleaseList .tc-item-sub'))
+        .filter((node) => /未绑定可展示的发布报告文件/.test(safe(node && node.textContent).trim()));
       output.release_report_ref_count = releases.filter((row) => !!safe((row && (row.release_source_ref || row.capability_snapshot_ref)) || '').trim()).length;
-      output.release_report_button_count = Array.from(document.querySelectorAll('#tcReleaseList button'))
-        .filter((node) => safe(node && node.textContent).trim() === '查看发布报告').length;
+      output.release_report_button_count = releaseReportButtons.length;
+      output.release_report_button_versions = releaseReportButtons
+        .map((node) => safe(node && node.dataset && node.dataset.releaseVersion).trim())
+        .filter(Boolean);
+      output.release_report_unavailable_count = releaseReportUnavailableNodes.length;
+      output.release_report_unavailable_versions = releaseReportUnavailableNodes
+        .map((node) => safe(node && node.dataset && node.dataset.releaseVersion).trim())
+        .filter(Boolean);
       output.release_review_current_pills = Array.from(document.querySelectorAll('#tcReleaseReviewSubstage .tc-release-review-pill.current'))
         .map((node) => safe(node && node.textContent).trim())
         .filter(Boolean);
@@ -3607,17 +3783,25 @@
       output.role_profile_source_release_id = safe(roleProfile.source_release_id).trim();
       output.role_profile_first_person_summary = safe(roleProfile.first_person_summary).trim();
       output.active_role_profile_ref = safe(selectedDetail.active_role_profile_ref || '').trim();
-      if (probeCase === 'ac_ar_rr_12' && output.release_report_button_count >= 1) {
+      if ((probeCase === 'ac_ar_rr_12' || probeCase === 'ac_ar_rr_19') && output.release_report_button_count >= 1) {
+        const requestedReleaseVersion = safe(queryParam('tc_probe_release_version')).trim();
         const releaseReportBtn = Array.from(document.querySelectorAll('#tcReleaseList button'))
-          .find((node) => safe(node && node.textContent).trim() === '查看发布报告');
+          .find((node) => {
+            if (safe(node && node.textContent).trim() !== '查看发布报告') return false;
+            if (!requestedReleaseVersion) return true;
+            return safe(node && node.dataset && node.dataset.releaseVersion).trim() === requestedReleaseVersion;
+          });
         if (releaseReportBtn) {
           releaseReportBtn.click();
           await new Promise((resolve) => window.setTimeout(resolve, 250));
           const reportDialog = $('tcPublishedReleaseReportDialog');
           output.release_report_dialog_open = !!(reportDialog && reportDialog.open);
           const reportTitleNode = reportDialog ? reportDialog.querySelector('.tc-report-dialog-title') : null;
+          const reportBodyNode = reportDialog ? reportDialog.querySelector('.tc-report-dialog-body') : null;
           output.release_report_dialog_title = safe(reportTitleNode && reportTitleNode.textContent).trim();
-          if (reportDialog && reportDialog.open && typeof reportDialog.close === 'function') {
+          output.release_report_dialog_version = safe(reportDialog && reportDialog.dataset && reportDialog.dataset.releaseVersion).trim();
+          output.release_report_dialog_text = safe(reportBodyNode && reportBodyNode.textContent).trim().slice(0, 1600);
+          if (probeCase !== 'ac_ar_rr_19' && reportDialog && reportDialog.open && typeof reportDialog.close === 'function') {
             reportDialog.close();
           }
         }
@@ -3680,6 +3864,8 @@
                                                 !!output.review_reviewer
                                             : probeCase === 'ac_ar_rr_12'
                                                 ? output.publish_status === 'success' &&
+                                                  output.release_review_card_mode === 'inactive' &&
+                                                  output.release_review_visible_grid_count === 0 &&
                                                   output.role_profile_source === 'latest_release_report' &&
                                                   !!output.active_role_profile_ref &&
                                                   output.release_report_ref_count >= 1 &&
@@ -3688,6 +3874,24 @@
                                                   /发布报告/.test(output.release_report_dialog_title) &&
                                                   output.release_review_current_pills.length === 0 &&
                                                   /^我/.test(output.role_profile_first_person_summary)
+                                                : probeCase === 'ac_ar_rr_19'
+                                                  ? output.publish_status === 'success' &&
+                                                    output.release_report_button_count >= 1 &&
+                                                    output.release_report_dialog_open &&
+                                                    /发布报告/.test(output.release_report_dialog_title) &&
+                                                    (!safe(queryParam('tc_probe_release_version')).trim() ||
+                                                      output.release_report_button_versions.includes(safe(queryParam('tc_probe_release_version')).trim())) &&
+                                                    (!safe(queryParam('tc_probe_release_version')).trim() ||
+                                                      output.release_report_dialog_version === safe(queryParam('tc_probe_release_version')).trim()) &&
+                                                    (!safe(queryParam('tc_probe_release_version')).trim() ||
+                                                      output.release_report_dialog_text.includes(safe(queryParam('tc_probe_release_version')).trim()))
+                                                : probeCase === 'ac_ar_rr_20'
+                                                  ? output.release_report_unavailable_count >= 1 &&
+                                                    !output.release_report_dialog_open &&
+                                                    (!safe(queryParam('tc_probe_release_version')).trim() ||
+                                                      output.release_report_unavailable_versions.includes(safe(queryParam('tc_probe_release_version')).trim())) &&
+                                                    (!safe(queryParam('tc_probe_release_version')).trim() ||
+                                                      !output.release_report_button_versions.includes(safe(queryParam('tc_probe_release_version')).trim()))
                                                 : probeCase === 'ac_ar_rr_13'
                                                   ? output.execution_log_phases.includes('prepare') &&
                                                     output.execution_log_phases.includes('git_execute') &&

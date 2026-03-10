@@ -87,6 +87,8 @@
     tcSelectedAgentId: '',
     tcSelectedAgentName: '',
     tcSelectedAgentDetail: null,
+    tcSelectedAgentContextLoading: false,
+    tcSelectedAgentContextRequestSeq: 0,
     tcReleasesByAgent: {}, // agent_id -> releases[]
     tcNormalCommitsByAgent: {}, // agent_id -> normal_commits[]
     tcReleaseReviewByAgent: {}, // agent_id -> review payload

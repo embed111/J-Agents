@@ -1,6 +1,6 @@
 # Daily Summary - 2026-03-10
 
-- last_update: 2026-03-10 17:11:41+0800
+- last_update: 2026-03-10 20:46:11+0800
 - source: scripts/workflow_entry_cli.py
 
 ## Must-Track (Top 5)
@@ -11,7 +11,7 @@
 5. Tomorrow first priority: No critical failures today. Continue workflow baseline scope.
 
 ## Extra
-- total_events_today: 29
+- total_events_today: 48
 - latest_session_id: sess-reconcile
 - latest_decision: none
 - latest_training: none

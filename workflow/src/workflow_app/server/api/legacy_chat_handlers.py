@@ -23,6 +23,49 @@ def handle_get_legacy(self, cfg, state) -> None:
     if path == "/static/workflow-web.css":
         self.send_text(200, load_index_page_css(), "text/css; charset=utf-8")
         return
+    if path == "/api/runtime-file":
+        raw_ref = str((query.get("path") or [""])[0] or "").strip()
+        if not raw_ref:
+            self.send_json(400, {"ok": False, "error": "path required", "code": "runtime_file_path_required"})
+            return
+        try:
+            target = normalize_abs_path(raw_ref, base=cfg.root)
+            target.relative_to(cfg.root.resolve(strict=False))
+        except Exception:
+            self.send_json(
+                400,
+                {
+                    "ok": False,
+                    "error": f"runtime file path out of root: {raw_ref}",
+                    "code": "runtime_file_out_of_root",
+                },
+            )
+            return
+        if not target.exists() or not target.is_file():
+            self.send_json(
+                404,
+                {
+                    "ok": False,
+                    "error": f"runtime file not found: {raw_ref}",
+                    "code": "runtime_file_not_found",
+                },
+            )
+            return
+        try:
+            text = target.read_text(encoding="utf-8")
+        except Exception as exc:
+            self.send_json(
+                500,
+                {
+                    "ok": False,
+                    "error": f"runtime file read failed: {exc}",
+                    "code": "runtime_file_read_failed",
+                },
+            )
+            return
+        content_type = "application/json; charset=utf-8" if target.suffix.lower() == ".json" else "text/plain; charset=utf-8"
+        self.send_text(200, text, content_type)
+        return
     if path == "/healthz":
         self.send_json(200, {"ok": True, "ts": iso_ts(now_local())})
         return

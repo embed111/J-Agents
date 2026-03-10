@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>角色画像发布格式与预发布判定参考图</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --panel: #ffffff;
+      --line: #d9dde3;
+      --text: #1f2329;
+      --muted: #667085;
+      --accent: #1f6feb;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #f8fafc, var(--bg));
+      color: var(--text);
+      font: 14px/1.6 "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    .wrap {
+      width: min(1200px, calc(100vw - 32px));
+      margin: 24px auto 40px;
+    }
+    .hero,
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    }
+    .hero {
+      padding: 20px 22px;
+      margin-bottom: 18px;
+    }
+    h1, h2, p { margin: 0; }
+    h1 { font-size: 24px; line-height: 1.2; }
+    .meta {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+    .card {
+      overflow: hidden;
+    }
+    .card-body {
+      padding: 16px 18px 18px;
+    }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 10px;
+      border-radius: 999px;
+      background: #eef4ff;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .desc {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-top: 1px solid var(--line);
+      background: #f7f8fa;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1>角色画像发布格式与预发布判定参考图</h1>
+      <p class="meta">主题对应：`需求详情-角色画像发布格式与预发布判定.md`。本页主要复用已验收的浏览器截图，用于固化单栏角色画像、正式发布态、预发布态与头像上传结果的页面口径。</p>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <div class="card-body">
+          <div class="tag">验收截图复用</div>
+          <h2>单栏角色画像</h2>
+          <p class="desc">对应首屏“简历式”单栏阅读流。</p>
+        </div>
+        <img src="./角色画像发布格式与预发布判定参考图-单栏画像.png" alt="角色画像发布格式与预发布判定参考图-单栏画像" />
+      </article>
+
+      <article class="card">
+        <div class="card-body">
+          <div class="tag">验收截图复用</div>
+          <h2>正式发布态</h2>
+          <p class="desc">对应发布格式字段完整、可识别为发布版本的正常展示状态。</p>
+        </div>
+        <img src="./角色画像发布格式与预发布判定参考图-正式发布态.png" alt="角色画像发布格式与预发布判定参考图-正式发布态" />
+      </article>
+
+      <article class="card">
+        <div class="card-body">
+          <div class="tag">验收截图复用</div>
+          <h2>预发布态</h2>
+          <p class="desc">对应存在工作区改动时的预发布识别与页面提示。</p>
+        </div>
+        <img src="./角色画像发布格式与预发布判定参考图-预发布态.png" alt="角色画像发布格式与预发布判定参考图-预发布态" />
+      </article>
+
+      <article class="card">
+        <div class="card-body">
+          <div class="tag">验收截图复用</div>
+          <h2>头像上传成功</h2>
+          <p class="desc">对应单头像展示 + 更换头像入口的成功态。</p>
+        </div>
+        <img src="./角色画像发布格式与预发布判定参考图-头像上传成功.png" alt="角色画像发布格式与预发布判定参考图-头像上传成功" />
+      </article>
+
+      <article class="card">
+        <div class="card-body">
+          <div class="tag">验收截图复用</div>
+          <h2>头像上传失败回退</h2>
+          <p class="desc">对应上传失败后的回退与默认呈现。</p>
+        </div>
+        <img src="./角色画像发布格式与预发布判定参考图-头像上传失败回退.png" alt="角色画像发布格式与预发布判定参考图-头像上传失败回退" />
+      </article>
+
+      <article class="card">
+        <div class="card-body">
+          <div class="tag">验收截图复用</div>
+          <h2>单栏布局细节</h2>
+          <p class="desc">对应单栏主体区与信息块纵向节奏的细节对齐。</p>
+        </div>
+        <img src="./角色画像发布格式与预发布判定参考图-单栏布局细节.png" alt="角色画像发布格式与预发布判定参考图-单栏布局细节" />
+      </article>
+    </section>
+  </div>
+</body>
+</html>

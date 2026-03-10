@@ -292,11 +292,12 @@
       }
       updateTrainingCenterSelectedMeta();
       renderTrainingCenterAgentList();
-      renderTrainingCenterAgentDetail();
       if (agentId) {
-        refreshTrainingCenterReleases(agentId).catch((err) => {
+        refreshTrainingCenterSelectedAgentContext(agentId).catch((err) => {
           setTrainingCenterDetailError(err.message || String(err));
         });
+      } else {
+        renderTrainingCenterAgentDetail();
       }
       applyGateState();
     });
@@ -745,8 +746,7 @@
     syncTrainingCenterPlanAgentOptions();
     updateTrainingCenterSelectedMeta();
     renderTrainingCenterAgentList();
-    renderTrainingCenterAgentDetail();
-    await refreshTrainingCenterReleases(agentId);
+    await refreshTrainingCenterSelectedAgentContext(agentId);
     return selected;
   }
 

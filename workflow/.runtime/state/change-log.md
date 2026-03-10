@@ -804,3 +804,54 @@
 ## 2026-03-10 17:11:42+0800 - reconcile run
 - reason=startup, ingress=0, before=0, after=0, gap_after=0
 
+## 2026-03-10 18:57:04+0800 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-10 19:22:53+0800 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-10 19:41:16+0800 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-10 19:55:34+0800 - show test data toggle
+- old=0, new=1
+
+## 2026-03-10 19:59:30+0800 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-10 20:01:50+0800 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-10 20:05:37+0800 - show test data toggle
+- old=1, new=0
+
+## 2026-03-10 20:05:59+0800 - show test data toggle
+- old=0, new=0
+
+## 2026-03-10 20:07:02+0800 - show test data toggle
+- old=0, new=1
+
+## 2026-03-10 20:07:23+0800 - show test data toggle
+- old=1, new=0
+
+## 2026-03-10 20:08:53+0800 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-10 20:09:00+0800 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-10 20:27:13+0800 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-10 20:41:31+0800 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-10 20:42:04+0800 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-10 20:42:52+0800 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-10 20:46:12+0800 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
