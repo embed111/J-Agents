@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>发布评审分层展示原型</title>
+  <link rel="stylesheet" href="../../../../workflow/src/workflow_app/server/presentation/templates/index.css">
+  <style>
+    .proto-page { height: 100vh; }
+    .proto-page .workspace { min-height: 0; }
+    .proto-agent-role { margin-top: 2px; font-size: 12px; color: var(--muted); }
+    .proto-head-select { width: 350px; max-width: 100%; }
+    .proto-release-row { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+    .proto-release-main { min-width: 0; flex: 1; }
+    .proto-release-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .proto-release-item.active { background: var(--accent-soft); }
+    .proto-inline-note { margin-top: 6px; padding: 8px 10px; border: 1px solid #dbe5f5; border-radius: 8px; background: #f7fbff; font-size: 12px; line-height: 1.5; color: #44576b; }
+    .proto-report-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .proto-dialog-close { flex: 0 0 auto; }
+    .proto-tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .proto-tag { display: inline-flex; align-items: center; padding: 4px 8px; border: 1px solid var(--line); border-radius: 999px; background: #f7f8fa; font-size: 12px; color: #334155; }
+    .proto-avatar { display: inline-flex; width: 42px; height: 42px; flex: 0 0 42px; }
+    .proto-avatar svg { width: 42px; height: 42px; display: block; }
+    .proto-review-scroll { display: flex; flex-direction: column; gap: 10px; max-height: 760px; overflow-y: scroll; padding-right: 2px; scrollbar-gutter: stable both-edges; }
+    .proto-scroll-panel { min-width: 0; }
+    .proto-scroll-panel .tc-release-report-stack { max-height: none; }
+    .proto-empty-state { padding: 8px 10px; border: 1px dashed #d7dce2; border-radius: 8px; background: #fbfcfd; font-size: 12px; line-height: 1.55; color: #646a73; }
+    .tc-report-dialog-body { max-height: 56vh; overflow-y: scroll; padding-right: 2px; scrollbar-gutter: stable both-edges; }
+    .proto-review-scroll::-webkit-scrollbar,
+    .tc-report-dialog-body::-webkit-scrollbar { width: 10px; }
+    .proto-review-scroll::-webkit-scrollbar-track,
+    .tc-report-dialog-body::-webkit-scrollbar-track { background: #f3f4f6; border-radius: 999px; }
+    .proto-review-scroll::-webkit-scrollbar-thumb,
+    .tc-report-dialog-body::-webkit-scrollbar-thumb { background: #c5ced9; border-radius: 999px; border: 2px solid #f3f4f6; }
+    @media (max-width: 1180px) {
+      .proto-report-grid { grid-template-columns: 1fr; }
+      .proto-head-select { width: 100%; }
+      .proto-review-scroll { max-height: 680px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app proto-page">
+    <aside class="rail">
+      <div class="brand">
+        <div class="title">workflow</div>
+        <div class="meta">[16:30:00] 原型预览</div>
+      </div>
+      <div class="meta">24h新增会话=0 · 待分析=0 · 待训练=0 · 可用Agent=6</div>
+      <div class="tabs">
+        <button class="tab">对话</button>
+        <button class="tab">工作记录与训练</button>
+        <button class="tab active">训练中心</button>
+        <button class="tab">设置</button>
+      </div>
+    </aside>
+    <div class="resizer"></div>
+    <main class="workspace">
+      <section class="pane active">
+        <div class="panel training-center-wrap">
+          <div class="row between">
+            <div class="card-title">训练中心</div>
+            <div class="hint">原型目标：首页只展示进行中的评审，已发布历史改为弹窗查看</div>
+          </div>
+          <div class="tc-toolbar">
+            <div class="tc-module-tabs">
+              <button class="active" type="button">角色资产与版本</button>
+              <button type="button">训练运营</button>
+            </div>
+            <span class="hint">当前角色：Analyst2</span>
+          </div>
+          <div class="tc-module active">
+            <div class="tc-grid">
+              <aside class="tc-side">
+                <div class="row">
+                  <input type="text" placeholder="搜索角色..." value="">
+                  <button class="alt" type="button">刷新</button>
+                </div>
+                <div class="hint">角色总数=8 · Git可用=8 · 最近发布时间=2026-03-10T13:48:39+08:00 · 队列待处理=1</div>
+                <div class="tc-list">
+                  <div class="tc-item tc-agent-card">
+                    <div class="tc-card-head">
+                      <span class="proto-avatar">
+                        <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="1.5" y="1.5" width="45" height="45" rx="12" fill="#fff7e6" stroke="#fa8c16" stroke-width="2"/><circle cx="24" cy="18" r="8.3" fill="#f2c4a4"/><path d="M16 18.3c0-5.4 3.2-9.2 8-9.2s8 3.8 8 9.2c-2.2-1.2-4.6-1.8-8-1.8s-5.8.6-8 1.8z" fill="#3d2d4f"/><path d="M11 40c0-6.9 5.8-12.4 13-12.4S37 33.1 37 40" fill="#fa8c16" opacity=".9"/><path d="M16 40c0-4.2 3.6-7.6 8-7.6s8 3.4 8 7.6" fill="#7a3c00" opacity=".9"/></svg>
+                      </span>
+                      <div class="tc-card-title-wrap">
+                        <div class="tc-item-title">Analyst</div>
+                        <div class="proto-agent-role">角色定位：未确定</div>
+                      </div>
+                      <span class="tc-card-chip">工牌</span>
+                    </div>
+                    <div class="tc-item-sub">当前版本：未发布</div>
+                    <div class="tc-card-tags"><span class="tc-badge">预发布</span></div>
+                  </div>
+                  <div class="tc-item tc-agent-card active">
+                    <div class="tc-card-head">
+                      <span class="proto-avatar">
+                        <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="1.5" y="1.5" width="45" height="45" rx="12" fill="#e6f4ff" stroke="#1677ff" stroke-width="2"/><circle cx="24" cy="18" r="8.3" fill="#d9a37e"/><path d="M16 18.3c0-5.4 3.2-9.2 8-9.2s8 3.8 8 9.2c-2.2-1.2-4.6-1.8-8-1.8s-5.8.6-8 1.8z" fill="#1e1f26"/><path d="M11 40c0-6.9 5.8-12.4 13-12.4S37 33.1 37 40" fill="#1677ff" opacity=".9"/><path d="M16 40c0-4.2 3.6-7.6 8-7.6s8 3.4 8 7.6" fill="#073b7a" opacity=".9"/></svg>
+                      </span>
+                      <div class="tc-card-title-wrap">
+                        <div class="tc-item-title">Analyst2</div>
+                        <div class="proto-agent-role">角色定位：未确定</div>
+                      </div>
+                      <span class="tc-card-chip">工牌</span>
+                    </div>
+                    <div class="tc-item-sub">当前版本：v1.0.0</div>
+                    <div class="tc-item-sub">最近发布时间：2026-03-10T13:48:39+08:00</div>
+                    <div class="tc-card-tags"><span class="tc-badge ok">已发布</span></div>
+                  </div>
+                  <div class="tc-item tc-agent-card">
+                    <div class="tc-card-head">
+                      <span class="proto-avatar">
+                        <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="1.5" y="1.5" width="45" height="45" rx="12" fill="#fff7e6" stroke="#fa8c16" stroke-width="2"/><circle cx="24" cy="18" r="8.3" fill="#f2c4a4"/><path d="M16 18.3c0-5.4 3.2-9.2 8-9.2s8 3.8 8 9.2c-2.2-1.2-4.6-1.8-8-1.8s-5.8.6-8 1.8z" fill="#3d2d4f"/><path d="M11 40c0-6.9 5.8-12.4 13-12.4S37 33.1 37 40" fill="#fa8c16" opacity=".9"/><path d="M16 40c0-4.2 3.6-7.6 8-7.6s8 3.4 8 7.6" fill="#7a3c00" opacity=".9"/></svg>
+                      </span>
+                      <div class="tc-card-title-wrap">
+                        <div class="tc-item-title">feishu</div>
+                        <div class="proto-agent-role">角色定位：未确定</div>
+                      </div>
+                      <span class="tc-card-chip">工牌</span>
+                    </div>
+                    <div class="tc-item-sub">当前版本：未发布</div>
+                    <div class="tc-card-tags"><span class="tc-badge">预发布</span></div>
+                  </div>
+                  <div class="tc-item tc-agent-card">
+                    <div class="tc-card-head">
+                      <span class="proto-avatar">
+                        <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="1.5" y="1.5" width="45" height="45" rx="12" fill="#e6f4ff" stroke="#1677ff" stroke-width="2"/><circle cx="24" cy="18" r="8.3" fill="#d9a37e"/><path d="M16 18.3c0-5.4 3.2-9.2 8-9.2s8 3.8 8 9.2c-2.2-1.2-4.6-1.8-8-1.8s-5.8.6-8 1.8z" fill="#1e1f26"/><path d="M11 40c0-6.9 5.8-12.4 13-12.4S37 33.1 37 40" fill="#1677ff" opacity=".9"/><path d="M16 40c0-4.2 3.6-7.6 8-7.6s8 3.4 8 7.6" fill="#073b7a" opacity=".9"/></svg>
+                      </span>
+                      <div class="tc-card-title-wrap">
+                        <div class="tc-item-title">openclaw</div>
+                        <div class="proto-agent-role">角色定位：未确定</div>
+                      </div>
+                      <span class="tc-card-chip">工牌</span>
+                    </div>
+                    <div class="tc-item-sub">当前版本：未发布</div>
+                    <div class="tc-card-tags"><span class="tc-badge">预发布</span></div>
+                  </div>
+                </div>
+              </aside>
+              <section class="tc-detail">
+                <section class="tc-portrait-card">
+                  <div class="tc-detail-head">
+                    <div class="tc-portrait-head">
+                      <div class="tc-avatar-preview">
+                        <svg class="tc-avatar-svg" viewBox="0 0 48 48" aria-hidden="true"><rect x="1.5" y="1.5" width="45" height="45" rx="12" fill="#e6f4ff" stroke="#1677ff" stroke-width="2"/><circle cx="24" cy="18" r="8.3" fill="#d9a37e"/><path d="M16 18.3c0-5.4 3.2-9.2 8-9.2s8 3.8 8 9.2c-2.2-1.2-4.6-1.8-8-1.8s-5.8.6-8 1.8z" fill="#1e1f26"/><path d="M11 40c0-6.9 5.8-12.4 13-12.4S37 33.1 37 40" fill="#1677ff" opacity=".9"/><path d="M16 40c0-4.2 3.6-7.6 8-7.6s8 3.4 8 7.6" fill="#073b7a" opacity=".9"/></svg>
+                      </div>
+                      <div class="tc-portrait-meta">
+                        <div class="card-title" id="agentTitle">角色详情 · Analyst2</div>
+                        <div class="tc-detail-subtitle" id="agentSubtitle">角色介绍：我当前是一名以需求分析为核心的角色型 agent：我会先澄清用户真正要解决的问题，再把显性需求、隐性诉求、范围边界、风险依赖与验收标准沉淀为可执行、可验证、可协作的结构化需求文档。</div>
+                      </div>
+                    </div>
+                    <div class="tc-detail-head-actions">
+                      <div class="tc-version-switch">
+                        <select id="versionSelect" class="proto-head-select">
+                          <option value="v1.0.0" selected>v1.0.0 · 2026-03-10T13:48:39+08:00</option>
+                        </select>
+                      </div>
+                      <button class="alt" type="button">更换头像</button>
+                      <button class="alt" type="button">进入训练优化</button>
+                    </div>
+                  </div>
+                  <div id="portraitSections" class="tc-portrait-grid"></div>
+                </section>
+
+                <div class="tc-kv" id="detailMeta">
+                  绑定发布版本=v1.0.0<br>
+                  角色详情来源=最新正式发布报告<br>
+                  生命周期=已发布
+                </div>
+                <div class="tc-release-state">
+                  <span class="tc-badge ok">已发布</span>
+                  <span class="tc-badge warn">当前工作区仍有进行中的新评审</span>
+                </div>
+
+                <div class="card-title">发布版本</div>
+                <div class="hint">切换不同已发布版本后，只在“查看发布报告”中查看该版本的发布评审记录；首页不再直接回显历史评审正文。</div>
+                <div class="tc-release-list" id="releaseList"></div>
+
+                <section class="tc-release-review-card">
+                  <div class="tc-release-review-head">
+                    <div>
+                      <div class="card-title">当前进行中的发布评审</div>
+                      <div class="hint">这是首页唯一保留的评审内容区域，用于承载当前工作区尚未完成的评审链路。</div>
+                    </div>
+                    <div class="tc-release-review-actions">
+                      <button class="alt" type="button">重新进入发布评审</button>
+                      <button type="button">确认发布</button>
+                    </div>
+                  </div>
+                  <div id="reviewHint" class="proto-inline-note"></div>
+                  <div id="currentReviewProgress" class="tc-release-review-progress active"></div>
+                  <div id="reviewSteps" class="tc-release-review-steps"></div>
+                  <div id="reviewSubsteps" class="tc-release-review-substage"></div>
+                  <div class="proto-review-scroll">
+                    <section class="tc-release-review-panel proto-scroll-panel">
+                      <div class="tc-release-review-section-title">结构化发布报告</div>
+                      <div id="currentReviewReport"></div>
+                    </section>
+                    <section class="tc-release-review-panel proto-scroll-panel">
+                      <div class="tc-release-review-section-title">分析链路</div>
+                      <div id="currentReviewChain" class="tc-release-review-content"></div>
+                    </section>
+                    <section class="tc-release-review-panel proto-scroll-panel">
+                      <div class="tc-release-review-section-title">人工审核</div>
+                      <div id="currentReviewManual" class="tc-release-review-content"></div>
+                    </section>
+                    <section class="tc-release-review-panel proto-scroll-panel">
+                      <div class="tc-release-review-section-title">确认发布执行日志</div>
+                      <div id="currentReviewLogs" class="tc-release-review-content"></div>
+                    </section>
+                    <section class="tc-release-review-panel proto-scroll-panel">
+                      <div class="tc-release-review-section-title">兜底结果</div>
+                      <div id="currentReviewFallback" class="tc-release-review-content"></div>
+                    </section>
+                  </div>
+                </section>
+              </section>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="reportDialog" class="tc-report-dialog">
+    <div class="tc-report-dialog-shell">
+      <div class="tc-report-dialog-head">
+        <div class="tc-report-dialog-title-wrap">
+          <div class="tc-report-dialog-title" id="dialogTitle">发布报告</div>
+          <div class="tc-report-dialog-meta" id="dialogMeta"></div>
+        </div>
+        <button class="alt proto-dialog-close" id="closeDialogBtn" type="button">关闭</button>
+      </div>
+      <div class="tc-report-dialog-error" id="dialogError"></div>
+      <div class="tc-report-dialog-body" id="dialogBody"></div>
+    </div>
+  </dialog>
+
+  <script>
+    const versionDetails = {
+      'v1.0.0': {
+        subtitle: '角色介绍：我当前是一名以需求分析为核心的角色型 agent：我会先澄清用户真正要解决的问题，再把显性需求、隐性诉求、范围边界、风险依赖与验收标准沉淀为可执行、可验证、可协作的结构化需求文档。',
+        meta: '绑定发布版本=v1.0.0<br>角色详情来源=最新正式发布报告<br>生命周期=已发布',
+        portrait: {
+          source: '最新正式发布报告 · 来源版本=v1.0.0',
+          intro: '我当前是一名以需求分析为核心的角色型 agent：我会先澄清用户真正要解决的问题，再把显性需求、隐性诉求、范围边界、风险依赖与验收标准沉淀为可执行、可验证、可协作的结构化需求文档；我坚持只做需求分析与交付说明，不直接改造其他 agent 工作区实现，并能结合方法库与本地技能把复杂问题收敛成可落地的需求产出。',
+          canDo: [
+            '我能把模糊目标整理为结构化需求概述，覆盖项目背景、问题定义、目标用户、核心场景、成功指标、范围边界、优先级、风险、依赖与待确认事项。',
+            '我能按主题输出详细需求文档，明确用户画像、关键流程、功能需求、非功能需求、边界条件、开放问题，并给出可执行的验收标准。',
+            '我能通过高价值澄清问题识别显性需求、隐性动机与底层目标，区分“用户提出的方案”和“真正要解决的问题”，并注明哪些内容属于推断/假设。',
+            '我能在需求文档中执行需求治理，补充范围界定、冲突提示、依赖分析、风险提示、CRUD 审查与能力扩展评估，避免需求直接滑向不可控实现。',
+            '我能把需求结果组织成“需求概述 + 1~N 需求详情”的多文件文档结构，并要求文档之间可追溯、可链接、可协同。'
+          ],
+          fullCapability: [
+            '我能把需求分析继续下沉到验收阶段，使用 Given/When/Then 或等效格式定义验收标准，补齐异常处理与失败兜底。',
+            '我能维护长期偏好、会话快照和工作区状态，确保跨会话继续分析时不依赖长上下文。',
+            '我能根据任务复杂度选择并组合分析方法，如第一性原理、逻辑学分析、系统思维、唯物辩证法等。',
+            '我能在展示/交互类需求中先输出与现有系统风格一致的原型，再等待用户确认后决定是否分发到其他工作区。',
+            '我能在跨工作区协作时输出可直接转发的需求文档、设计文档和执行提示词，但不会越权修改其他工作区实现。'
+          ],
+          knowledgeScope: '我覆盖需求澄清、范围界定、优先级判断、风险依赖识别、验收标准设计、跨工作区交付说明，以及偏好/状态治理等需求分析相关范围。',
+          scenarios: [
+            '需求讨论与收敛',
+            '需求概述与详情文档输出',
+            '跨工作区交付前原型确认',
+            '验收标准补齐与风险提示'
+          ],
+          versionNotes: '当前版本已按“先确认需求，再确认原型，再决定是否分发”的协作节奏整理角色详情。'
+        }
+      }
+    };
+
+    const releases = [
+      { version: 'v1.0.0', time: '2026-03-10 13:48:39+08:00', note: '首个正式发布版本，已补齐角色详情。', report: true }
+    ];
+
+    const reports = {
+      'v1.0.0': {
+        time: '2026-03-10 13:48:39+08:00',
+        refType: '发布报告',
+        refPath: '.artifacts/release-report-v1.0.0.json',
+        core: [
+          { label: '目标版本', value: 'v1.0.0', options: { tag: true } },
+          { label: '工作区基线', value: 'c9a13f7', options: { code: true } },
+          { label: '上一正式版本', value: '无', options: { tag: true } },
+          { label: '发布建议', value: '通过，可作为正式角色详情基线。', options: { strong: true } },
+          { label: '下一步建议', value: '后续版本继续沿用同一结构，确保角色详情来源与版本备注可追溯。' }
+        ],
+        roleProfile: {
+          summary: '我当前是一名以需求分析为核心的角色型 agent：我会先澄清用户真正要解决的问题，再把显性需求、隐性诉求、范围边界、风险依赖与验收标准沉淀为可执行、可验证、可协作的结构化需求文档。',
+          inventory: [
+            '输出结构化需求概述，覆盖背景、问题定义、目标用户、核心场景、成功指标、范围边界、优先级、风险与依赖。',
+            '输出按主题拆分的需求详情文档，并补齐功能需求、非功能需求、边界条件、开放问题与验收标准。',
+            '通过高价值澄清问题识别显性需求、隐性诉求与底层目标，并对推断/假设进行标注。'
+          ],
+          facts: [
+            { label: '角色知识范围', value: '需求分析、需求文档、验收标准、风险与依赖、跨工作区交付说明。', options: {} },
+            { label: 'Agent Skills', value: 'requirement-convergence-gate、session-state-maintainer、method-selection-orchestrator', options: {} },
+            { label: '适用场景', value: '需求讨论与收敛、展示类需求原型确认、跨工作区分发前审核。', options: {} }
+          ]
+        },
+        changeSummary: '首个正式发布版本，补齐了角色详情正式展示所需的来源、第一人称介绍、能力清单、知识范围与场景信息。',
+        capabilityDelta: [
+          '新增“角色详情来源”字段，明确来源版本与来源类型。',
+          '新增“我是 / 我当前能做什么 / 全量能力清单”固定展示结构。',
+          '新增“版本备注”，便于后续版本切换时识别口径变化。'
+        ],
+        risks: [
+          '若后续版本未继续输出结构化发布报告，角色详情可能回退到结构化字段回填模式。',
+          '若“角色介绍”与“全量能力清单”不一致，用户会感知为角色描述口径漂移。'
+        ],
+        evidence: [
+          '已生成 release-report-v1.0.0.json 并可回读。',
+          '人工审核结论已记录为通过。',
+          '角色详情页面已能按固定结构展示来源、介绍、能力与备注。'
+        ],
+        warnings: [
+          '历史版本较少，后续切换多个已发布版本时需要继续校验展示稳定性。',
+          '若存在超长能力清单，详情区与弹窗都需要保持滚动可用。'
+        ]
+      }
+    };
+
+    const currentReviewData = {
+      hint: '发布报告已就绪 · 目标版本 v1.0.1 · 工作区基线 e5d4a8c',
+      progress: {
+        title: '确认发布执行中 · 已耗时 32s',
+        detail: '正在按当前版本识别规则回读并校验发布结果，完成后会继续更新 Git / release note / verify 阶段。',
+        stages: [
+          { label: '进入发布评审', status: 'done' },
+          { label: '生成发布报告', status: 'done' },
+          { label: '人工审核', status: 'done' },
+          { label: '确认发布', status: 'running' },
+          { label: '完成落盘', status: 'pending' }
+        ]
+      },
+      steps: [
+        { label: '进入发布评审', status: 'done' },
+        { label: '生成发布报告', status: 'done' },
+        { label: '人工审核', status: 'done' },
+        { label: '确认发布', status: 'current' }
+      ],
+      substeps: [
+        { label: 'Git 发布完成', status: 'done' },
+        { label: 'release note 处理中', status: 'current' },
+        { label: '成功校验待执行', status: 'pending' },
+        { label: '兜底待命', status: 'pending' }
+      ],
+      report: {
+        core: [
+          { label: '目标版本', value: 'v1.0.1', options: { tag: true } },
+          { label: '工作区基线', value: 'e5d4a8c', options: { code: true } },
+          { label: '上一正式版本', value: 'v1.0.0', options: { tag: true } },
+          { label: '发布建议', value: '通过并进入确认发布', options: { strong: true } },
+          { label: '下一步建议', value: '完成 release note 写入与成功校验后，即可落盘为新的正式发布版本。' }
+        ],
+        roleProfile: {
+          summary: '确认发布成功后，角色详情页优先展示“最新正式发布报告”中的第一人称全量介绍，并保留版本来源与版本备注。',
+          inventory: [
+            '首页只展示进行中的发布评审，不再常驻回显已发布历史评审正文。',
+            '切换不同已发布版本后，通过“查看发布报告”弹窗查看该版本的评审记录。',
+            '若某个已发布版本未绑定可展示报告，仅展示不可查看原因，不弹出空内容。'
+          ],
+          facts: [
+            { label: '角色知识范围', value: '发布展示分层、历史报告下钻、当前评审与历史评审职责分离。', options: {} },
+            { label: 'Agent Skills', value: 'release-governance、evidence-packaging、requirement-convergence-gate', options: {} },
+            { label: '适用场景', value: '发布展示优化、版本切换、历史评审追溯。', options: {} }
+          ]
+        },
+        changeSummary: '本次调整将发布展示分层：当前首页只保留正在进行的发布评审；历史正式发布版本的评审记录改为通过“查看发布报告”弹窗按版本查看。',
+        capabilityDelta: [
+          '移除已发布历史评审在首页的常驻正文展示，降低首屏信息噪音。',
+          '保留当前进行中的发布评审链路，继续展示阶段、人工审核、确认发布与执行日志。',
+          '已发布版本增加“查看发布报告”入口，按版本查看对应评审记录与证据模块。'
+        ],
+        risks: [
+          '若弹窗与当前评审区出现两套不同模块顺序，用户会难以建立稳定阅读心智。',
+          '若版本切换后按钮仍指向旧报告，会直接造成历史评审错位。'
+        ],
+        evidence: [
+          '已生成结构化发布报告并通过人工审核。',
+          '当前原型已验证首页与弹窗的职责分离。',
+          '版本列表可针对有报告的发布版本提供“查看发布报告”入口。'
+        ],
+        warnings: [
+          '需要继续验证旧版本未绑定报告时的只读提示是否足够明确。',
+          '需要验证长报告和长日志在滚动区内的可读性与操作按钮位置。'
+        ]
+      },
+      chain: {
+        rows: [
+          ['提示词版本', 'release-review-v20260310'],
+          ['提示词文件', 'docs/workflow/prompts/执行提示词-角色发布评审与确认发布链路-20260310.md'],
+          ['报告文件', '.artifacts/release-report-v1.0.1.json'],
+          ['公开介绍快照', '.artifacts/public-profile-v1.0.1.md'],
+          ['能力快照', '.artifacts/capability-snapshot-v1.0.1.json'],
+          ['stdout', '.tmp/release-review-v1.0.1/stdout.log'],
+          ['stderr', '.tmp/release-review-v1.0.1/stderr.log'],
+          ['trace 目录', '.tmp/release-review-v1.0.1/trace'],
+          ['执行摘要', 'Codex 已完成结构化报告生成，当前进入确认发布阶段。']
+        ],
+        codexSummary: 'Codex 摘要：exit=0 · events=42 · duration_ms=18342',
+        promptText: '请基于当前工作区的变更，生成结构化发布报告，明确目标版本、上一正式版本、功能差异、风险清单、验证证据、发布建议、下一步建议，并输出正式发布后的第一人称角色介绍预览。'
+      },
+      manual: {
+        state: '当前状态：人工审核已通过',
+        rows: [
+          ['审核结论', '通过并进入确认发布'],
+          ['审核人', 'owner'],
+          ['审核时间', '2026-03-10 16:46:21+08:00'],
+          ['审核意见', '首页与历史发布报告职责分离清晰，允许进入确认发布。']
+        ]
+      },
+      logs: [
+        {
+          phase: 'prepare',
+          status: 'done',
+          message: '已定位目标版本 v1.0.1，并锁定工作区基线 e5d4a8c。',
+          meta: 'path=.tmp/release-review-v1.0.1/prepare.log · ts=2026-03-10 16:46:33+08:00',
+          details: { target_version: 'v1.0.1', current_workspace_ref: 'e5d4a8c', previous_release_version: 'v1.0.0' }
+        },
+        {
+          phase: 'git_execute',
+          status: 'done',
+          message: 'Git 标签与提交已写入本地仓库，等待 release note 一并完成后进入 verify。',
+          meta: 'path=.tmp/release-review-v1.0.1/git_execute.log · ts=2026-03-10 16:46:44+08:00',
+          details: { tag: 'v1.0.1', commit: 'a1942de', branch: 'main' }
+        },
+        {
+          phase: 'release_note',
+          status: 'running',
+          message: '正在写入 release note，并按当前版本识别规则回读确认。',
+          meta: 'path=.tmp/release-review-v1.0.1/release_note.log · ts=2026-03-10 16:46:55+08:00',
+          details: { output_path: 'releases/v1.0.1.md', expected_sections: ['变更摘要', '风险清单', '验证证据'] }
+        },
+        {
+          phase: 'verify',
+          status: 'pending',
+          message: '等待 Git 与 release note 全部落盘后执行成功校验。',
+          meta: 'path=.tmp/release-review-v1.0.1/verify.log · ts=待执行',
+          details: { checks: ['git tag 存在', 'release note 可读取', '版本识别成功'] }
+        }
+      ],
+      fallback: {
+        rows: [
+          ['兜底状态', '未触发'],
+          ['失败原因', '-'],
+          ['修复摘要', '当前确认发布流程尚未失败，暂未进入自动重试。'],
+          ['下一步建议', '继续观察 verify 结果；若失败则展示自动重试结果与下一步建议。']
+        ],
+        repairActions: [],
+        retryResult: null
+      }
+    };
+
+    const versionSelect = document.getElementById('versionSelect');
+    const agentSubtitle = document.getElementById('agentSubtitle');
+    const portraitSections = document.getElementById('portraitSections');
+    const detailMeta = document.getElementById('detailMeta');
+    const releaseList = document.getElementById('releaseList');
+    const reviewHint = document.getElementById('reviewHint');
+    const currentReviewProgress = document.getElementById('currentReviewProgress');
+    const reviewSteps = document.getElementById('reviewSteps');
+    const reviewSubsteps = document.getElementById('reviewSubsteps');
+    const currentReviewReport = document.getElementById('currentReviewReport');
+    const currentReviewChain = document.getElementById('currentReviewChain');
+    const currentReviewManual = document.getElementById('currentReviewManual');
+    const currentReviewLogs = document.getElementById('currentReviewLogs');
+    const currentReviewFallback = document.getElementById('currentReviewFallback');
+    const dialog = document.getElementById('reportDialog');
+    const dialogTitle = document.getElementById('dialogTitle');
+    const dialogMeta = document.getElementById('dialogMeta');
+    const dialogBody = document.getElementById('dialogBody');
+    const closeDialogBtn = document.getElementById('closeDialogBtn');
+
+    function renderPortraitSections(portrait) {
+      if (!portraitSections) return;
+      const sections = [];
+      const addTextSection = (label, text) => {
+        if (!text) return;
+        sections.push(
+          '<section class="tc-portrait-item">' +
+            '<div class="tc-portrait-k">' + label + '</div>' +
+            '<div class="tc-portrait-v">' + text + '</div>' +
+          '</section>'
+        );
+      };
+      const addListSection = (label, rows) => {
+        if (!Array.isArray(rows) || !rows.length) return;
+        sections.push(
+          '<section class="tc-portrait-item">' +
+            '<div class="tc-portrait-k">' + label + '</div>' +
+            '<ul class="tc-portrait-v tc-portrait-list">' +
+              rows.map((row) => '<li>' + row + '</li>').join('') +
+            '</ul>' +
+          '</section>'
+        );
+      };
+      addTextSection('角色详情来源', portrait.source);
+      addTextSection('我是', portrait.intro);
+      addListSection('我当前能做什么', portrait.canDo);
+      addListSection('全量能力清单', portrait.fullCapability);
+      addTextSection('角色知识范围', portrait.knowledgeScope);
+      addListSection('适用场景', portrait.scenarios);
+      addTextSection('版本备注', portrait.versionNotes);
+      portraitSections.innerHTML = sections.join('');
+    }
+
+    function createReviewRow(label, value, useCode) {
+      return (
+        '<div class="tc-release-review-row">' +
+          '<span class="tc-release-review-row-label">' + label + '</span>' +
+          '<span class="tc-release-review-row-value' + (useCode ? ' code' : '') + '">' + value + '</span>' +
+        '</div>'
+      );
+    }
+
+    function renderReviewSteps(host, items) {
+      if (!host) return;
+      host.innerHTML = items.map((item, index) => (
+        '<div class="tc-release-review-step ' + item.status + '">' +
+          '<span class="tc-release-review-step-index">' + (index + 1) + '</span>' +
+          '<span class="tc-release-review-step-label">' + item.label + '</span>' +
+        '</div>'
+      )).join('');
+    }
+
+    function renderReviewPills(host, items) {
+      if (!host) return;
+      host.innerHTML = items.map((item) => (
+        '<span class="tc-release-review-pill ' + item.status + '">' + item.label + '</span>'
+      )).join('');
+    }
+
+    function renderProgress(host, progress) {
+      if (!host) return;
+      host.innerHTML =
+        '<div class="tc-release-review-progress-head">' +
+          '<div class="tc-release-review-progress-title">' + progress.title + '</div>' +
+        '</div>' +
+        '<div class="tc-release-review-progress-detail">' + progress.detail + '</div>' +
+        '<div class="tc-release-review-progress-stages">' +
+          progress.stages.map((stage) => (
+            '<div class="tc-release-review-progress-stage ' + stage.status + '">' +
+              '<span class="tc-release-review-progress-stage-text">' + stage.label + '</span>' +
+            '</div>'
+          )).join('') +
+        '</div>';
+    }
+
+    function createReportCardHtml(card) {
+      const classes = ['tc-release-report-card-value'];
+      if (card.options && card.options.code) classes.push('code');
+      if (card.options && card.options.tag) classes.push('tag');
+      if (card.options && card.options.strong) classes.push('strong');
+      return (
+        '<section class="tc-release-report-card">' +
+          '<div class="tc-release-report-card-label">' + card.label + '</div>' +
+          '<div class="' + classes.join(' ') + '">' + card.value + '</div>' +
+        '</section>'
+      );
+    }
+
+    function createReportListHtml(items, tone) {
+      if (!Array.isArray(items) || !items.length) return '';
+      return (
+        '<ul class="tc-release-report-list' + (tone ? ' ' + tone : '') + '">' +
+          items.map((item) => '<li class="tc-release-report-list-item">' + item + '</li>').join('') +
+        '</ul>'
+      );
+    }
+
+    function renderReportStack(host, report) {
+      if (!host) return;
+      const roleFacts = Array.isArray(report.roleProfile && report.roleProfile.facts) ? report.roleProfile.facts : [];
+      host.innerHTML =
+        '<div class="tc-release-report-stack">' +
+          '<section class="tc-release-report-module">' +
+            '<div class="tc-release-report-module-head">' +
+              '<div class="tc-release-report-module-title">核心信息</div>' +
+              '<div class="tc-release-report-module-desc">先看版本、基线与发布结论</div>' +
+            '</div>' +
+            '<div class="tc-release-report-core-grid">' +
+              report.core.map(createReportCardHtml).join('') +
+            '</div>' +
+          '</section>' +
+          '<section class="tc-release-report-module">' +
+            '<div class="tc-release-report-module-head">' +
+              '<div class="tc-release-report-module-title">正式发布角色介绍预览</div>' +
+              '<div class="tc-release-report-module-desc">确认发布成功后，角色详情页优先展示这里的第一人称全量介绍</div>' +
+            '</div>' +
+            '<div class="tc-release-report-text">' + report.roleProfile.summary + '</div>' +
+            createReportListHtml(report.roleProfile.inventory, 'capability') +
+            '<div class="tc-release-report-core-grid">' + roleFacts.map(createReportCardHtml).join('') + '</div>' +
+          '</section>' +
+          '<section class="tc-release-report-module">' +
+            '<div class="tc-release-report-module-head">' +
+              '<div class="tc-release-report-module-title">功能差异报告</div>' +
+              '<div class="tc-release-report-module-desc">重点说明相对上一正式发布版本的变化</div>' +
+            '</div>' +
+            '<div class="tc-release-report-text">' + report.changeSummary + '</div>' +
+            createReportListHtml(report.capabilityDelta, 'capability') +
+          '</section>' +
+          '<section class="tc-release-report-module">' +
+            '<div class="tc-release-report-module-head"><div class="tc-release-report-module-title">风险清单</div></div>' +
+            createReportListHtml(report.risks, 'risk') +
+          '</section>' +
+          '<section class="tc-release-report-module">' +
+            '<div class="tc-release-report-module-head"><div class="tc-release-report-module-title">验证证据</div></div>' +
+            createReportListHtml(report.evidence, 'evidence') +
+          '</section>' +
+          '<section class="tc-release-report-module">' +
+            '<div class="tc-release-report-module-head"><div class="tc-release-report-module-title">补充提示</div></div>' +
+            createReportListHtml(report.warnings, 'warning') +
+          '</section>' +
+        '</div>';
+    }
+
+    function renderCurrentReview() {
+      if (reviewHint) reviewHint.textContent = currentReviewData.hint;
+      renderProgress(currentReviewProgress, currentReviewData.progress);
+      renderReviewSteps(reviewSteps, currentReviewData.steps);
+      renderReviewPills(reviewSubsteps, currentReviewData.substeps);
+      renderReportStack(currentReviewReport, currentReviewData.report);
+
+      if (currentReviewChain) {
+        currentReviewChain.innerHTML =
+          currentReviewData.chain.rows.map((row, index) => createReviewRow(row[0], row[1], index > 0)).join('') +
+          '<div class="tc-release-review-note">' + currentReviewData.chain.codexSummary + '</div>' +
+          '<pre class="tc-release-review-pre">' + currentReviewData.chain.promptText + '</pre>';
+      }
+
+      if (currentReviewManual) {
+        currentReviewManual.innerHTML =
+          '<div class="tc-release-review-note">' + currentReviewData.manual.state + '</div>' +
+          currentReviewData.manual.rows.map((row) => createReviewRow(row[0], row[1], false)).join('');
+      }
+
+      if (currentReviewLogs) {
+        currentReviewLogs.innerHTML = currentReviewData.logs.map((log) => (
+          '<div class="tc-release-review-log-item">' +
+            '<div class="tc-release-review-log-head">' +
+              '<span class="tc-release-review-log-phase">' + log.phase + '</span>' +
+              '<span class="tc-release-review-pill ' + log.status + '">' + log.status + '</span>' +
+            '</div>' +
+            '<div class="tc-release-review-log-message">' + log.message + '</div>' +
+            '<div class="tc-release-review-log-meta">' + log.meta + '</div>' +
+            '<pre class="tc-release-review-pre compact">' + JSON.stringify(log.details, null, 2) + '</pre>' +
+          '</div>'
+        )).join('');
+      }
+
+      if (currentReviewFallback) {
+        currentReviewFallback.innerHTML =
+          currentReviewData.fallback.rows.map((row) => createReviewRow(row[0], row[1], false)).join('') +
+          '<div class="proto-empty-state">发布失败时，这里会继续补充自动重试结果、修复动作与下一步建议。</div>';
+      }
+    }
+
+    function renderSelectedVersion() {
+      const data = versionDetails[versionSelect.value];
+      agentSubtitle.textContent = data.subtitle;
+      detailMeta.innerHTML = data.meta;
+      renderPortraitSections(data.portrait);
+      renderReleaseList();
+    }
+
+    function renderReleaseList() {
+      releaseList.innerHTML = '';
+      releases.forEach((row) => {
+        const item = document.createElement('div');
+        item.className = 'tc-item proto-release-item' + (row.version === versionSelect.value ? ' active' : '');
+        item.innerHTML =
+          '<div class="proto-release-row">' +
+            '<div class="proto-release-main">' +
+              '<div class="tc-item-title">' + row.version + ' <span class="tc-badge ok">发布版本</span></div>' +
+              '<div class="tc-item-sub">发布时间：' + row.time + '</div>' +
+              '<div class="tc-item-sub">发布说明：' + row.note + '</div>' +
+            '</div>' +
+            '<div class="proto-release-actions"></div>' +
+          '</div>';
+        const actions = item.querySelector('.proto-release-actions');
+        if (row.report) {
+          const btn = document.createElement('button');
+          btn.className = 'alt';
+          btn.type = 'button';
+          btn.textContent = '查看发布报告';
+          btn.addEventListener('click', () => openReport(row.version));
+          actions.appendChild(btn);
+        } else {
+          const hint = document.createElement('div');
+          hint.className = 'hint';
+          hint.textContent = '当前版本未绑定可展示的发布报告文件';
+          actions.appendChild(hint);
+        }
+        releaseList.appendChild(item);
+      });
+    }
+
+    function openReport(version) {
+      const report = reports[version];
+      dialogTitle.textContent = version + ' 发布报告';
+      dialogMeta.textContent = report
+        ? ('发布时间：' + report.time + ' · ' + report.refType + '：' + report.refPath)
+        : '当前发布报告不可用';
+      dialogBody.innerHTML = '';
+      if (!report) {
+        dialogBody.innerHTML = '<div class="tc-empty">当前发布报告暂不可展示。</div>';
+      } else {
+        const host = document.createElement('div');
+        renderReportStack(host, report);
+        dialogBody.appendChild(host);
+      }
+      if (typeof dialog.showModal === 'function' && !dialog.open) dialog.showModal();
+      history.replaceState(null, '', '?report=' + encodeURIComponent(version));
+    }
+
+    function closeReport() {
+      if (dialog.open) dialog.close();
+      history.replaceState(null, '', location.pathname);
+    }
+
+    versionSelect.addEventListener('change', renderSelectedVersion);
+    closeDialogBtn.addEventListener('click', closeReport);
+    dialog.addEventListener('click', (event) => {
+      const rect = dialog.getBoundingClientRect();
+      const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+      if (!inside) closeReport();
+    });
+
+    renderSelectedVersion();
+    renderCurrentReview();
+    const initialReport = new URLSearchParams(location.search).get('report');
+    if (initialReport) openReport(initialReport);
+  </script>
+</body>
+</html>

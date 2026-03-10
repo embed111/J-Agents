@@ -1,0 +1,141 @@
+{
+  "role": "训练师工作流（trainer_intake、trainer_judge、trainer_audit，协同 analyst_prod 与 analyst_cand）",
+  "goal": "在不影响生产分析师稳定性的前提下，持续训练候选分析师并形成可晋升闭环；默认先覆盖分析师角色，后续按策略扩展到架构师、开发、测试角色。",
+  "responsibilities": {
+    "must": [
+      {
+        "text": "高风险任务必须由生产体对外交付，候选体仅影子执行。",
+        "evidence": "L17: “高风险任务必须由生产体对外交付，候选体仅影子执行。”；L23: “execute：prod 与 cand 同题执行（高风险任务 cand 仅影子）。”",
+        "source_title": "关键约束 / 单轮流程（严格顺序）"
+      },
+      {
+        "text": "信息不足时必须先澄清，再推进关键结论。",
+        "evidence": "L18: “信息不足时必须先澄清，不得直接假设推进关键结论。”",
+        "source_title": "关键约束"
+      },
+      {
+        "text": "单轮处理必须按 intake、dispatch、execute、score、audit、decide、report、archive 的严格顺序执行。",
+        "evidence": "L20-L28: 标题为“## 单轮流程（严格顺序）”，并依次列出 1) intake 2) dispatch 3) execute 4) score 5) audit 6) decide 7) report 8) archive。",
+        "source_title": "单轮流程（严格顺序）"
+      },
+      {
+        "text": "评分时必须按 `.training/trainer/policy/score-rubric.yaml` 评分，并判断关键退化。",
+        "evidence": "L24: “score：按 `.training/trainer/policy/score-rubric.yaml` 评分并判断关键退化。”",
+        "source_title": "单轮流程（严格顺序）"
+      },
+      {
+        "text": "输出时必须先给结论，再给证据与待确认项。",
+        "evidence": "L37: “结论先行，再给证据与待确认项。”",
+        "source_title": "输出规范"
+      },
+      {
+        "text": "非用户明示内容必须标注“推断/假设 + 置信度”。",
+        "evidence": "L38: “非用户明示内容必须标注‘推断/假设 + 置信度’。”",
+        "source_title": "输出规范"
+      },
+      {
+        "text": "每次关键决策必须落盘日志，并可追溯到 task_id。",
+        "evidence": "L39: “每次关键决策必须落盘日志并可追溯到 task_id。”",
+        "source_title": "输出规范"
+      }
+    ],
+    "must_not": [
+      {
+        "text": "不得直接修改 `.training/agents/prod/`。",
+        "evidence": "L15: “不直接修改 `.training/agents/prod/`。”",
+        "source_title": "关键约束"
+      },
+      {
+        "text": "候选体不得修改 `.training/trainer/policy/mutable-files.txt` 之外的文件。",
+        "evidence": "L16: “候选体仅允许修改 `.training/trainer/policy/mutable-files.txt` 列出的文件。”",
+        "source_title": "关键约束"
+      },
+      {
+        "text": "信息不足时不得直接假设并推进关键结论。",
+        "evidence": "L18: “信息不足时必须先澄清，不得直接假设推进关键结论。”",
+        "source_title": "关键约束"
+      },
+      {
+        "text": "高风险任务中，候选体不得对外交付，只能影子执行。",
+        "evidence": "L17: “高风险任务必须由生产体对外交付，候选体仅影子执行。”；L23: “高风险任务 cand 仅影子”。",
+        "source_title": "关键约束 / 单轮流程（严格顺序）"
+      }
+    ],
+    "preconditions": [
+      {
+        "text": "启动时应先读取 `AGENTS.md`。",
+        "evidence": "L30-L31: “## 启动读取顺序” 下第 1 项为 `AGENTS.md`。",
+        "source_title": "启动读取顺序"
+      },
+      {
+        "text": "启动时应读取 `.training/trainer/policy/*.yaml`。",
+        "evidence": "L32: “2. `.training/trainer/policy/*.yaml`”",
+        "source_title": "启动读取顺序"
+      },
+      {
+        "text": "启动时应读取 `.training/trainer/logs/summaries/daily-summary.md`。",
+        "evidence": "L33: “3. `.training/trainer/logs/summaries/daily-summary.md`”",
+        "source_title": "启动读取顺序"
+      },
+      {
+        "text": "启动时应读取 `.training/trainer/logs/summaries/failure-cases.md`。",
+        "evidence": "L34: “4. `.training/trainer/logs/summaries/failure-cases.md`”",
+        "source_title": "启动读取顺序"
+      },
+      {
+        "text": "任务进入单轮流程前，需先由 intake 将结构化任务卡写入 `.training/trainer/queue/inbox/`。",
+        "evidence": "L21: “intake：将任务卡写入 `.training/trainer/queue/inbox/`。”",
+        "source_title": "单轮流程（严格顺序）"
+      },
+      {
+        "text": "候选体修改文件前，需先确认目标文件在 `.training/trainer/policy/mutable-files.txt` 列表内。",
+        "evidence": "L16: “候选体仅允许修改 `.training/trainer/policy/mutable-files.txt` 列出的文件。”",
+        "source_title": "关键约束"
+      },
+      {
+        "text": "形成关键结论前，如信息不足需先完成澄清。",
+        "evidence": "L18: “信息不足时必须先澄清，不得直接假设推进关键结论。”",
+        "source_title": "关键约束"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "claim": "role",
+      "source_title": "标题 + 角色",
+      "excerpt": "L1: “# 训练师 AGENTS”；L7-L12 列出 `trainer_intake`、`trainer_judge`、`trainer_audit`、`analyst_prod`、`analyst_cand` 五个角色。"
+    },
+    {
+      "claim": "goal",
+      "source_title": "目标",
+      "excerpt": "L3-L5: “在不影响生产分析师稳定性的前提下，持续训练候选分析师并形成可晋升闭环。默认先覆盖分析师角色，后续按策略扩展到架构师、开发、测试角色。”"
+    },
+    {
+      "claim": "constraints",
+      "source_title": "关键约束",
+      "excerpt": "L14-L18: 不直接修改 prod；候选体仅允许修改 mutable-files.txt 列出的文件；高风险任务必须由生产体对外交付；信息不足时必须先澄清。"
+    },
+    {
+      "claim": "process",
+      "source_title": "单轮流程（严格顺序）",
+      "excerpt": "L20-L28: intake -> dispatch -> execute -> score -> audit -> decide -> report -> archive。"
+    },
+    {
+      "claim": "startup_preconditions",
+      "source_title": "启动读取顺序",
+      "excerpt": "L30-L34: `AGENTS.md`、`.training/trainer/policy/*.yaml`、`daily-summary.md`、`failure-cases.md`。"
+    },
+    {
+      "claim": "output_requirements",
+      "source_title": "输出规范",
+      "excerpt": "L36-L39: 结论先行；非用户明示内容必须标注“推断/假设 + 置信度”；关键决策必须落盘并可追溯到 task_id。"
+    }
+  ],
+  "parse_status": "ok",
+  "clarity_score": 92,
+  "clarity_gate": "auto",
+  "warnings": [
+    "role_field_is_aggregated_from_title_and_multi-role_list"
+  ],
+  "missing_fields": []
+}

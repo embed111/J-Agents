@@ -24,7 +24,8 @@
 2. 二级结构建议：
    1. `Agent资产与版本`：版本时间线、切换、克隆入口。
    2. `训练运营`：训练计划与队列。
-   3. `预发布与发布评审`：状态查看、进入发布评审、舍弃预发布、查看发布报告、人工审核、确认发布。
+   3. `预发布与发布评审`：仅展示当前活跃评审的状态查看、进入发布评审、舍弃预发布、人工审核、确认发布。
+   4. `发布版本历史`：查看已发布版本列表，并通过“查看发布报告”按版本下钻历史发布评审记录。
 3. agent-first 规则：
    1. 所有页面列表第一维度均为 `agent_id`。
    2. 所有操作上下文必须绑定单个 agent。
@@ -137,6 +138,10 @@
 6. 进入发布评审：
    1. 仅允许 `lifecycle_state=pre_release` 的 agent 进入。
    2. 进入后创建 `agent_release_review` 记录，并将 `release_review_state` 设置为 `report_generating`。
+   3. 进入发布评审前先做元数据预检：
+      1. 检查 `target_version/current_registry_version/latest_release_version/released_versions` 是否自洽；
+      2. 若存在明显冲突，优先输出 `metadata_conflict` 类失败信息，并写入评审记录；
+      3. 不把元数据冲突直接伪装成 agent 能力风险。
 7. 发布报告委派：
    1. 系统必须基于 `agent_id -> workspace_path` 选择对应工作区 agent。
    2. 执行方式固定复用“会话入口 agent 分析”链路：`codex exec` + 提示词版本 + 证据落盘 + 分析链路可见。
@@ -156,7 +161,26 @@
    4. `first_person_summary/change_summary/risk_list/validation_evidence/next_action_suggestion` 等自然语言字段统一使用第一人称视角。
    5. 发布报告必须同时输出“全量能力清单快照”与“版本增量说明”；前者用于角色详情，后者用于评审判断。
    6. 成功生成报告后，需落盘 `public_profile_markdown_path` 与 `capability_snapshot_json_path`，但在正式发布成功前不得激活到角色详情页。
-   7. 若 Codex 执行失败、超时或输出不符合契约，则设置 `release_review_state=report_failed`，并阻断确认发布。
+   7. 报告生成的事实来源优先级固定为：
+      1. 当前工作区 `AGENTS.md`；
+      2. 当前已知角色画像字段与本地 skills；
+      3. 当前版本上下文（目标版本、上一正式版本、绑定版本）；
+      4. 可读的 `README/CHANGELOG/release note` 与工作区内相关说明文档。
+   8. 若 `README/CHANGELOG/release note` 缺失，默认只写入 `warnings`，不作为单独的拒绝门禁；除非上层产品规则已显式声明其为必备发布材料。
+   9. Git 风险判断默认只读取目标工作区路径范围内的状态与差异；仓库外或兄弟工作区噪声仅可作为辅助提示，不得主导 `release_recommendation`。
+   10. 若不存在上一正式发布版本，则进入 `initial_release` 评审模式：
+      1. `previous_release_version` 允许为空；
+      2. 仍必须输出完整 `first_person_summary/full_capability_inventory/knowledge_scope/agent_skills/applicable_scenarios`；
+      3. `capability_delta` 用于描述“当前首发基线包含什么”，而不是退化为空或只输出拒绝理由。
+   11. `release_recommendation` 只允许使用 `approve/reject/needs_more_validation`；
+      1. 服务端负责把历史旧枚举（如 `reject_continue_training/reject_discard_pre_release`）映射到新建议枚举；
+      2. 人工审核决策仍保持独立字段，不与报告建议复用。
+   12. 若 Codex 执行失败、超时或输出不符合契约，则设置 `release_review_state=report_failed`，并阻断确认发布。
+   13. `report_failed` 时仍需落盘“失败报告骨架”：
+      1. 优先保留已解析出的结构化字段；
+      2. 至少补齐 `target_version/current_workspace_ref/change_summary/release_recommendation/next_action_suggestion`；
+      3. 保留 `raw_result/warnings` 供前端与人工排查；
+      4. 禁止仅向前端回传空 `report_json`。
 8. 人工审核：
    1. 仅当 `release_review_state=report_ready` 时允许提交审核结论。
    2. 审核通过后设置 `release_review_state=review_approved`。
@@ -227,21 +251,36 @@
 5. 发布评审入口：
    1. 仅在 `pre_release` 且有真实使用记录后可点击。
    2. 点击后页面进入四步状态条：`进入发布评审 -> 生成发布报告 -> 人工审核 -> 确认发布`。
-6. 发布报告展示：
+6. 首页评审区展示口径：
+   1. 首页“发布评审”区块只展示当前活跃评审。
+   2. “当前活跃评审”定义为：当前 agent 最近一条尚未因“确认发布成功”或“显式废弃”而结束的评审记录。
+   3. 若当前不存在活跃评审，则首页不常驻渲染完整发布评审内容。
+   4. 历史已发布版本对应的评审记录不得继续常驻在首页评审区。
+7. 发布报告展示：
    1. 报告生成阶段必须展示排队中/执行中/已完成/失败状态。
    2. 报告顶部优先展示“第一人称述职摘要 + 全量能力清单”，再展示版本增量、风险与证据。
    3. 报告正文、提示词、Codex 执行摘要、stdout/stderr、结构化结果默认折叠展示，但必须支持完整下钻。
-7. 人工审核入口：
+   4. 若进入失败态，页面错误文案优先显示后端返回的真实失败原因；
+      1. 仅当后端明确返回“结构化报告不完整”时，才显示“缺字段”提示；
+      2. 缺字段列表必须与服务端 `RELEASE_REVIEW_REQUIRED_FIELDS` 一致，不允许前后端各自维护不同口径。
+8. 历史发布报告弹窗：
+   1. “发布版本”列表中的每个已发布版本按 `release_id/version_label` 独立渲染。
+   2. 若该版本存在 `release_source_ref/public_profile_ref/capability_snapshot_ref` 等可展示来源，则显示“查看发布报告”按钮。
+   3. 点击“查看发布报告”后，页面以 `dialog/modal` 方式展示该版本对应的历史发布报告/发布评审记录。
+   4. 弹窗数据源必须与当前点击版本一一绑定，不得复用当前活跃评审状态。
+   5. 历史报告弹窗只承担“按版本查看历史报告/评审记录”职责，不承载当前评审的步骤条、人工审核按钮或确认发布按钮。
+   6. 若该版本未绑定可展示报告，则列表仅显示不可查看原因，不展示“查看发布报告”按钮。
+9. 人工审核入口：
    1. 仅在 `release_review_state=report_ready` 时可提交。
-8. 确认发布按钮：
+10. 确认发布按钮：
    1. 仅在 `release_review_state=review_approved` 时可点击。
    2. 其余状态必须禁用并展示原因。
    3. 点击后必须展示子阶段进度：`Git 发布中 -> release note 处理中 -> 成功校验中 -> 完成/失败`。
    4. 若失败触发兜底，页面需展示 `兜底中/兜底完成/兜底失败`。
-9. 发布执行日志展示：
+11. 发布执行日志展示：
    1. 发布评审详情需提供“发布执行日志”区块，默认折叠。
    2. 展开后至少可查看 Git 命令摘要、release note 引用、成功校验结果、兜底任务引用与结果摘要。
-10. 角色详情联动：
+12. 角色详情联动：
    1. 正式发布成功后，角色详情页优先读取 `agent_registry.active_role_profile_ref`。
    2. 预发布报告在正式发布成功前仅显示于发布评审页，不得覆盖当前正式发布角色详情。
 
@@ -258,6 +297,7 @@
    1. 返回 `workspace_agent_not_found`，并阻断发布报告生成。
 6. 发布报告生成失败：
    1. 返回 `release_report_generation_failed`，且“确认发布”不可点击。
+   2. 若已拿到部分结构化结果，仍需在 `review.report` 中保留失败报告骨架，供页面展示与人工复核。
 7. 报告未就绪即提交人工审核：
    1. 返回 `release_report_not_ready`。
 8. 人工审核未通过即确认发布：
@@ -303,6 +343,7 @@
    5. 若确认发布失败，必须自动启动 `../workflow` 工作区 agent 进行兜底。
    6. 兜底 agent 的默认职责固定为“给出失败原因 + 自动重试一次 + 输出重试结果”。
    7. 后续目标支持自动评估驱动自动训练/自动发布。
+   8. 首页只展示当前活跃评审；历史正式发布版本的评审记录通过“查看发布报告”弹窗按版本查看。
 3. 待后续专题：
    1. 自动评估策略、阈值与回滚机制设计。
 

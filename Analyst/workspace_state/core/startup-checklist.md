@@ -43,4 +43,5 @@
 13. 是否确认长期偏好主档（global/requirements/collaboration/overview）均未超过 200 行？
 14. 是否保持 `workspace_state/` 与 `user_profile/` 顶层“仅 `目录导读.md` 一个文件”？
 15. 若本轮涉及目录整理，是否先执行 `scripts/maintain-directory-health.ps1 -TargetDir <dir>` 做通用目录门禁检查？
+16. 若本轮涉及已有系统的展示/交互需求，是否计划先输出与现有设计风格一致的原型预览，再进行跨工作区交付？
 

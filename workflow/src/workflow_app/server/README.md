@@ -22,7 +22,7 @@
 ## 5. 状态与数据存储（表/文件/缓存）
 - SQLite：`state/workflow.db`（会话、训练计划、训练队列、训练运行、审计等）。
 - 事件文件：`logs/events/*.jsonl`。
-- 运行证据：`.output/evidence/*`。
+- 运行/验收证据：`.test/evidence/*`、`.test/runs/*`、`.test/reports/*`。
 
 ## 6. 关键回归命令
 - `python scripts/quality/check-module-readme-contract.py --root .`

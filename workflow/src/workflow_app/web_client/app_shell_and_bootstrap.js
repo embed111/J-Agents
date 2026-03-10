@@ -470,6 +470,15 @@
         }
       }
     };
+    $('tcDiscardReleaseReviewBtn').onclick = async () => {
+      try {
+        await withButtonLock('tcDiscardReleaseReviewBtn', async () => {
+          await discardTrainingCenterReleaseReview();
+        });
+      } catch (err) {
+        setTrainingCenterDetailError(err.message || String(err));
+      }
+    };
     $('tcSubmitEvalBtn').onclick = async () => {
       try {
         await withButtonLock('tcSubmitEvalBtn', async () => {

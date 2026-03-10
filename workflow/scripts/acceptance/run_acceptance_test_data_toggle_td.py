@@ -359,7 +359,7 @@ def main() -> int:
     repo_root = Path(args.root).resolve()
     ts = datetime.now().strftime("%Y%m%d-%H%M%S")
     runtime_root = (repo_root / "state" / "acceptance-runtime-td").resolve()
-    evidence_root = (repo_root / ".output" / "evidence" / f"test-data-toggle-td-{ts}").resolve()
+    evidence_root = (repo_root / ".test" / "evidence" / f"test-data-toggle-td-{ts}").resolve()
     api_dir = evidence_root / "api"
     db_dir = evidence_root / "db"
     shots_dir = evidence_root / "screenshots"

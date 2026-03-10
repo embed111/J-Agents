@@ -227,6 +227,21 @@ def handle_post_legacy(self, cfg, state) -> None:
             payload.update(exc.extra)
             self.send_json(exc.status_code, payload)
         return
+    mrrd = re.fullmatch(r"/api/training/agents/([0-9A-Za-z._:-]+)/release-review/discard", path)
+    if mrrd:
+        try:
+            data = discard_training_agent_release_review(
+                cfg,
+                agent_id=safe_token(mrrd.group(1), "", 120),
+                operator=str(body.get("operator") or "web-user"),
+                reason=str(body.get("reason") or body.get("review_comment") or body.get("summary") or "").strip(),
+            )
+            self.send_json(200, {"ok": True, **data})
+        except TrainingCenterError as exc:
+            payload = {"ok": False, "error": str(exc), "code": exc.code}
+            payload.update(exc.extra)
+            self.send_json(exc.status_code, payload)
+        return
     mrrm = re.fullmatch(r"/api/training/agents/([0-9A-Za-z._:-]+)/release-review/manual", path)
     if mrrm:
         try:

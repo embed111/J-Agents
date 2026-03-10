@@ -497,7 +497,7 @@ def main() -> int:
             results.append({"ac_id": ac_id, "pass": False, "detail": {"error": str(exc)}})
 
     all_pass = all(bool(item.get("pass")) for item in results)
-    out_dir = (repo_root / ".output" / "runs").resolve()
+    out_dir = (repo_root / ".test" / "runs").resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
     out_json = out_dir / f"ac16-ac22-acceptance-{run_id}.json"
     out_md = out_dir / f"ac16-ac22-acceptance-{run_id}.md"

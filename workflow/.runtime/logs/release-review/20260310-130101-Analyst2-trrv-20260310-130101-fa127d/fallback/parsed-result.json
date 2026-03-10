@@ -1,0 +1,13 @@
+{
+  "failure_reason": "本次发布的直接失败点是 Git 提交阶段缺少作者身份配置：当前环境未设置 `user.name` 和 `user.email`，导致 `git commit` 被 Git 拒绝并报错 `Author identity unknown`，因此 `publish_error` 为 `git_commit_failed`。`release_note` 阶段已成功完成，不是失败原因。校验层面没有出现硬失败，但当前评审结论仍为 `needs_more_validation`：这是首发版本，缺少上一正式版本对照；仓库级 `HEAD` 为 `9a3f1bb`，而当前工作区最近提交仍是 `4949153`，存在版本绑定口径待确认；同时缺少更完整的首发对外说明与发布隔离确认。",
+  "retry_target_version": "v1.0.0",
+  "retry_release_notes": "v1.0.0 首发发布：Analyst2 作为需求分析型 agent 正式上线，聚焦需求澄清、范围界定、风险依赖与验收标准输出；提供“需求概述 + 需求详情”结构化交付；沉淀方法库与本地技能；明确职责边界，不直接改造其他 agent 工作区实现。",
+  "next_action_suggestion": "自动重试前先为当前仓库注入可审计的 Git 身份信息（优先仓库级设置 `git config user.name` 与 `git config user.email`），随后复用已生成的 release note 重新执行一次提交/打标/发布。若本次重试成功，下一步仍需人工确认发布系统是否按 `Analyst2` 工作区隔离打包、`9a3f1bb` 作为绑定 ref 是否符合预期，并补充 README、CHANGELOG 或正式首发说明以完成发布闭环。",
+  "warnings": [
+    "如果自动重试阶段仍无法获得明确的 Git 提交身份，`git commit` 会再次失败。",
+    "当前 `release_recommendation` 为 `needs_more_validation`，即使重试提交成功，也不等于首发校验风险已消除。",
+    "仓库级 `HEAD` 与当前工作区最近提交不一致，若发布系统按整仓 ref 绑定版本，需要人工确认版本口径一致性。",
+    "仓库其他兄弟目录存在未提交变更；若实际发布不是工作区隔离打包，可能引入非 Analyst2 的内容。",
+    "当前缺少更完整的首发对外说明材料，发布后的版本追溯与外部理解成本较高。"
+  ]
+}

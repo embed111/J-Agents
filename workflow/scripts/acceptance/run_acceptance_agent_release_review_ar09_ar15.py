@@ -102,6 +102,8 @@ def write_agent_workspace(
     persist_git_identity: bool,
     pre_release_note: str,
     fail_commit_hook: bool = False,
+    create_release_tag: bool = True,
+    initialize_git_repo: bool = True,
 ) -> Path:
     workspace = root / agent_name
     workspace.mkdir(parents=True, exist_ok=True)
@@ -136,6 +138,9 @@ def write_agent_workspace(
         + "\n",
         encoding="utf-8",
     )
+    if not initialize_git_repo:
+        (workspace / "WIP.md").write_text(pre_release_note + "\n", encoding="utf-8")
+        return workspace
 
     run_cmd(["git", "init"], workspace)
     identity_env = os.environ.copy()
@@ -152,17 +157,18 @@ def write_agent_workspace(
 
     run_cmd(["git", "add", "AGENTS.md", ".codex/skills/release-governance/SKILL.md"], workspace, env=cmd_env)
     run_cmd(["git", "commit", "-m", "init"], workspace, env=cmd_env)
-    note_v100 = release_note_text(
-        "v1.0.0",
-        capability_summary="我负责角色发布评审与正式版本维护。",
-        knowledge_scope="我覆盖基础发布治理与角色能力说明。",
-        skills=["release-governance", "evidence-packaging"],
-        applicable_scenarios="正式发布基线维护；角色详情初始化",
-        version_notes="首个正式发布基线。",
-    )
-    note_path = workspace / ".release-note-v1.0.0.md"
-    note_path.write_text(note_v100, encoding="utf-8")
-    run_cmd(["git", "tag", "-a", "v1.0.0", "-F", note_path.as_posix()], workspace, env=cmd_env)
+    if create_release_tag:
+        note_v100 = release_note_text(
+            "v1.0.0",
+            capability_summary="我负责角色发布评审与正式版本维护。",
+            knowledge_scope="我覆盖基础发布治理与角色能力说明。",
+            skills=["release-governance", "evidence-packaging"],
+            applicable_scenarios="正式发布基线维护；角色详情初始化",
+            version_notes="首个正式发布基线。",
+        )
+        note_path = workspace / ".release-note-v1.0.0.md"
+        note_path.write_text(note_v100, encoding="utf-8")
+        run_cmd(["git", "tag", "-a", "v1.0.0", "-F", note_path.as_posix()], workspace, env=cmd_env)
     if fail_commit_hook:
         hook_path = workspace / ".git" / "hooks" / "pre-commit"
         hook_path.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
@@ -184,6 +190,21 @@ def fixture_agents(workspace_root: Path) -> dict[str, Path]:
             fail_commit_hook=True,
         ),
         "report-fail-agent": write_agent_workspace(workspace_root, "report-fail-agent", persist_git_identity=True, pre_release_note="report fail agent pre-release change"),
+        "no-git-agent": write_agent_workspace(
+            workspace_root,
+            "no-git-agent",
+            persist_git_identity=True,
+            pre_release_note="no git agent pre-release change",
+            create_release_tag=False,
+            initialize_git_repo=False,
+        ),
+        "legacy-analyst2-agent": write_agent_workspace(
+            workspace_root,
+            "legacy-analyst2-agent",
+            persist_git_identity=True,
+            pre_release_note="legacy analyst2 first release baseline change",
+            create_release_tag=False,
+        ),
     }
 
 
@@ -347,10 +368,13 @@ def write_codex_stub(bin_dir: Path) -> None:
                 "def emit(payload):",
                 "    print(json.dumps({'type': 'item.completed', 'item': {'type': 'agent_message', 'text': json.dumps(payload, ensure_ascii=False)}}, ensure_ascii=False))",
                 "if is_fallback:",
-                "    emit({'failure_reason': '我识别到当前工作区缺少 Git 用户身份配置，导致提交或打标签失败。', 'retry_target_version': target_version, 'retry_release_notes': '', 'next_action_suggestion': '我建议先补齐 Git 用户身份后再重新确认发布。', 'warnings': []})",
+                "    emit({'failure_reason': '我识别到当前工作区缺少 Git 用户身份配置，导致提交或打标签失败。', 'repair_summary': '我已定位到失败主因是 Git 身份或工作区提交钩子拦截，需要先修复后再重试。', 'repair_actions': ['我已检查当前发布失败日志并锁定 Git 身份/提交钩子问题。', '我建议先移除阻断提交的工作区钩子或补齐本地 Git 身份，然后再执行自动重试。'], 'retry_target_version': target_version, 'retry_release_notes': '', 'next_action_suggestion': '我建议先补齐 Git 用户身份或修复工作区提交钩子后，再直接重试发布。', 'warnings': []})",
                 "    raise SystemExit(0)",
                 "if agent_name == 'report-fail-agent':",
                 "    raise SystemExit(2)",
+                "if agent_name == 'legacy-analyst2-agent':",
+                "    emit({'target_version': target_version, 'current_workspace_ref': current_workspace_ref, 'change_summary': '我本次正在整理首发基线所需的角色发布评审报告。', 'capability_delta': ['我本次补充了首发基线的角色能力梳理。'], 'risk_list': ['README.md / CHANGELOG / release note 暂未补齐。', '../workflow 存在兄弟目录脏文件。'], 'validation_evidence': ['我当前已确认工作区存在预发布改动，并已产出结构化 trace。'], 'release_recommendation': 'reject_continue_training', 'next_action_suggestion': '我建议先补齐发布说明并继续验证。', 'warnings': []})",
+                "    raise SystemExit(0)",
                 "if agent_name == 'success-agent':",
                 "    time.sleep(2.5)",
                 "summary_name = agent_name or 'release-agent'",
@@ -397,7 +421,7 @@ def main() -> int:
     repo_root = Path(args.root).resolve()
     ts = datetime.now().strftime("%Y%m%d-%H%M%S")
     runtime_root = (repo_root / ".test" / "runtime" / "agent-release-review-ar09-ar15").resolve()
-    evidence_root = (repo_root / ".output" / "evidence" / f"agent-release-review-ar09-ar15-{ts}").resolve()
+    evidence_root = (repo_root / ".test" / "evidence" / f"agent-release-review-ar09-ar15-{ts}").resolve()
     api_dir = evidence_root / "api"
     db_dir = evidence_root / "db"
     shots_dir = evidence_root / "screenshots"
@@ -468,6 +492,8 @@ def main() -> int:
         reject_id = str(find_agent(items, "reject-agent").get("agent_id") or "")
         publish_fail_id = str(find_agent(items, "publish-fail-agent").get("agent_id") or "")
         report_fail_id = str(find_agent(items, "report-fail-agent").get("agent_id") or "")
+        no_git_id = str(find_agent(items, "no-git-agent").get("agent_id") or "")
+        legacy_analyst2_id = str(find_agent(items, "legacy-analyst2-agent").get("agent_id") or "")
 
         enter_results: dict[str, tuple[int, dict[str, Any]]] = {}
 
@@ -504,6 +530,44 @@ def main() -> int:
         ac["AC-AR-10"] = {"pass": bool(st10_enter == 200 and st10r == 200 and probe10_payload.get("pass") and str(review10.get("release_review_state") or "") == "report_ready" and str(report10.get("first_person_summary") or "").startswith("我") and bool(report10.get("full_capability_inventory")) and bool(report10.get("capability_delta")) and all(str(chain10.get(key) or "").strip() for key in ("prompt_path", "stdout_path", "stderr_path", "report_path"))), "api": [api10_enter, api10_get]}
         ac_ev["AC-AR-10"] = {"screenshots": [shot10], "recordings": [], "api": [api10_enter, api10_get], "db_or_logs": [probe10, str(chain10.get("prompt_path") or ""), str(chain10.get("stdout_path") or ""), str(chain10.get("stderr_path") or ""), str(chain10.get("report_path") or ""), str(review10.get("public_profile_markdown_path") or ""), str(review10.get("capability_snapshot_json_path") or "")], "code": code_refs_common}
 
+        st10l_e, body10l_e = call(base_url, "POST", f"/api/training/agents/{legacy_analyst2_id}/release-review/enter", {"operator": "ar-reviewer"})
+        api10l_e = api_file(api_dir, "reg_a2_01_enter_legacy_analyst2", "POST", f"/api/training/agents/{legacy_analyst2_id}/release-review/enter", {"operator": "ar-reviewer"}, st10l_e, body10l_e)
+        st10l_r, body10l_r = wait_review_state(base_url, legacy_analyst2_id, "report_ready", timeout_s=10)
+        api10l_r = api_file(api_dir, "reg_a2_01_review_ready_legacy_analyst2", "GET", f"/api/training/agents/{legacy_analyst2_id}/release-review", None, st10l_r, body10l_r)
+        shot10l, probe10l, probe10l_payload = capture_probe(browser, base_url, evidence_root, "reg_a2_01_legacy_analyst2_report_ready", "ac_ar_rr_10", {"tc_probe_agent": "legacy-analyst2-agent"})
+        dump_sql(db_path, "SELECT review_id,agent_id,target_version,current_workspace_ref,release_review_state,report_json,report_error,analysis_chain_json FROM agent_release_review WHERE agent_id=? ORDER BY created_at DESC", (legacy_analyst2_id,), db_dir / "reg_a2_01_legacy_analyst2_review.db.json")
+        legacy_review = body10l_r.get("review", {}) if isinstance(body10l_r, dict) else {}
+        legacy_report = legacy_review.get("report", {}) if isinstance(legacy_review, dict) else {}
+        legacy_warnings = list(legacy_report.get("warnings") or []) if isinstance(legacy_report, dict) else []
+        legacy_raw_result = legacy_report.get("raw_result") if isinstance(legacy_report, dict) else {}
+        legacy_raw_risks_text = json.dumps((legacy_raw_result or {}).get("risk_list") or [], ensure_ascii=False)
+        ac["REG-A2-01"] = {
+            "pass": bool(
+                st10l_e == 200
+                and st10l_r == 200
+                and probe10l_payload.get("pass")
+                and str(legacy_review.get("release_review_state") or "").strip() == "report_ready"
+                and not str(legacy_report.get("previous_release_version") or "").strip()
+                and str(legacy_report.get("release_recommendation") or "").strip() == "needs_more_validation"
+                and bool(legacy_report.get("first_person_summary"))
+                and bool(legacy_report.get("full_capability_inventory"))
+                and bool(legacy_report.get("knowledge_scope"))
+                and bool(legacy_report.get("agent_skills"))
+                and bool(legacy_report.get("applicable_scenarios"))
+                and any("首发基线评审" in str(item) for item in legacy_warnings)
+                and any("README" in str(item) or "release note" in str(item) for item in legacy_warnings)
+                and ("../workflow" in legacy_raw_risks_text or "兄弟目录" in legacy_raw_risks_text)
+            ),
+            "api": [api10l_e, api10l_r],
+        }
+        ac_ev["REG-A2-01"] = {
+            "screenshots": [shot10l],
+            "recordings": [],
+            "api": [api10l_e, api10l_r],
+            "db_or_logs": [(db_dir / "reg_a2_01_legacy_analyst2_review.db.json").as_posix(), probe10l],
+            "code": code_refs_common,
+        }
+
         approve_payload = {"decision": "approve_publish", "reviewer": "release-owner", "review_comment": "我确认当前报告可以进入正式发布。", "operator": "release-owner"}
         st11a, body11a = call(base_url, "POST", f"/api/training/agents/{success_id}/release-review/manual", approve_payload)
         api11a = api_file(api_dir, "ac_ar_11_manual_approve_success", "POST", f"/api/training/agents/{success_id}/release-review/manual", approve_payload, st11a, body11a)
@@ -522,6 +586,52 @@ def main() -> int:
         rejected_review = body11c.get("review", {}) if isinstance(body11c, dict) else {}
         ac["AC-AR-11"] = {"pass": bool(st11a == 200 and st11r == 200 and probe11_payload.get("pass") and str(approved_review.get("reviewer") or "").strip() == "release-owner" and str(approved_review.get("review_decision") or "").strip() == "approve_publish" and bool(str(approved_review.get("reviewed_at") or "").strip()) and st11e == 200 and st11b == 200 and str(rejected_review.get("release_review_state") or "").strip() == "review_rejected" and not bool(rejected_review.get("can_confirm"))), "api": [api11a, api11r, api11e, api11b, api11c]}
         ac_ev["AC-AR-11"] = {"screenshots": [shot11], "recordings": [], "api": [api11a, api11r, api11e, api11b, api11c], "db_or_logs": [(db_dir / "ac_ar_11_manual_review.db.json").as_posix(), probe11], "code": code_refs_common}
+
+        discard_payload = {"operator": "release-owner", "reason": "当前评审批次作废，重新进入评审。"}
+        st16d, body16d = call(base_url, "POST", f"/api/training/agents/{success_id}/release-review/discard", discard_payload)
+        api16d = api_file(api_dir, "ac_ar_16_discard_review", "POST", f"/api/training/agents/{success_id}/release-review/discard", discard_payload, st16d, body16d)
+        st16r, body16r = wait_review_state(base_url, success_id, "review_discarded", timeout_s=10)
+        api16r = api_file(api_dir, "ac_ar_16_review_discarded", "GET", f"/api/training/agents/{success_id}/release-review", None, st16r, body16r)
+        shot16, probe16, probe16_payload = capture_probe(browser, base_url, evidence_root, "ac_ar_16_review_discarded", "ac_ar_rr_16", {"tc_probe_agent": "success-agent"})
+        st16e, body16e = call(base_url, "POST", f"/api/training/agents/{success_id}/release-review/enter", {"operator": "release-owner"})
+        api16e = api_file(api_dir, "ac_ar_16_reenter_review", "POST", f"/api/training/agents/{success_id}/release-review/enter", {"operator": "release-owner"}, st16e, body16e)
+        st16rr, body16rr = wait_review_state(base_url, success_id, "report_ready", timeout_s=10)
+        api16rr = api_file(api_dir, "ac_ar_16_review_ready_after_reenter", "GET", f"/api/training/agents/{success_id}/release-review", None, st16rr, body16rr)
+        st16m, body16m = call(base_url, "POST", f"/api/training/agents/{success_id}/release-review/manual", approve_payload)
+        api16m = api_file(api_dir, "ac_ar_16_reapprove_review", "POST", f"/api/training/agents/{success_id}/release-review/manual", approve_payload, st16m, body16m)
+        st16a, body16a = wait_review_state(base_url, success_id, "review_approved", timeout_s=10)
+        api16a = api_file(api_dir, "ac_ar_16_review_approved_after_reenter", "GET", f"/api/training/agents/{success_id}/release-review", None, st16a, body16a)
+        dump_sql(db_path, "SELECT review_id,agent_id,release_review_state,review_decision,reviewer,review_comment,reviewed_at,execution_log_json FROM agent_release_review WHERE agent_id=? ORDER BY created_at DESC", (success_id,), db_dir / "ac_ar_16_review_discard_and_reenter.db.json")
+        discarded_review = body16r.get("review", {}) if isinstance(body16r, dict) else {}
+        reentered_review = body16rr.get("review", {}) if isinstance(body16rr, dict) else {}
+        approved_after_discard = body16a.get("review", {}) if isinstance(body16a, dict) else {}
+        discard_logs = discarded_review.get("execution_logs") if isinstance(discarded_review, dict) else []
+        discard_phases = {str(item.get("phase") or "").strip() for item in discard_logs if isinstance(item, dict)}
+        ac["AC-AR-17"] = {
+            "pass": bool(
+                st16d == 200
+                and st16r == 200
+                and probe16_payload.get("pass")
+                and str(discarded_review.get("release_review_state") or "").strip() == "review_discarded"
+                and bool(discarded_review.get("can_enter"))
+                and not bool(discarded_review.get("can_confirm"))
+                and "review_discard" in discard_phases
+                and st16e == 200
+                and st16rr == 200
+                and str(reentered_review.get("release_review_state") or "").strip() == "report_ready"
+                and st16m == 200
+                and st16a == 200
+                and str(approved_after_discard.get("release_review_state") or "").strip() == "review_approved"
+            ),
+            "api": [api16d, api16r, api16e, api16rr, api16m, api16a],
+        }
+        ac_ev["AC-AR-17"] = {
+            "screenshots": [shot16],
+            "recordings": [],
+            "api": [api16d, api16r, api16e, api16rr, api16m, api16a],
+            "db_or_logs": [(db_dir / "ac_ar_16_review_discard_and_reenter.db.json").as_posix(), probe16],
+            "code": code_refs_common,
+        }
 
         st12c, body12c = call(base_url, "POST", f"/api/training/agents/{success_id}/release-review/confirm", {"operator": "release-owner"})
         api12c = api_file(api_dir, "ac_ar_12_confirm_publish_success", "POST", f"/api/training/agents/{success_id}/release-review/confirm", {"operator": "release-owner"}, st12c, body12c)
@@ -550,6 +660,53 @@ def main() -> int:
         }
         ac_ev["AC-AR-12"] = {"screenshots": [shot12], "recordings": [], "api": [api12c, api12a, api12r], "db_or_logs": [probe12, (db_dir / "ac_ar_12_agent_registry.db.json").as_posix(), (db_dir / "ac_ar_12_release_history.db.json").as_posix()], "code": code_refs_common}
 
+        st12g_e, body12g_e = call(base_url, "POST", f"/api/training/agents/{no_git_id}/release-review/enter", {"operator": "ar-reviewer"})
+        api12g_e = api_file(api_dir, "reg_git_01_enter_no_git_agent", "POST", f"/api/training/agents/{no_git_id}/release-review/enter", {"operator": "ar-reviewer"}, st12g_e, body12g_e)
+        st12g_m, body12g_m = call(base_url, "POST", f"/api/training/agents/{no_git_id}/release-review/manual", approve_payload)
+        api12g_m = api_file(api_dir, "reg_git_01_manual_approve_no_git_agent", "POST", f"/api/training/agents/{no_git_id}/release-review/manual", approve_payload, st12g_m, body12g_m)
+        st12g_c, body12g_c = call(base_url, "POST", f"/api/training/agents/{no_git_id}/release-review/confirm", {"operator": "release-owner"})
+        api12g_c = api_file(api_dir, "reg_git_01_confirm_no_git_agent", "POST", f"/api/training/agents/{no_git_id}/release-review/confirm", {"operator": "release-owner"}, st12g_c, body12g_c)
+        st12g_a, body12g_a = call(base_url, "GET", "/api/training/agents")
+        api12g_a = api_file(api_dir, "reg_git_01_agents_after_publish", "GET", "/api/training/agents", None, st12g_a, body12g_a)
+        st12g_r, body12g_r = call(base_url, "GET", f"/api/training/agents/{no_git_id}/releases?page=1&page_size=20")
+        api12g_r = api_file(api_dir, "reg_git_01_releases_after_publish", "GET", f"/api/training/agents/{no_git_id}/releases?page=1&page_size=20", None, st12g_r, body12g_r)
+        shot12g, probe12g, probe12g_payload = capture_probe(browser, base_url, evidence_root, "reg_git_01_no_git_publish_success", "ac_ar_rr_12", {"tc_probe_agent": "no-git-agent"})
+        dump_sql(db_path, "SELECT agent_id,current_version,latest_release_version,bound_release_version,lifecycle_state,training_gate_state,git_available,active_role_profile_release_id,active_role_profile_ref FROM agent_registry WHERE agent_id=?", (no_git_id,), db_dir / "reg_git_01_no_git_agent_registry.db.json")
+        dump_sql(db_path, "SELECT review_id,agent_id,release_review_state,publish_status,publish_error,execution_log_json FROM agent_release_review WHERE agent_id=? ORDER BY created_at DESC", (no_git_id,), db_dir / "reg_git_01_no_git_review.db.json")
+        no_git_after = find_agent(list(body12g_a.get("items") or []), "no-git-agent")
+        no_git_releases = list(body12g_r.get("releases") or []) if isinstance(body12g_r, dict) else []
+        no_git_latest_release = no_git_releases[0] if no_git_releases else {}
+        no_git_review = body12g_c.get("review", {}) if isinstance(body12g_c, dict) else {}
+        no_git_logs = no_git_review.get("execution_logs") if isinstance(no_git_review, dict) else []
+        no_git_messages = [str(item.get("message") or "").strip() for item in no_git_logs if isinstance(item, dict)]
+        ac["REG-GIT-01"] = {
+            "pass": bool(
+                st12g_e == 200
+                and st12g_m == 200
+                and st12g_c == 200
+                and st12g_a == 200
+                and st12g_r == 200
+                and probe12g_payload.get("pass")
+                and str((body12g_c.get("review") or {}).get("publish_status") or "").strip() == "success"
+                and str(no_git_after.get("lifecycle_state") or "").strip() == "released"
+                and bool(str(no_git_after.get("active_role_profile_ref") or "").strip())
+                and bool(str(no_git_latest_release.get("public_profile_ref") or "").strip())
+                and any("自动执行 git init" in message for message in no_git_messages)
+            ),
+            "api": [api12g_e, api12g_m, api12g_c, api12g_a, api12g_r],
+        }
+        ac_ev["REG-GIT-01"] = {
+            "screenshots": [shot12g],
+            "recordings": [],
+            "api": [api12g_e, api12g_m, api12g_c, api12g_a, api12g_r],
+            "db_or_logs": [
+                probe12g,
+                (db_dir / "reg_git_01_no_git_agent_registry.db.json").as_posix(),
+                (db_dir / "reg_git_01_no_git_review.db.json").as_posix(),
+            ],
+            "code": code_refs_common,
+        }
+
         st14e, body14e = call(base_url, "POST", f"/api/training/agents/{publish_fail_id}/release-review/enter", {"operator": "ar-reviewer"})
         api14e = api_file(api_dir, "ac_ar_14_enter_publish_fail", "POST", f"/api/training/agents/{publish_fail_id}/release-review/enter", {"operator": "ar-reviewer"}, st14e, body14e)
         st14m, body14m = call(base_url, "POST", f"/api/training/agents/{publish_fail_id}/release-review/manual", approve_payload)
@@ -565,7 +722,7 @@ def main() -> int:
         fail_logs = fail_review.get("execution_logs") if isinstance(fail_review, dict) else []
         fail_phases = {str(item.get("phase") or "").strip() for item in fail_logs if isinstance(item, dict)}
         fallback_payload = fail_review.get("fallback") if isinstance(fail_review, dict) else {}
-        ac["AC-AR-14"] = {"pass": bool(st14e == 200 and st14m == 200 and st14c == 200 and st14r == 200 and probe14_payload.get("pass") and str(fail_review.get("publish_status") or "").strip() == "failed" and str(fail_review.get("release_review_state") or "").strip() == "publish_failed" and "fallback_trigger" in fail_phases and "fallback_result" in fail_phases and bool(str((fallback_payload or {}).get("failure_reason") or "").strip()) and isinstance((fallback_payload or {}).get("retry_result"), dict)), "api": [api14e, api14m, api14c, api14r]}
+        ac["AC-AR-14"] = {"pass": bool(st14e == 200 and st14m == 200 and st14c == 200 and st14r == 200 and probe14_payload.get("pass") and str(fail_review.get("publish_status") or "").strip() == "failed" and str(fail_review.get("release_review_state") or "").strip() == "publish_failed" and bool(fail_review.get("can_confirm")) and "fallback_trigger" in fail_phases and "fallback_result" in fail_phases and bool(str((fallback_payload or {}).get("failure_reason") or "").strip()) and bool(str((fallback_payload or {}).get("repair_summary") or "").strip()) and isinstance((fallback_payload or {}).get("repair_actions"), list) and isinstance((fallback_payload or {}).get("retry_result"), dict)), "api": [api14e, api14m, api14c, api14r]}
         ac_ev["AC-AR-14"] = {"screenshots": [shot14], "recordings": [], "api": [api14e, api14m, api14c, api14r], "db_or_logs": [(db_dir / "ac_ar_14_publish_failed_review.db.json").as_posix(), probe14_pre, probe14], "code": code_refs_common}
 
         st13r, body13r = call(base_url, "GET", f"/api/training/agents/{publish_fail_id}/release-review")
@@ -578,14 +735,61 @@ def main() -> int:
         ac["AC-AR-13"] = {"pass": bool(st13r == 200 and probe13_payload.get("pass") and {"prepare", "git_execute", "release_note", "verify"} <= success_phases and {"fallback_trigger", "fallback_result"} <= failure_phases), "api": [api13r, api12c]}
         ac_ev["AC-AR-13"] = {"screenshots": [shot13], "recordings": [], "api": [api13r, api12c], "db_or_logs": [probe13, (db_dir / "ac_ar_14_publish_failed_review.db.json").as_posix()], "code": code_refs_common}
 
+        retry_hook = workspace_root / "publish-fail-agent" / ".git" / "hooks" / "pre-commit"
+        if retry_hook.exists():
+            retry_hook.unlink()
+        retry_workspace = workspace_root / "publish-fail-agent"
+        run_cmd(["git", "config", "user.email", "publish-fail-agent@example.com"], retry_workspace)
+        run_cmd(["git", "config", "user.name", "publish-fail-agent"], retry_workspace)
+        st14x_c, body14x_c = call(base_url, "POST", f"/api/training/agents/{publish_fail_id}/release-review/confirm", {"operator": "release-owner"})
+        api14x_c = api_file(api_dir, "reg_retry_01_confirm_publish_retry", "POST", f"/api/training/agents/{publish_fail_id}/release-review/confirm", {"operator": "release-owner"}, st14x_c, body14x_c)
+        st14x_a, body14x_a = call(base_url, "GET", "/api/training/agents")
+        api14x_a = api_file(api_dir, "reg_retry_01_agents_after_retry_publish", "GET", "/api/training/agents", None, st14x_a, body14x_a)
+        st14x_r, body14x_r = call(base_url, "GET", f"/api/training/agents/{publish_fail_id}/releases?page=1&page_size=20")
+        api14x_r = api_file(api_dir, "reg_retry_01_releases_after_retry_publish", "GET", f"/api/training/agents/{publish_fail_id}/releases?page=1&page_size=20", None, st14x_r, body14x_r)
+        shot14x, probe14x, probe14x_payload = capture_probe(browser, base_url, evidence_root, "reg_retry_01_publish_retry_success", "ac_ar_rr_12", {"tc_probe_agent": "publish-fail-agent"})
+        dump_sql(db_path, "SELECT review_id,agent_id,release_review_state,publish_status,publish_error,execution_log_json,fallback_json FROM agent_release_review WHERE agent_id=? ORDER BY created_at DESC", (publish_fail_id,), db_dir / "reg_retry_01_publish_retry_review.db.json")
+        retry_review = body14x_c.get("review", {}) if isinstance(body14x_c, dict) else {}
+        retry_logs = retry_review.get("execution_logs") if isinstance(retry_review, dict) else []
+        retry_messages = [str(item.get("message") or "").strip() for item in retry_logs if isinstance(item, dict)]
+        retry_after = find_agent(list(body14x_a.get("items") or []), "publish-fail-agent")
+        retry_releases = list(body14x_r.get("releases") or []) if isinstance(body14x_r, dict) else []
+        retry_latest_release = retry_releases[0] if retry_releases else {}
+        ac["REG-RETRY-01"] = {
+            "pass": bool(
+                st14x_c == 200
+                and st14x_a == 200
+                and st14x_r == 200
+                and probe14x_payload.get("pass")
+                and str(retry_review.get("publish_status") or "").strip() == "success"
+                and str(retry_review.get("release_review_state") or "").strip() == "idle"
+                and str(retry_review.get("review_id") or "").strip() == str(fail_review.get("review_id") or "").strip()
+                and any("开始基于当前评审记录手动重试发布" in message for message in retry_messages)
+                and str(retry_after.get("lifecycle_state") or "").strip() == "released"
+                and bool(str(retry_latest_release.get("public_profile_ref") or "").strip())
+            ),
+            "api": [api14x_c, api14x_a, api14x_r],
+        }
+        ac_ev["REG-RETRY-01"] = {
+            "screenshots": [shot14x],
+            "recordings": [],
+            "api": [api14x_c, api14x_a, api14x_r],
+            "db_or_logs": [
+                probe14x,
+                (db_dir / "reg_retry_01_publish_retry_review.db.json").as_posix(),
+            ],
+            "code": code_refs_common,
+        }
+
         st15e, body15e = call(base_url, "POST", f"/api/training/agents/{report_fail_id}/release-review/enter", {"operator": "ar-reviewer"})
         api15e = api_file(api_dir, "ac_ar_15_enter_report_fail", "POST", f"/api/training/agents/{report_fail_id}/release-review/enter", {"operator": "ar-reviewer"}, st15e, body15e)
         st15r, body15r = wait_review_state(base_url, report_fail_id, "report_failed", timeout_s=10)
         api15r = api_file(api_dir, "ac_ar_15_review_report_failed", "GET", f"/api/training/agents/{report_fail_id}/release-review", None, st15r, body15r)
         shot15, probe15, probe15_payload = capture_probe(browser, base_url, evidence_root, "ac_ar_15_report_failed_blocked", "ac_ar_rr_15", {"tc_probe_agent": "report-fail-agent"})
-        dump_sql(db_path, "SELECT review_id,agent_id,release_review_state,report_error,analysis_chain_json FROM agent_release_review WHERE agent_id=? ORDER BY created_at DESC", (report_fail_id,), db_dir / "ac_ar_15_report_failed_review.db.json")
+        dump_sql(db_path, "SELECT review_id,agent_id,release_review_state,report_error,report_json,analysis_chain_json FROM agent_release_review WHERE agent_id=? ORDER BY created_at DESC", (report_fail_id,), db_dir / "ac_ar_15_report_failed_review.db.json")
         report_fail_review = body15r.get("review", {}) if isinstance(body15r, dict) else {}
-        ac["AC-AR-15"] = {"pass": bool(st15e == 200 and st15r == 200 and probe15_payload.get("pass") and str(report_fail_review.get("release_review_state") or "").strip() == "report_failed" and "重新进入发布评审" in str(report_fail_review.get("report_error") or "") and not bool(report_fail_review.get("can_confirm"))), "api": [api15e, api15r]}
+        report_fail_report = report_fail_review.get("report", {}) if isinstance(report_fail_review, dict) else {}
+        ac["AC-AR-15"] = {"pass": bool(st15e == 200 and st15r == 200 and probe15_payload.get("pass") and str(report_fail_review.get("release_review_state") or "").strip() == "report_failed" and "重新进入发布评审" in str(report_fail_review.get("report_error") or "") and str(report_fail_review.get("report_error_code") or "").strip() == "release_review_report_failed" and all(str(report_fail_report.get(field) or "").strip() for field in ("target_version", "current_workspace_ref", "change_summary", "release_recommendation", "next_action_suggestion")) and not bool(report_fail_review.get("can_confirm"))), "api": [api15e, api15r]}
         ac_ev["AC-AR-15"] = {"screenshots": [shot15], "recordings": [], "api": [api15e, api15r], "db_or_logs": [(db_dir / "ac_ar_15_report_failed_review.db.json").as_posix(), probe15], "code": code_refs_common}
 
         gif10 = rec_dir / "ac_ar_10_release_review.gif"
@@ -602,7 +806,7 @@ def main() -> int:
         write_json(manifest, ac_ev)
         summary_md = evidence_root / "ac_ar_09_15_summary.md"
         summary_lines = [
-            f"# AC-AR-09~15 Acceptance Summary ({ts})",
+            f"# AC-AR-09~15 + AC-AR-17 + REG-A2-01 Acceptance Summary ({ts})",
             "",
             f"- runtime_root: {runtime_root.as_posix()}",
             f"- workspace_root: {workspace_root.as_posix()}",
@@ -618,7 +822,7 @@ def main() -> int:
             "| AC | pass | evidence |",
             "|---|---|---|",
         ]
-        for ac_id in [f"AC-AR-{i:02d}" for i in range(9, 16)]:
+        for ac_id in [*(f"AC-AR-{i:02d}" for i in range(9, 16)), "AC-AR-17", "REG-A2-01", "REG-GIT-01", "REG-RETRY-01"]:
             row = ac.get(ac_id, {"pass": False})
             evidence = ac_ev.get(ac_id, {})
             refs: list[str] = []
@@ -636,7 +840,8 @@ def main() -> int:
         summary_md.write_text("\n".join(summary_lines) + "\n", encoding="utf-8")
         write_json(evidence_root / "ac_ar_09_15_summary.json", ac)
         print(summary_md.as_posix())
-        return 0 if all(bool(ac.get(f"AC-AR-{i:02d}", {}).get("pass")) for i in range(9, 16)) else 1
+        required_ids = [*(f"AC-AR-{i:02d}" for i in range(9, 16)), "AC-AR-17", "REG-A2-01", "REG-GIT-01", "REG-RETRY-01"]
+        return 0 if all(bool(ac.get(ac_id, {}).get("pass")) for ac_id in required_ids) else 1
     finally:
         if proc.poll() is None:
             proc.terminate()

@@ -49,7 +49,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--root", default=".", help="Workspace root path.")
     parser.add_argument(
         "--report",
-        default="README_CONTRACT_REPORT.md",
+        default=".test/reports/README_CONTRACT_REPORT.md",
         help="Report file path (absolute or relative to root).",
     )
     return parser.parse_args()

@@ -21,7 +21,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--root", default=".", help="Workspace root path.")
     parser.add_argument(
         "--report",
-        default="PROTOTYPE_TEXT_SCAN_REPORT.txt",
+        default=".test/reports/PROTOTYPE_TEXT_SCAN_REPORT.txt",
         help="Report file path (absolute or relative to root).",
     )
     return parser.parse_args()

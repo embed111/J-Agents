@@ -30,176 +30,9 @@
 5. `docs/workflow` 与 `../workflow/docs/workflow` 是否保持同版，避免需求文档分叉。
 
 ## 历史归档引用
-1. 已归档 29 个历史块到 workspace_state\logs\session-history\session-history-2026-03-05-to-2026-03-06.md。
+1. 已归档 21 个历史块到 workspace_state\logs\session-history\session-history-2026-03-06-to-2026-03-06.md。
 2. 历史索引见 workspace_state\logs\session-history-index.md。
 
-## 本轮更新（2026-03-06）- `user_profile/` 与 `workspace_state/` 目录轻量整理
-1. 用户请求（明示）：
-   - 评估 `user_profile` 与 `workspace_stat/workspace_state` 是否需要整理，并添加导读文件。
-2. 盘点结论（事实）：
-   - `workspace_stat` 目录不存在，按 `workspace_state` 执行检查。
-   - 两目录结构总体可用，但导航成本偏高：
-     1) `workspace_state/core/session-snapshot.md` 行数较高；
-     2) `user_profile/logs/thinking-patterns-change-log.md` 行数较高。
-3. 已执行动作（事实）：
-   - 新增统一导读：`workspace_state/目录导读.md`（覆盖两目录导航与维护动作）。
-   - 更新 `workspace_state/core/workspace-state-overview.md`：将导读纳入启动读取顺序。
-   - 更新 `workspace_state/core/startup-checklist.md`：将导读纳入启动步骤。
-4. 整理策略（事实）：
-   - 采用“轻量整理”而非迁移重排：不移动历史文件，仅补导航入口与维护清单，降低回归风险。
-5. 收敛门禁（内部判定）：
-   - `start_design`（本轮目标已完成）。
-快照检查：用户偏好已更新=是；用户需求已完全理解=是
-
-## 本轮更新（2026-03-06）- 目录单入口落地与动态归档已执行
-1. 用户要求（明示）：
-   - `user_profile/` 与 `workspace_state/` 顶层仅保留一个导读文件；
-   - 后续按文件体量动态归档。
-2. 已执行动作（事实）：
-   - 完成两目录结构下沉，顶层仅保留 `目录导读.md`。
-   - 新增 `scripts/maintain-state-health.ps1`，支持阈值巡检与 `-AutoArchive` 联动。
-   - 执行真实归档（非 dry-run）：
-     1) `workspace_state/core/session-snapshot.md`：1081 -> 447 行；
-     2) `user_profile/logs/thinking-patterns-change-log.md`：650 -> 180 行。
-3. 同步更新（事实）：
-   - `AGENTS.md`、`workspace_state/core/startup-checklist.md`、`workspace_state/core/workspace-state-overview.md`。
-   - `workspace_state/目录导读.md`、`user_profile/目录导读.md`。
-   - 相关技能与脚本路径契约。
-4. 收敛门禁（内部判定）：
-   - `start_design`（本轮目标已完全落地）。
-快照检查：用户偏好已更新=是；用户需求已完全理解=是
-## 本轮更新（2026-03-06）- 新增通用目录治理技能（适用于所有目录整理）
-1. 用户要求（明示）：
-   - 将目录动态维护规则沉淀为技能，并适配任意目录整理场景。
-2. 已执行动作（事实）：
-   - 新增技能：`./.codex/skills/directory-maintenance-governor/SKILL.md`。
-   - 新增参考模板：`./.codex/skills/directory-maintenance-governor/references/dynamic-rules-template.md`。
-   - 新增通用脚本：`scripts/maintain-directory-health.ps1`（支持单导读门禁检查 + 阈值巡检 + 指定文件归档）。
-   - 已将该技能接入：`AGENTS.md`、`skills/local-skills-overview.md`。
-3. 验证结果（事实）：
-   - `check-skill-examples.ps1` 通过；新技能包含 `## Examples`。
-   - 对 `workspace_state` / `user_profile` 运行通用巡检均通过顶层单导读规则。
-4. 收敛门禁（内部判定）：
-   - `start_design`（本轮目标已完成并可复用）。
-快照检查：用户偏好已更新=是；用户需求已完全理解=是
-## 本轮更新（2026-03-06）- 修复技能前言解析失败
-1. 用户反馈（明示）：
-   - 4 个本地技能因 `SKILL.md` 缺少 YAML frontmatter 被跳过加载。
-2. 排查结果（事实）：
-   - 4 个文件正文存在 frontmatter，但文件头带有 UTF-8 BOM，导致解析器未把首行识别为 `---`。
-3. 已执行动作（事实）：
-   - 将 `.codex/skills/` 下全部 `SKILL.md` 统一重写为 UTF-8 无 BOM。
-   - 重点修复：
-     1) `preference-cap-review-governor/SKILL.md`
-     2) `requirements-doc-structure-governor/SKILL.md`
-     3) `session-state-maintainer/SKILL.md`
-     4) `snapshot-archive-governor/SKILL.md`
-4. 验证结果（事实）：
-   - 4 个文件首行均恢复为纯 `---`。
-   - `scripts/check-skill-examples.ps1` 通过。
-5. 收敛门禁（内部判定）：
-   - `start_design`（问题已定位并修复）。
-快照检查：用户偏好已更新=否；用户需求已完全理解=是
-## 本轮更新（2026-03-07）- `OpenClaw` 最小上手路径说明
-1. 用户提问（明示）：
-   - 询问“如何使用 openclaw”。
-2. 当前判断（事实 + 推断/假设，置信度: 中）：
-   - `OpenClaw` 可能指向 AI agent 平台，也可能指向其他同名项目。
-   - 结合当前语境，先按“OpenClaw AI 平台”提供官方最小上手路径，并显式标注该假设。
-3. 执行动作（事实）：
-   - 已核对官方文档与官方 GitHub 仓库入口。
-   - 准备交付一份面向新手的最小可用说明，覆盖：安装、首次登录、创建 agent、接入渠道、关键注意事项。
-4. 方法选择（事实）：
-   - 采用“第一性原理 + 逻辑校验”的最小说明路径：
-   - 先回答“要跑起来最少需要什么”；
-   - 再补“哪些前提若不成立会导致误用”。
-5. 能力扩展评估（结论）：
-   - 暂不需要新增 skill。
-   - 暂不需要新增 agent 角色。
-   - 当前兜底方案：继续使用官方文档核对 + 会话状态维护。
-6. 收敛门禁（内部判定）：
-   - `hold_design`（本轮为工具使用咨询，不进入需求设计拆解）。
-快照检查：用户偏好已更新=否；用户需求已完全理解=否
-## 本轮更新（2026-03-06）- `docs/workflow` 与 `../workflow` 文档安全同步
-1. 用户要求（明示）：
-   - 同步 `../workflow` 的文档；
-   - 不同步截图等图片资产。
-2. 差异结论（事实）：
-   - 活动文档中仅 2 份治理文档内容不一致，且 `../workflow` 侧版本更新；
-   - 另有 1 份活动报告仅存在于 `../workflow`。
-3. 已执行动作（事实）：
-   - 采用“防回退”同步策略：
-     1) 将 `../workflow/docs/workflow/governance/截图索引与归档规范.md` 回补到当前工作区；
-     2) 将 `../workflow/docs/workflow/governance/新工作区留痕启动包.md` 回补到当前工作区；
-     3) 将 `../workflow/docs/workflow/reports/验收回传-角色画像发布格式与预发布判定.md` 同步到当前工作区。
-   - 未同步 `screenshots/`；未动 `governance/archive/` 历史归档目录。
-4. 校验结果（事实）：
-   - 两侧活动 Markdown 文档（排除截图与 archive）现已全量哈希一致。
-5. 收敛门禁（内部判定）：
-   - `start_design`（文档同步已完成）。
-快照检查：用户偏好已更新=否；用户需求已完全理解=是
-## 本轮更新（2026-03-06）- 角色画像再收敛（单头像 + Agent Skills）
-1. 用户新反馈（明示）：
-   - 头像功能设计过于复杂；当前只需要展示一个头像，并保留一个“更换头像”入口。
-   - 角色技能区应展示 `agent skill`，而不是抽象化技能标签。
-2. 已执行动作（事实）：
-   - 更新 `docs/workflow/requirements/需求详情-角色画像发布格式与预发布判定.md`：
-     1) 头像需求收敛为“单头像展示 + 更换入口”；
-     2) 技能区语义固定为 `Agent Skills`；
-     3) 补充“未声明 Agent Skills”空态与对应验收。
-   - 更新 `docs/workflow/design/详细设计-角色画像发布格式与预发布判定.md`：
-     1) 身份头卡改为“单头像/名称/定位/更换头像入口”；
-     2) 去掉复杂头像管理区口径；
-     3) `skills` 字段语义收紧为 `agent skill` 清单。
-   - 更新 `docs/workflow/overview/需求概述.md` 并同步到 `../workflow/docs/workflow/`。
-3. 校验结果（事实）：
-   - 上述 3 份文档双侧 SHA256 均 `Match=True`。
-4. 推断/假设（置信度: 中）：
-   - 当前 `Agent Skills` 默认理解为角色声明的技能清单，而非页面侧二次抽象生成的标签。
-5. 收敛门禁（内部判定）：
-   - `start_design`（本轮需求已收敛到可执行文档口径）。
-快照检查：用户偏好已更新=是；用户需求已完全理解=是
-## 本轮更新（2026-03-06）- 角色画像简化版需求再次交付到 `../workflow`
-1. 用户要求（明示）：
-   - 将本轮“单头像 + 更换头像入口 + Agent Skills”口径交付给 `../workflow`，并提供可直接执行的提示词。
-2. 已执行动作（事实）：
-   - 重新同步以下 3 份文档到 `../workflow/docs/workflow/`：
-     1) `requirements/需求详情-角色画像发布格式与预发布判定.md`
-     2) `design/详细设计-角色画像发布格式与预发布判定.md`
-     3) `overview/需求概述.md`
-3. 校验结果（事实）：
-   - 上述 3 份文档双侧 SHA256 均 `Match=True`。
-4. 收敛门禁（内部判定）：
-   - `start_design`（交付已完成，可直接进入实现工作）。
-快照检查：用户偏好已更新=否；用户需求已完全理解=是
-## 本轮更新（2026-03-06）- 飞书文档管理 agent 可行性分析
-1. 用户问题（明示）：
-   - 计划新建一个 agent 来管理飞书文档，希望先判断可行性。
-2. 外部核验（事实）：
-   - 已核验飞书开放平台官方文档存在文档与 Wiki 相关服务端 API，覆盖文档创建、文档基础信息获取、文档块列表读取、文档块创建、Wiki 子节点列表与节点创建。
-3. 分析结论（事实 + 推断/假设）：
-   - 技术上可行；
-   - 但“管理”范围尚未收敛，当前更适合先定义阶段目标，再决定 agent 边界。
-4. 当前建议（推断/假设，置信度: 高）：
-   - 优先从“受控读写 + 索引维护 + 模板化更新”起步，不建议第一阶段直接做全自动自治治理。
-5. 收敛门禁（内部判定）：
-   - `hold_design`（目标方向明确，但 scope/constraints/acceptance 仍未完全收敛）。
-快照检查：用户偏好已更新=是；用户需求已完全理解=否
-## 本轮更新（2026-03-06）- 飞书文档优化场景可行性细化
-1. 用户举例（明示）：
-   - 希望未来的 agent 能帮助优化指定飞书文档，例如某个 Wiki 页面。
-2. 外部核验（事实）：
-   - 尝试访问用户给定飞书 Wiki 链接时，页面跳转到飞书登录页，当前无法直接读取正文内容。
-   - 已确认飞书开放平台提供文档创建、文档块创建、Wiki 节点列表等服务端 API，可支撑受控读写方案。
-3. 分析结论（事实 + 推断/假设）：
-   - “帮你优化某篇飞书文档”在能力上可行；
-   - 但要分成“当前立即可做的内容优化”与“长期 agent 化接管”两种模式。
-4. 当前建议（推断/假设，置信度: 高）：
-   - 若要我现在直接优化这篇文档，需要你提供正文内容、导出文件，或让该链接可匿名访问；
-   - 若要建设长期 agent，建议先从“读文档 -> 出优化建议/草稿 -> 人工确认 -> 再写回”起步。
-5. 收敛门禁（内部判定）：
-   - `hold_design`（方向明确，但访问方式、写入权限、目标动作仍待确认）。
-快照检查：用户偏好已更新=否；用户需求已完全理解=否
 ## 本轮更新（2026-03-06）- `Agent Skills` 展示来源收敛到 `.codex/skills/`
 1. 用户补充（明示）：
    - `../workflow` 的技能展示希望类似 `.codex/skills/` 目录下的技能，而不是抽象总结。
@@ -238,6 +71,94 @@
    - 在当前访问条件下，不能直接读到该页面正文。
 4. 收敛门禁（内部判定）：
    - `start_design`（问题已得到明确判断）。
+快照检查：用户偏好已更新=否；用户需求已完全理解=是
+## 本轮更新（2026-03-10）- 已向 `../workflow` 交付参考图、需求文档与开工提示词
+1. 用户请求（明示）：
+   - 要求将参考图与需求文档交付给 `../workflow`，并提供一份可直接让 `../workflow` 开工的提示词。
+2. 本轮交付（事实）：
+   - 已新增提示词文件：
+     - `docs/workflow/prompts/执行提示词-发布评审分层展示与历史报告弹窗-20260310.md`
+   - 已同步以下文件到 `../workflow`：
+     - `docs/workflow/README.md`
+     - `docs/workflow/overview/需求概述.md`
+     - `docs/workflow/requirements/需求详情-agent发布管理与版本切换.md`
+     - `docs/workflow/design/详细设计-agent发布管理与版本切换.md`
+     - `docs/workflow/prompts/执行提示词-发布评审分层展示与历史报告弹窗-20260310.md`
+     - `docs/workflow/prototypes/发布评审分层展示参考图-20260310.html`
+     - `docs/workflow/prototypes/发布评审分层展示参考图-20260310-首页.png`
+     - `docs/workflow/prototypes/发布评审分层展示参考图-20260310-弹窗.png`
+3. 一致性校验（事实）：
+   - 上述 8 个文件已完成源/目标 `SHA256` 校验，结果全部一致。
+4. 提示词目录治理（事实）：
+   - 为保持 `docs/workflow/prompts/` 仅保留最近 7 轮提示词，已删除一份旧文件：
+     - `docs/workflow/prompts/执行提示词-工程化重构五六轮合并-20260304.md`
+     - `../workflow/docs/workflow/prompts/执行提示词-工程化重构五六轮合并-20260304.md`
+5. 当前结论（事实）：
+   - `../workflow` 已具备本轮开工所需的需求文档、设计文档、参考图与执行提示词。
+6. 收敛门禁（内部判定）：
+   - `start_design`（当前进入执行工作区开工阶段）。
+快照检查：用户偏好已更新=否；用户需求已完全理解=是
+## 本轮更新（2026-03-10）- 将展示产物命名从“原型”调整为“参考图”
+1. 用户反馈（明示）：
+   - 表示截图中未明显看到滚动条，并建议将当前“原型图”文件名改为“参考图”。
+2. 本轮动作（事实）：
+   - 已将以下文件重命名为“参考图”：
+     - `docs/workflow/prototypes/发布评审分层展示参考图-20260310.html`
+     - `docs/workflow/prototypes/发布评审分层展示参考图-20260310-首页.png`
+     - `docs/workflow/prototypes/发布评审分层展示参考图-20260310-弹窗.png`
+   - 已同步更新当前入口引用：
+     - `docs/workflow/README.md`
+     - `docs/workflow/overview/需求概述.md`
+     - `workspace_state/core/session-snapshot.md`
+3. 当前结论（事实）：
+   - 这轮仅调整交付物命名，不改变现有展示口径与参考图内容。
+4. 收敛门禁（内部判定）：
+   - `start_design`（继续等待用户确认参考图细节）。
+快照检查：用户偏好已更新=否；用户需求已完全理解=是
+## 本轮更新（2026-03-10）- 补齐当前评审与发布报告的长内容滚动语义
+1. 用户反馈（明示）：
+   - 指出当前评审内容与发布报告内容不够详细，和现阶段真实页面存在差异。
+   - 进一步指出实际使用时存在滚动交互，原型若不体现滚动会影响判断，并确认继续补齐。
+2. 对齐依据（事实）：
+   - 已读取 `../workflow/src/workflow_app/web_client/training_center_and_bootstrap.js` 中：
+     - `renderTrainingCenterReleaseReport`
+     - `renderTrainingCenterReleaseReview`
+   - 已确认现网页面当前评审区真实模块包括：
+     - 状态提示
+     - 进度区
+     - 阶段/子阶段
+     - 结构化发布报告
+     - 分析链路
+     - 人工审核
+     - 执行日志
+     - 兜底结果
+   - 已确认发布报告弹窗真实模块包括：
+     - 核心信息
+     - 正式发布角色介绍预览
+     - 功能差异报告
+     - 风险清单
+     - 验证证据
+     - 补充提示
+3. 修正动作（事实）：
+   - 已将原型中的“当前评审”区从简化摘要升级为长内容滚动区。
+   - 已将“查看发布报告”弹窗升级为长内容滚动区，并补齐接近现网的模块层级。
+   - 已新增显式滚动语义：
+     - `当前评审` 内部滚动区
+     - `发布报告` 弹窗正文滚动区
+     - 显式滚动条样式与 `scrollbar-gutter`
+   - 已重新生成截图：
+     - `docs/workflow/prototypes/发布评审分层展示参考图-20260310-首页.png`
+     - `docs/workflow/prototypes/发布评审分层展示参考图-20260310-弹窗.png`
+4. 当前结论（事实）：
+   - 原型当前已同时体现：
+     - 现有系统视觉风格
+     - 左侧主导航
+     - 角色详情真实结构
+     - 首页仅展示进行中的发布评审
+     - 历史评审通过弹窗查看
+     - 长内容滚动语义
+5. 收敛门禁（内部判定）：
+   - `start_design`（当前继续等待用户确认原型与内容深度是否到位）。
 快照检查：用户偏好已更新=否；用户需求已完全理解=是
 ## 本轮更新（2026-03-06）- 飞书 token 可用性实测
 1. 用户动作（明示）：

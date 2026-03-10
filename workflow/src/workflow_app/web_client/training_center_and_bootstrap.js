@@ -110,6 +110,9 @@
       analysis_chain: {},
       report: {},
       report_error: '',
+      report_error_code: '',
+      report_missing_fields: [],
+      required_report_fields: [],
       review_decision: '',
       reviewer: '',
       review_comment: '',
@@ -122,6 +125,7 @@
       created_at: '',
       updated_at: '',
       can_enter: lifecycleState === 'pre_release',
+      can_discard: false,
       can_review: false,
       can_confirm: false,
       publish_succeeded: false,
@@ -146,6 +150,15 @@
       rawReview && rawReview.report && typeof rawReview.report === 'object'
         ? rawReview.report
         : {};
+    review.report_error_code = safe(rawReview && rawReview.report_error_code).trim();
+    review.report_missing_fields =
+      rawReview && Array.isArray(rawReview.report_missing_fields)
+        ? rawReview.report_missing_fields.map((item) => safe(item).trim()).filter(Boolean)
+        : [];
+    review.required_report_fields =
+      rawReview && Array.isArray(rawReview.required_report_fields)
+        ? rawReview.required_report_fields.map((item) => safe(item).trim()).filter(Boolean)
+        : [];
     review.execution_logs =
       rawReview && Array.isArray(rawReview.execution_logs)
         ? rawReview.execution_logs
@@ -161,6 +174,7 @@
     review.publish_status = safe(review.publish_status).trim();
     review.lifecycle_state = safe(review.lifecycle_state || detail.lifecycle_state || 'released').trim().toLowerCase() || 'released';
     review.can_enter = !!review.can_enter;
+    review.can_discard = !!review.can_discard;
     review.can_review = !!review.can_review;
     review.can_confirm = !!review.can_confirm;
     review.publish_succeeded = !!review.publish_succeeded;
@@ -484,16 +498,33 @@
     const key = safe(fieldName).trim().toLowerCase();
     if (key === 'target_version') return '目标版本';
     if (key === 'current_workspace_ref') return '工作区基线';
+    if (key === 'first_person_summary') return '第一人称摘要';
+    if (key === 'full_capability_inventory') return '全量能力清单';
+    if (key === 'knowledge_scope') return '知识范围';
+    if (key === 'agent_skills') return 'Agent Skills';
+    if (key === 'applicable_scenarios') return '适用场景';
     if (key === 'change_summary') return '变更摘要';
     if (key === 'release_recommendation') return '发布建议';
     if (key === 'next_action_suggestion') return '下一步建议';
     return safe(fieldName).trim() || '未知字段';
   }
 
-  function trainingCenterReleaseReviewMissingReportFields(report) {
-    const node = report && typeof report === 'object' ? report : {};
-    return ['target_version', 'current_workspace_ref', 'change_summary', 'release_recommendation', 'next_action_suggestion']
-      .filter((fieldName) => !safe(node[fieldName]).trim())
+  function trainingCenterReleaseReviewFieldPresent(value) {
+    if (Array.isArray(value)) {
+      return value.some((item) => !!safe(item).trim());
+    }
+    if (value && typeof value === 'object') {
+      return Object.keys(value).length > 0;
+    }
+    return !!safe(value).trim();
+  }
+
+  function trainingCenterReleaseReviewMissingReportFields(review) {
+    const reviewNode = review && typeof review === 'object' ? review : {};
+    const node = reviewNode.report && typeof reviewNode.report === 'object' ? reviewNode.report : {};
+    const requiredFields = Array.isArray(reviewNode.required_report_fields) ? reviewNode.required_report_fields : [];
+    return requiredFields
+      .filter((fieldName) => !trainingCenterReleaseReviewFieldPresent(node[fieldName]))
       .map((fieldName) => trainingCenterReleaseReviewFieldLabel(fieldName));
   }
 
@@ -502,12 +533,13 @@
     const localNode = localError && typeof localError === 'object' ? localError : {};
     const chain = reviewNode.analysis_chain && typeof reviewNode.analysis_chain === 'object' ? reviewNode.analysis_chain : {};
     const rawMessage = safe(reviewNode.report_error).trim() || (safe(localNode.mode).trim().toLowerCase() === 'enter' ? safe(localNode.error_message).trim() : '');
-    const missingFields = trainingCenterReleaseReviewMissingReportFields(reviewNode.report);
+    const errorCode = safe(reviewNode.report_error_code || chain.report_error_code || localNode.error_code).trim().toLowerCase();
+    const missingFields = errorCode === 'release_review_report_incomplete' ? trainingCenterReleaseReviewMissingReportFields(reviewNode) : [];
     const chainError = safe(chain.error || localNode.error_reason || localNode.error_code).trim().toLowerCase();
     const exitCode = Number(chain.codex_summary && chain.codex_summary.exit_code);
     let summary = rawMessage;
     if (!summary || safe(summary).trim().toLowerCase() === 'release review report failed') {
-      if (missingFields.length) {
+      if (errorCode === 'release_review_report_incomplete' && missingFields.length) {
         summary = '生成发布报告失败：结构化报告缺少关键字段（' + missingFields.join(' / ') + '）。';
       } else if (chainError === 'codex_command_not_found') {
         summary = '生成发布报告失败：当前环境未找到 codex 命令。';
@@ -525,14 +557,14 @@
 
     let suggestion = '';
     if (!/请先|建议|重新进入发布评审/.test(summary)) {
-      if (missingFields.length) {
+      if (errorCode === 'release_review_report_incomplete' && missingFields.length) {
         suggestion = '建议先检查报告文件是否缺少 ' + missingFields.join(' / ') + '，修正后点击“重新进入发布评审”。';
       } else if (safe(chain.stderr_path).trim() || safe(chain.stdout_path).trim() || safe(chain.report_path).trim()) {
         suggestion = '建议先查看分析链路里的 stderr / stdout / 报告文件，定位原因后点击“重新进入发布评审”。';
       } else {
         suggestion = '建议先处理环境或工作区问题，再点击“重新进入发布评审”。';
       }
-    } else if (missingFields.length && !/stderr|stdout|报告文件/.test(summary)) {
+    } else if (errorCode === 'release_review_report_incomplete' && missingFields.length && !/stderr|stdout|报告文件/.test(summary)) {
       suggestion = '建议先检查报告文件是否缺少 ' + missingFields.join(' / ') + '，修正后点击“重新进入发布评审”。';
     }
 
@@ -564,19 +596,33 @@
     let suggestion = safe(fallback.next_action_suggestion).trim();
     if (!suggestion) {
       if (phase === 'git_execute') {
-        suggestion = '建议先检查 Git 标签/提交是否可写、是否存在冲突，然后重新点击“确认发布”。';
+        suggestion = reviewNode.can_confirm
+          ? '建议先检查 Git 标签/提交是否可写、是否存在冲突；修复后可直接点击“重试发布”。'
+          : '建议先检查 Git 标签/提交是否可写、是否存在冲突，然后重新点击“确认发布”。';
       } else if (phase === 'release_note') {
-        suggestion = '建议先检查 release note 是否成功写入并符合当前版本识别规则，修正后重新点击“确认发布”。';
+        suggestion = reviewNode.can_confirm
+          ? '建议先检查 release note 是否成功写入并符合当前版本识别规则；修正后可直接点击“重试发布”。'
+          : '建议先检查 release note 是否成功写入并符合当前版本识别规则，修正后重新点击“确认发布”。';
       } else if (phase === 'verify') {
-        suggestion = '建议先检查 Git 标签和 release note 是否都已落盘并可被当前版本规则识别，再重新点击“确认发布”。';
+        suggestion = reviewNode.can_confirm
+          ? '建议先检查 Git 标签和 release note 是否都已落盘并可被当前版本规则识别；修复后可直接点击“重试发布”。'
+          : '建议先检查 Git 标签和 release note 是否都已落盘并可被当前版本规则识别，再重新点击“确认发布”。';
       } else if (safe(fallback.status).trim()) {
-        suggestion = '自动兜底已执行但仍未完成，请根据兜底结果人工处理后再重试。';
+        suggestion = reviewNode.can_confirm
+          ? '自动兜底已执行但仍未完成；请根据兜底结果修复问题后直接点击“重试发布”，若报告本身需要变化再重新进入发布评审。'
+          : '自动兜底已执行但仍未完成，请根据兜底结果人工处理后再重试。';
       } else {
-        suggestion = '建议先查看执行日志中的失败阶段，修复后再重新点击“确认发布”。';
+        suggestion = reviewNode.can_confirm
+          ? '建议先查看执行日志中的失败阶段，修复后可直接点击“重试发布”。'
+          : '建议先查看执行日志中的失败阶段，修复后再重新点击“确认发布”。';
       }
     }
 
-    const detailText = safe(failedLog && failedLog.message).trim() || safe(fallback.failure_reason || fallback.error).trim() || message;
+    const detailText =
+      safe(failedLog && failedLog.message).trim() ||
+      safe(fallback.repair_summary).trim() ||
+      safe(fallback.failure_reason || fallback.error).trim() ||
+      message;
     return {
       summary: message || detailText,
       suggestion: suggestion,
@@ -590,6 +636,7 @@
     const mode = safe(progress.mode).trim().toLowerCase();
     if (mode === 'confirm') {
       next.release_review_state = progress.failed ? 'publish_failed' : 'publish_running';
+      next.can_discard = false;
       if (progress.active) next.can_confirm = false;
       if (progress.failed && !safe(next.publish_error).trim()) {
         next.publish_error = safe(progress.error_message).trim();
@@ -598,6 +645,8 @@
       next.release_review_state = progress.failed ? 'report_failed' : 'report_generating';
       next.analysis_chain = {};
       next.report = {};
+      next.report_error_code = '';
+      next.report_missing_fields = [];
       next.review_decision = '';
       next.reviewer = '';
       next.review_comment = '';
@@ -607,6 +656,7 @@
       next.publish_error = '';
       next.execution_logs = [];
       next.fallback = {};
+      next.can_discard = false;
       if (progress.active) {
         next.can_enter = false;
         next.can_review = false;
@@ -627,6 +677,7 @@
     if (key === 'report_ready') return '发布报告已就绪';
     if (key === 'review_approved') return '人工审核已通过';
     if (key === 'review_rejected') return '人工审核未通过';
+    if (key === 'review_discarded') return '当前评审已废弃';
     if (key === 'publish_running') return '确认发布执行中';
     if (key === 'publish_failed') return '确认发布失败';
     if (key === 'report_failed') return '发布报告生成失败';
@@ -638,16 +689,44 @@
     if (key === 'approve_publish') return '通过并进入确认发布';
     if (key === 'reject_continue_training') return '不通过：继续训练';
     if (key === 'reject_discard_pre_release') return '不通过：舍弃预发布';
+    if (key === 'discard_review') return '已废弃当前评审记录';
     return key ? safe(value) : '未提交';
   }
 
   function trainingCenterReleaseLogStatus(logs, phase) {
     const rows = Array.isArray(logs) ? logs.filter((item) => safe(item && item.phase).trim() === phase) : [];
     if (!rows.length) return 'pending';
-    if (rows.some((item) => safe(item && item.status).trim() === 'failed')) return 'failed';
-    if (rows.some((item) => safe(item && item.status).trim() === 'running')) return 'current';
-    if (rows.some((item) => safe(item && item.status).trim() === 'done')) return 'done';
+    for (let index = rows.length - 1; index >= 0; index -= 1) {
+      const status = safe(rows[index] && rows[index].status).trim().toLowerCase();
+      if (status === 'failed') return 'failed';
+      if (status === 'running') return 'current';
+      if (status === 'done') return 'done';
+    }
     return 'pending';
+  }
+
+  function trainingCenterReleaseSubstepLabel(kind, status) {
+    const key = safe(kind).trim().toLowerCase();
+    const phaseStatus = safe(status).trim().toLowerCase();
+    if (key === 'git') {
+      if (phaseStatus === 'done') return 'Git 发布完成';
+      if (phaseStatus === 'failed') return 'Git 发布失败';
+      if (phaseStatus === 'current') return 'Git 发布中';
+      return 'Git 发布待执行';
+    }
+    if (key === 'release_note') {
+      if (phaseStatus === 'done') return 'release note 已完成';
+      if (phaseStatus === 'failed') return 'release note 失败';
+      if (phaseStatus === 'current') return 'release note 处理中';
+      return 'release note 待处理';
+    }
+    if (key === 'verify') {
+      if (phaseStatus === 'done') return '成功校验通过';
+      if (phaseStatus === 'failed') return '成功校验失败';
+      if (phaseStatus === 'current') return '成功校验中';
+      return '成功校验待执行';
+    }
+    return safe(kind).trim();
   }
 
   function trainingCenterReleaseReviewSteps(review) {
@@ -673,6 +752,7 @@
         label: '人工审核',
         status:
           stateKey === 'review_rejected'
+            || stateKey === 'review_discarded'
             ? 'failed'
             : stateKey === 'report_ready'
               ? 'current'
@@ -712,19 +792,19 @@
     const finalStatus = publishSuccess ? 'done' : stateKey === 'publish_failed' ? 'failed' : stateKey === 'publish_running' ? 'current' : 'pending';
     return [
       {
-        label: 'Git 发布中',
+        label: trainingCenterReleaseSubstepLabel('git', gitStatus === 'pending' && stateKey === 'publish_running' ? 'current' : gitStatus),
         status: gitStatus === 'pending' && stateKey === 'publish_running' ? 'current' : gitStatus,
       },
       {
-        label: 'release note 处理中',
+        label: trainingCenterReleaseSubstepLabel('release_note', releaseNoteStatus === 'pending' && stateKey === 'publish_running' ? 'current' : releaseNoteStatus),
         status: releaseNoteStatus === 'pending' && stateKey === 'publish_running' ? 'current' : releaseNoteStatus,
       },
       {
-        label: '成功校验中',
+        label: trainingCenterReleaseSubstepLabel('verify', verifyStatus === 'pending' && stateKey === 'publish_running' ? 'current' : verifyStatus),
         status: verifyStatus === 'pending' && stateKey === 'publish_running' ? 'current' : verifyStatus,
       },
       {
-        label: publishSuccess ? '完成' : '完成 / 失败',
+        label: publishSuccess ? '发布完成' : stateKey === 'publish_failed' ? '发布失败' : '完成 / 失败',
         status: finalStatus,
       },
     ];
@@ -1014,6 +1094,139 @@
     }
   }
 
+  async function fetchTrainingCenterJsonRef(refPath) {
+    const path = safe(refPath).trim();
+    if (!path) {
+      throw new Error('当前发布版本未绑定发布报告文件。');
+    }
+    const resp = await fetch(path, { cache: 'no-store' });
+    const text = await resp.text();
+    if (!resp.ok) {
+      throw new Error('读取发布报告失败：' + path);
+    }
+    let payload = {};
+    try {
+      payload = JSON.parse(text || '{}');
+    } catch (_) {
+      throw new Error('发布报告文件不是有效 JSON：' + path);
+    }
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+      throw new Error('发布报告文件格式不正确：' + path);
+    }
+    return payload;
+  }
+
+  function ensureTrainingCenterPublishedReleaseReportDialog() {
+    let dialog = $('tcPublishedReleaseReportDialog');
+    if (!dialog) {
+      dialog = document.createElement('dialog');
+      dialog.id = 'tcPublishedReleaseReportDialog';
+      dialog.className = 'tc-report-dialog';
+
+      const shell = document.createElement('div');
+      shell.className = 'tc-report-dialog-shell';
+
+      const head = document.createElement('div');
+      head.className = 'tc-report-dialog-head';
+      const titleWrap = document.createElement('div');
+      titleWrap.className = 'tc-report-dialog-title-wrap';
+      const titleNode = document.createElement('div');
+      titleNode.className = 'tc-report-dialog-title';
+      const metaNode = document.createElement('div');
+      metaNode.className = 'tc-report-dialog-meta';
+      titleWrap.appendChild(titleNode);
+      titleWrap.appendChild(metaNode);
+      const closeBtn = document.createElement('button');
+      closeBtn.type = 'button';
+      closeBtn.className = 'alt';
+      closeBtn.textContent = '关闭';
+      closeBtn.onclick = () => dialog.close();
+      head.appendChild(titleWrap);
+      head.appendChild(closeBtn);
+
+      const errorNode = document.createElement('div');
+      errorNode.className = 'tc-report-dialog-error';
+
+      const bodyNode = document.createElement('div');
+      bodyNode.className = 'tc-report-dialog-body';
+
+      shell.appendChild(head);
+      shell.appendChild(errorNode);
+      shell.appendChild(bodyNode);
+      dialog.appendChild(shell);
+      dialog.addEventListener('click', (event) => {
+        if (event.target !== dialog) return;
+        const rect = dialog.getBoundingClientRect();
+        const inside =
+          event.clientX >= rect.left &&
+          event.clientX <= rect.right &&
+          event.clientY >= rect.top &&
+          event.clientY <= rect.bottom;
+        if (!inside) dialog.close();
+      });
+      document.body.appendChild(dialog);
+    }
+    return {
+      dialog: dialog,
+      titleNode: dialog.querySelector('.tc-report-dialog-title'),
+      metaNode: dialog.querySelector('.tc-report-dialog-meta'),
+      errorNode: dialog.querySelector('.tc-report-dialog-error'),
+      bodyNode: dialog.querySelector('.tc-report-dialog-body'),
+    };
+  }
+
+  async function openTrainingCenterPublishedReleaseReport(agentId, releaseRow) {
+    const release = releaseRow && typeof releaseRow === 'object' ? releaseRow : {};
+    const detail = trainingCenterAgentDetailById(agentId);
+    const reportRef = safe(release.release_source_ref).trim() || safe(release.capability_snapshot_ref).trim();
+    const reportRefType = safe(release.release_source_ref).trim() ? '发布报告' : '能力快照';
+    const refs = ensureTrainingCenterPublishedReleaseReportDialog();
+    if (refs.titleNode) {
+      refs.titleNode.textContent = safe(release.version_label).trim()
+        ? safe(release.version_label).trim() + ' 发布报告'
+        : '发布报告';
+    }
+    if (refs.metaNode) {
+      const metaParts = [];
+      if (safe(release.released_at).trim()) metaParts.push('发布时间：' + safe(release.released_at).trim());
+      if (safe(reportRefType).trim() && safe(reportRef).trim()) metaParts.push(reportRefType + '：' + safe(reportRef).trim());
+      refs.metaNode.textContent = metaParts.join(' · ');
+    }
+    if (refs.errorNode) refs.errorNode.textContent = '';
+    if (refs.bodyNode) {
+      refs.bodyNode.innerHTML = '';
+      const loading = document.createElement('div');
+      loading.className = 'tc-empty';
+      loading.textContent = '正在读取发布报告...';
+      refs.bodyNode.appendChild(loading);
+    }
+    if (refs.dialog && !refs.dialog.open && typeof refs.dialog.showModal === 'function') {
+      refs.dialog.showModal();
+    }
+    const report = await fetchTrainingCenterJsonRef(reportRef);
+    const review = defaultTrainingCenterReleaseReview(detail);
+    review.review_id = safe(release.release_id).trim();
+    review.agent_id = safe(detail.agent_id || release.agent_id).trim();
+    review.agent_name = safe(detail.agent_name || release.agent_id).trim();
+    review.target_version = safe(release.version_label).trim();
+    review.publish_version = safe(release.version_label).trim();
+    review.current_workspace_ref = safe(report.current_workspace_ref).trim();
+    review.publish_status = 'success';
+    review.publish_succeeded = true;
+    review.report = report;
+    review.analysis_chain = {
+      report_path: safe(release.release_source_ref).trim(),
+    };
+    review.public_profile_markdown_path = safe(release.public_profile_ref).trim();
+    review.capability_snapshot_json_path = safe(release.capability_snapshot_ref).trim();
+    if (refs.bodyNode) {
+      refs.bodyNode.innerHTML = '';
+      const host = document.createElement('div');
+      refs.bodyNode.appendChild(host);
+      renderTrainingCenterReleaseReport(host, review, null, null);
+    }
+  }
+
   function renderTrainingCenterReleaseReview(agentId) {
     const reviewCard = $('tcReleaseReviewCard');
     const hintNode = $('tcReleaseReviewHint');
@@ -1026,6 +1239,7 @@
     const logsNode = $('tcReleaseReviewLogs');
     const fallbackNode = $('tcReleaseReviewFallback');
     const enterBtn = $('tcEnterReleaseReviewBtn');
+    const discardBtn = $('tcDiscardReleaseReviewBtn');
     const confirmBtn = $('tcConfirmReleaseReviewBtn');
     const decisionSelect = $('tcEvalDecisionSelect');
     const reviewerInput = $('tcEvalReviewerInput');
@@ -1061,6 +1275,7 @@
         node.appendChild(empty);
       });
       if (enterBtn) enterBtn.disabled = true;
+      if (discardBtn) discardBtn.disabled = true;
       if (confirmBtn) confirmBtn.disabled = true;
       if (decisionSelect) decisionSelect.disabled = true;
       if (reviewerInput) reviewerInput.disabled = true;
@@ -1103,6 +1318,10 @@
             ? '重新进入发布评审'
             : '进入发布评审';
     }
+    if (discardBtn) {
+      discardBtn.disabled = !!progress || !effectiveReview.can_discard;
+      discardBtn.textContent = '废弃当前评审';
+    }
     if (confirmBtn) {
       confirmBtn.disabled = !!progress || !effectiveReview.can_confirm;
       confirmBtn.textContent =
@@ -1110,7 +1329,9 @@
           ? '发布中...'
           : safe(review.publish_status).trim().toLowerCase() === 'success'
             ? '已发布成功'
-            : '确认发布';
+            : safe(effectiveReview.release_review_state).trim() === 'publish_failed'
+              ? '重试发布'
+              : '确认发布';
     }
     if (decisionSelect) {
       const rejectDiscardOption = Array.from(decisionSelect.options || []).find(
@@ -1207,6 +1428,12 @@
       statusNode.className = 'tc-release-review-note';
       statusNode.textContent = '当前状态：' + trainingCenterReleaseReviewStateText(effectiveReview.release_review_state);
       manualMetaNode.appendChild(statusNode);
+      if (safe(effectiveReview.release_review_state).trim().toLowerCase() === 'review_discarded') {
+        const discardedNode = document.createElement('div');
+        discardedNode.className = 'tc-release-review-note';
+        discardedNode.textContent = '当前评审记录已废弃；如需继续，请重新进入发布评审。';
+        manualMetaNode.appendChild(discardedNode);
+      }
       if (safe(effectiveReview.review_decision).trim()) {
         [
           ['审核结论', trainingCenterReleaseReviewDecisionText(effectiveReview.review_decision)],
@@ -1315,6 +1542,7 @@
         [
           ['兜底状态', safe(fallback.status).trim()],
           ['失败原因', safe(fallback.failure_reason || fallback.error).trim() || '-'],
+          ['修复摘要', safe(fallback.repair_summary).trim() || '-'],
           ['下一步建议', safe(fallback.next_action_suggestion).trim() || '-'],
         ].forEach((entry) => {
           const row = document.createElement('div');
@@ -1329,6 +1557,13 @@
           row.appendChild(valueNode);
           fallbackNode.appendChild(row);
         });
+        const repairActions = Array.isArray(fallback.repair_actions) ? fallback.repair_actions.filter((item) => safe(item).trim()) : [];
+        if (repairActions.length) {
+          const actionsPre = document.createElement('pre');
+          actionsPre.className = 'tc-release-review-pre compact';
+          actionsPre.textContent = repairActions.join('\n');
+          fallbackNode.appendChild(actionsPre);
+        }
         const retryResult = fallback.retry_result && typeof fallback.retry_result === 'object' ? fallback.retry_result : {};
         if (Object.keys(retryResult).length) {
           const retryPre = document.createElement('pre');
@@ -2074,17 +2309,63 @@
     for (const row of releases) {
       const node = document.createElement('div');
       node.className = 'tc-item';
-      node.innerHTML =
-        "<div class='tc-item-title'>" +
-        safe(row.version_label || '-') +
-        " <span class='tc-badge ok'>发布版本</span>" +
-        '</div>' +
-        "<div class='tc-item-sub'>发布时间：" +
-        safe(row.released_at || '-') +
-        '</div>' +
-        "<div class='tc-item-sub'>发布说明：" +
-        safe(row.version_notes || row.change_summary || '-') +
-        '</div>';
+      const titleNode = document.createElement('div');
+      titleNode.className = 'tc-item-title';
+      titleNode.textContent = safe(row.version_label || '-');
+      const badgeNode = document.createElement('span');
+      badgeNode.className = 'tc-badge ok';
+      badgeNode.textContent = '发布版本';
+      titleNode.appendChild(document.createTextNode(' '));
+      titleNode.appendChild(badgeNode);
+      node.appendChild(titleNode);
+
+      const timeNode = document.createElement('div');
+      timeNode.className = 'tc-item-sub';
+      timeNode.textContent = '发布时间：' + safe(row.released_at || '-');
+      node.appendChild(timeNode);
+
+      const summaryNode = document.createElement('div');
+      summaryNode.className = 'tc-item-sub';
+      summaryNode.textContent = '发布说明：' + safe(row.version_notes || row.change_summary || '-');
+      node.appendChild(summaryNode);
+
+      const reportRef = safe(row.release_source_ref || row.capability_snapshot_ref).trim();
+      if (reportRef) {
+        const actionsNode = document.createElement('div');
+        actionsNode.className = 'tc-release-row';
+        const reportBtn = document.createElement('button');
+        reportBtn.type = 'button';
+        reportBtn.className = 'alt';
+        reportBtn.textContent = '查看发布报告';
+        reportBtn.onclick = async () => {
+          try {
+            reportBtn.disabled = true;
+            await openTrainingCenterPublishedReleaseReport(key, row);
+          } catch (err) {
+            const refs = ensureTrainingCenterPublishedReleaseReportDialog();
+            if (refs.errorNode) refs.errorNode.textContent = safe(err && err.message ? err.message : err);
+            if (refs.bodyNode) {
+              refs.bodyNode.innerHTML = '';
+              const empty = document.createElement('div');
+              empty.className = 'tc-empty';
+              empty.textContent = '当前发布报告暂不可展示。';
+              refs.bodyNode.appendChild(empty);
+            }
+            if (refs.dialog && !refs.dialog.open && typeof refs.dialog.showModal === 'function') {
+              refs.dialog.showModal();
+            }
+          } finally {
+            reportBtn.disabled = false;
+          }
+        };
+        actionsNode.appendChild(reportBtn);
+        node.appendChild(actionsNode);
+      } else {
+        const hintNode = document.createElement('div');
+        hintNode.className = 'tc-item-sub';
+        hintNode.textContent = '发布报告：当前版本未绑定可展示的发布报告文件';
+        node.appendChild(hintNode);
+      }
       box.appendChild(node);
     }
   }
@@ -2816,6 +3097,28 @@
     }
   }
 
+  async function discardTrainingCenterReleaseReview() {
+    const agentId = selectedTrainingCenterAgentId();
+    if (!agentId) throw new Error('请先选择角色');
+    const reason = safe($('tcEvalSummaryInput') ? $('tcEvalSummaryInput').value : '').trim();
+    const data = await postJSON(
+      '/api/training/agents/' + encodeURIComponent(agentId) + '/release-review/discard',
+      {
+        operator: 'web-user',
+        reason: reason,
+      }
+    );
+    if (!state.tcReleaseReviewByAgent || typeof state.tcReleaseReviewByAgent !== 'object') {
+      state.tcReleaseReviewByAgent = {};
+    }
+    state.tcReleaseReviewByAgent[agentId] = normalizeTrainingCenterReleaseReviewPayload(agentId, data);
+    setTrainingCenterDetailError('');
+    setTrainingCenterAgentActionResult(data);
+    setTrainingCenterRunResult(data);
+    renderTrainingCenterReleaseReview(agentId);
+    await refreshTrainingCenterAgents();
+  }
+
   async function submitTrainingCenterManualEvaluation() {
     const agentId = selectedTrainingCenterAgentId();
     if (!agentId) throw new Error('请先选择角色');
@@ -2904,6 +3207,11 @@
       publish_status: '',
       publish_error: '',
       fallback_status: '',
+      release_report_ref_count: 0,
+      release_report_button_count: 0,
+      release_report_dialog_open: false,
+      release_report_dialog_title: '',
+      release_review_current_pills: [],
       report_first_person_summary: '',
       report_change_summary: '',
       report_has_inventory: false,
@@ -3205,7 +3513,8 @@
         probeCase === 'ac_ar_rr_12' ||
         probeCase === 'ac_ar_rr_13' ||
         probeCase === 'ac_ar_rr_14' ||
-        probeCase === 'ac_ar_rr_15'
+        probeCase === 'ac_ar_rr_15' ||
+        probeCase === 'ac_ar_rr_16'
       ) {
         setTrainingCenterModule('agents');
         if (selectedId) {
@@ -3241,18 +3550,44 @@
       output.review_state = safe(currentReview.release_review_state || '').toLowerCase();
       output.review_decision = safe(currentReview.review_decision || '').trim();
       output.review_reviewer = safe(currentReview.reviewer || '').trim();
+      output.review_can_enter = !!currentReview.can_enter;
+      output.review_can_discard = !!currentReview.can_discard;
       output.review_can_review = !!currentReview.can_review;
       output.review_can_confirm = !!currentReview.can_confirm;
       output.review_error = safe(currentReview.report_error || '').trim();
+      output.review_report_error_code = safe(currentReview.report_error_code || '').trim().toLowerCase();
+      output.review_report_missing_fields = Array.isArray(currentReview.report_missing_fields) ? currentReview.report_missing_fields : [];
+      output.review_required_report_fields = Array.isArray(currentReview.required_report_fields) ? currentReview.required_report_fields : [];
       output.publish_status = safe(currentReview.publish_status || '').toLowerCase();
       output.publish_error = safe(currentReview.publish_error || '').trim();
       output.fallback_status = safe(currentReview.fallback && currentReview.fallback.status).toLowerCase();
+      output.release_report_ref_count = releases.filter((row) => !!safe((row && (row.release_source_ref || row.capability_snapshot_ref)) || '').trim()).length;
+      output.release_report_button_count = Array.from(document.querySelectorAll('#tcReleaseList button'))
+        .filter((node) => safe(node && node.textContent).trim() === '查看发布报告').length;
+      output.release_review_current_pills = Array.from(document.querySelectorAll('#tcReleaseReviewSubstage .tc-release-review-pill.current'))
+        .map((node) => safe(node && node.textContent).trim())
+        .filter(Boolean);
+      output.report_previous_release_version = safe(currentReview.report && currentReview.report.previous_release_version).trim();
       output.report_first_person_summary = safe(currentReview.report && currentReview.report.first_person_summary).trim();
       output.report_change_summary = safe(currentReview.report && currentReview.report.change_summary).trim();
+      output.report_release_recommendation = safe(currentReview.report && currentReview.report.release_recommendation).trim().toLowerCase();
       output.report_has_inventory =
         !!(currentReview.report && Array.isArray(currentReview.report.full_capability_inventory) && currentReview.report.full_capability_inventory.length);
       output.report_has_delta =
         !!(currentReview.report && Array.isArray(currentReview.report.capability_delta) && currentReview.report.capability_delta.length);
+      output.report_has_knowledge_scope = !!safe(currentReview.report && currentReview.report.knowledge_scope).trim();
+      output.report_agent_skill_count =
+        currentReview.report && Array.isArray(currentReview.report.agent_skills) ? currentReview.report.agent_skills.length : 0;
+      output.report_applicable_scenario_count =
+        currentReview.report && Array.isArray(currentReview.report.applicable_scenarios) ? currentReview.report.applicable_scenarios.length : 0;
+      output.report_warning_count =
+        currentReview.report && Array.isArray(currentReview.report.warnings) ? currentReview.report.warnings.length : 0;
+      output.report_has_failure_skeleton =
+        !!safe(currentReview.report && currentReview.report.target_version).trim() &&
+        !!safe(currentReview.report && currentReview.report.current_workspace_ref).trim() &&
+        !!safe(currentReview.report && currentReview.report.change_summary).trim() &&
+        !!safe(currentReview.report && currentReview.report.release_recommendation).trim() &&
+        !!safe(currentReview.report && currentReview.report.next_action_suggestion).trim();
       output.analysis_chain_paths = {
         prompt_path: safe(currentReview.analysis_chain && currentReview.analysis_chain.prompt_path).trim(),
         stdout_path: safe(currentReview.analysis_chain && currentReview.analysis_chain.stdout_path).trim(),
@@ -3272,6 +3607,21 @@
       output.role_profile_source_release_id = safe(roleProfile.source_release_id).trim();
       output.role_profile_first_person_summary = safe(roleProfile.first_person_summary).trim();
       output.active_role_profile_ref = safe(selectedDetail.active_role_profile_ref || '').trim();
+      if (probeCase === 'ac_ar_rr_12' && output.release_report_button_count >= 1) {
+        const releaseReportBtn = Array.from(document.querySelectorAll('#tcReleaseList button'))
+          .find((node) => safe(node && node.textContent).trim() === '查看发布报告');
+        if (releaseReportBtn) {
+          releaseReportBtn.click();
+          await new Promise((resolve) => window.setTimeout(resolve, 250));
+          const reportDialog = $('tcPublishedReleaseReportDialog');
+          output.release_report_dialog_open = !!(reportDialog && reportDialog.open);
+          const reportTitleNode = reportDialog ? reportDialog.querySelector('.tc-report-dialog-title') : null;
+          output.release_report_dialog_title = safe(reportTitleNode && reportTitleNode.textContent).trim();
+          if (reportDialog && reportDialog.open && typeof reportDialog.close === 'function') {
+            reportDialog.close();
+          }
+        }
+      }
       if (!output.error_code) {
         output.error_code = safe((output.api_result && output.api_result.code) || '').toLowerCase();
       }
@@ -3312,23 +3662,31 @@
                                         ? true
                                         : probeCase === 'ac_ar_rr_09'
                                           ? output.review_state === 'report_generating'
-                                          : probeCase === 'ac_ar_rr_10'
-                                            ? output.review_state === 'report_ready' &&
-                                              output.report_has_inventory &&
-                                              output.report_has_delta &&
-                                              !!safe(output.analysis_chain_paths.prompt_path) &&
-                                              !!safe(output.analysis_chain_paths.stdout_path) &&
-                                              !!safe(output.analysis_chain_paths.stderr_path) &&
-                                              !!safe(output.analysis_chain_paths.report_path) &&
-                                              /^我/.test(output.report_first_person_summary)
+                                            : probeCase === 'ac_ar_rr_10'
+                                              ? output.review_state === 'report_ready' &&
+                                                output.report_has_inventory &&
+                                                output.report_has_delta &&
+                                                output.report_has_knowledge_scope &&
+                                                output.report_agent_skill_count >= 1 &&
+                                                output.report_applicable_scenario_count >= 1 &&
+                                                !!safe(output.analysis_chain_paths.prompt_path) &&
+                                                !!safe(output.analysis_chain_paths.stdout_path) &&
+                                                !!safe(output.analysis_chain_paths.stderr_path) &&
+                                                !!safe(output.analysis_chain_paths.report_path) &&
+                                                /^我/.test(output.report_first_person_summary)
                                             : probeCase === 'ac_ar_rr_11'
                                               ? output.review_state === 'review_approved' &&
                                                 output.review_decision === 'approve_publish' &&
                                                 !!output.review_reviewer
-                                              : probeCase === 'ac_ar_rr_12'
+                                            : probeCase === 'ac_ar_rr_12'
                                                 ? output.publish_status === 'success' &&
                                                   output.role_profile_source === 'latest_release_report' &&
                                                   !!output.active_role_profile_ref &&
+                                                  output.release_report_ref_count >= 1 &&
+                                                  output.release_report_button_count >= 1 &&
+                                                  output.release_report_dialog_open &&
+                                                  /发布报告/.test(output.release_report_dialog_title) &&
+                                                  output.release_review_current_pills.length === 0 &&
                                                   /^我/.test(output.role_profile_first_person_summary)
                                                 : probeCase === 'ac_ar_rr_13'
                                                   ? output.execution_log_phases.includes('prepare') &&
@@ -3340,11 +3698,17 @@
                                                       !!output.fallback_status &&
                                                       output.execution_log_phases.includes('fallback_trigger') &&
                                                       output.execution_log_phases.includes('fallback_result')
-                                                    : probeCase === 'ac_ar_rr_15'
-                                                      ? output.review_state === 'report_failed' &&
-                                                        !!output.review_error &&
+                                                  : probeCase === 'ac_ar_rr_15'
+                                                    ? output.review_state === 'report_failed' &&
+                                                      !!output.review_error &&
+                                                      !!output.review_report_error_code &&
+                                                      output.report_has_failure_skeleton &&
+                                                      !output.review_can_confirm
+                                                    : probeCase === 'ac_ar_rr_16'
+                                                      ? output.review_state === 'review_discarded' &&
+                                                        output.review_can_enter &&
                                                         !output.review_can_confirm
-                                        : true);
+                                         : true);
     } catch (err) {
       output.error = safe(err && err.message ? err.message : err);
       output.error_code = safe(err && err.code ? err.code : output.error_code);

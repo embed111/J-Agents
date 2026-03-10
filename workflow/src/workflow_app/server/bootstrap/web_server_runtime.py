@@ -39,6 +39,7 @@ from ...runtime.training_center_runtime import (
     confirm_training_agent_release_review,
     create_training_plan_and_enqueue,
     discard_agent_pre_release,
+    discard_training_agent_release_review,
     dispatch_next_training_queue_item,
     discover_training_trainers,
     enter_training_agent_release_review,

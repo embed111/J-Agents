@@ -571,7 +571,7 @@ def main() -> int:
             proc.kill()
 
     now_key = datetime.now().strftime("%Y%m%d-%H%M%S")
-    out_dir = (repo_root / ".output" / "runs").resolve()
+    out_dir = (repo_root / ".test" / "runs").resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"workflow-gate-acceptance-{now_key}.md"
     lines = [

@@ -866,6 +866,7 @@
     const tcAvatarFileInput = $('tcAvatarFileInput');
     const tcSetAvatarBtn = $('tcSetAvatarBtn');
     const tcDiscardPreReleaseBtn = $('tcDiscardPreReleaseBtn');
+    const tcDiscardReleaseReviewBtn = $('tcDiscardReleaseReviewBtn');
     const tcEvalDecisionSelect = $('tcEvalDecisionSelect');
     const tcEvalReviewerInput = $('tcEvalReviewerInput');
     const tcEvalSummaryInput = $('tcEvalSummaryInput');
@@ -919,6 +920,7 @@
     if (tcDiscardPreReleaseBtn) {
       tcDiscardPreReleaseBtn.disabled = !rootReady || !tcHasSelectedAgent || !tcAgentPreRelease || !tcHasPublishedRelease;
     }
+    if (tcDiscardReleaseReviewBtn) tcDiscardReleaseReviewBtn.disabled = !rootReady || !tcHasSelectedAgent;
     if (tcEvalDecisionSelect) tcEvalDecisionSelect.disabled = !rootReady || !tcHasSelectedAgent;
     if (tcEvalReviewerInput) tcEvalReviewerInput.disabled = !rootReady || !tcHasSelectedAgent;
     if (tcEvalSummaryInput) tcEvalSummaryInput.disabled = !rootReady || !tcHasSelectedAgent;

@@ -13,10 +13,13 @@
    1. 重构映射与行数预算等分析报告。
 6. `prompts/`
    1. 执行提示词与提示词管理说明。
+7. `prototypes/`
+   1. 需求预览参考图、HTML 示意稿、交互草图。
 
 ## 2. 当前主入口
 1. 主入口：`docs/workflow/overview/需求概述.md`
 2. 历史增量：`docs/workflow/overview/需求概述-增量历史-20260225-20260304.md`
+3. 展示参考图：`docs/workflow/prototypes/发布评审分层展示参考图-20260310.html`
 
 ## 3. 命名与治理约束
 1. 新增需求文档优先放入 `requirements/` 或 `design/`，禁止再回到根目录扁平堆叠。

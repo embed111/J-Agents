@@ -426,7 +426,7 @@ def main() -> int:
     )
 
     edge_path = find_edge_executable()
-    out_dir = (repo_root / ".output" / "runs").resolve()
+    out_dir = (repo_root / ".test" / "runs").resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
     shots_dir = out_dir / f"ac36-ac43-shots-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
     shots_dir.mkdir(parents=True, exist_ok=True)

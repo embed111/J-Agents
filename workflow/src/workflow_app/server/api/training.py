@@ -300,6 +300,22 @@ def try_handle_post(handler, cfg, state, ctx: dict) -> bool:
             handler.send_json(exc.status_code, payload)
         return True
 
+    mrrd = re.fullmatch(r"/api/training/agents/([0-9A-Za-z._:-]+)/release-review/discard", path)
+    if mrrd:
+        try:
+            data = ws.discard_training_agent_release_review(
+                cfg,
+                agent_id=ws.safe_token(mrrd.group(1), "", 120),
+                operator=str(body.get("operator") or "web-user"),
+                reason=str(body.get("reason") or body.get("review_comment") or body.get("summary") or "").strip(),
+            )
+            handler.send_json(200, {"ok": True, **data})
+        except ws.TrainingCenterError as exc:
+            payload = {"ok": False, "error": str(exc), "code": exc.code}
+            payload.update(exc.extra)
+            handler.send_json(exc.status_code, payload)
+        return True
+
     mrrm = re.fullmatch(r"/api/training/agents/([0-9A-Za-z._:-]+)/release-review/manual", path)
     if mrrm:
         try:

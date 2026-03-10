@@ -27,19 +27,49 @@ RELEASE_REVIEW_STATES = (
     "report_ready",
     "review_approved",
     "review_rejected",
+    "review_discarded",
     "publish_running",
     "publish_failed",
     "report_failed",
 )
-RELEASE_REVIEW_PROMPT_VERSION = "2026-03-09-release-review-v6"
-RELEASE_REVIEW_FALLBACK_PROMPT_VERSION = "2026-03-07-release-review-fallback-v1"
+RELEASE_REVIEW_PROMPT_VERSION = "2026-03-10-release-review-v8"
+RELEASE_REVIEW_FALLBACK_PROMPT_VERSION = "2026-03-10-release-review-fallback-v2"
 RELEASE_REVIEW_CODEX_TIMEOUT_S = 900
-RELEASE_REVIEW_ENTERABLE_STATES = ("idle", "review_rejected", "publish_failed", "report_failed")
+RELEASE_REVIEW_ENTERABLE_STATES = ("idle", "review_rejected", "review_discarded", "publish_failed", "report_failed")
+RELEASE_REVIEW_DISCARDABLE_STATES = ("report_generating", "report_ready", "review_approved")
+RELEASE_REVIEW_CONFIRMABLE_STATES = ("review_approved", "publish_failed")
+RELEASE_REVIEW_REPORT_FIELDS = (
+    "target_version",
+    "current_workspace_ref",
+    "previous_release_version",
+    "first_person_summary",
+    "full_capability_inventory",
+    "knowledge_scope",
+    "agent_skills",
+    "applicable_scenarios",
+    "change_summary",
+    "capability_delta",
+    "risk_list",
+    "validation_evidence",
+    "release_recommendation",
+    "next_action_suggestion",
+    "warnings",
+)
 RELEASE_REVIEW_REQUIRED_FIELDS = (
     "target_version",
     "current_workspace_ref",
     "first_person_summary",
+    "full_capability_inventory",
     "knowledge_scope",
+    "agent_skills",
+    "applicable_scenarios",
+    "change_summary",
+    "release_recommendation",
+    "next_action_suggestion",
+)
+RELEASE_REVIEW_FAILURE_REPORT_FIELDS = (
+    "target_version",
+    "current_workspace_ref",
     "change_summary",
     "release_recommendation",
     "next_action_suggestion",
@@ -65,6 +95,35 @@ def training_release_review_id() -> str:
 
 def _can_enter_release_review(lifecycle_state: str, current_state: str) -> bool:
     return normalize_lifecycle_state(lifecycle_state) == "pre_release" and str(current_state or "").strip() in RELEASE_REVIEW_ENTERABLE_STATES
+
+
+def _can_confirm_release_review(lifecycle_state: str, current_state: str, review_decision: str) -> bool:
+    return (
+        normalize_lifecycle_state(lifecycle_state) == "pre_release"
+        and str(current_state or "").strip() in RELEASE_REVIEW_CONFIRMABLE_STATES
+        and str(review_decision or "").strip() == "approve_publish"
+    )
+
+
+def _can_discard_release_review(lifecycle_state: str, current_state: str, review_id: str) -> bool:
+    return (
+        normalize_lifecycle_state(lifecycle_state) == "pre_release"
+        and bool(str(review_id or "").strip())
+        and str(current_state or "").strip() in RELEASE_REVIEW_DISCARDABLE_STATES
+    )
+
+
+def _release_review_field_present(value: Any) -> bool:
+    if isinstance(value, list):
+        return bool([item for item in value if str(item or "").strip()])
+    if isinstance(value, dict):
+        return bool(value)
+    return bool(str(value or "").strip())
+
+
+def _release_review_missing_fields(report: dict[str, Any], fields: tuple[str, ...]) -> list[str]:
+    node = report if isinstance(report, dict) else {}
+    return [field for field in fields if not _release_review_field_present(node.get(field))]
 
 
 def _json_dumps_text(payload: Any, fallback: str) -> str:
@@ -106,6 +165,14 @@ def _release_review_trace_dir(root: Path, agent_name: str, review_id: str) -> Pa
     stamp = now_local().strftime("%Y%m%d-%H%M%S")
     token = safe_token(agent_name, "agent", 40) or "agent"
     folder = _release_review_trace_root(root) / f"{stamp}-{token}-{safe_token(review_id, 'review', 80)}"
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder
+
+
+def _release_review_attempt_dir(trace_dir: Path, prefix: str) -> Path:
+    stamp = now_local().strftime("%Y%m%d-%H%M%S")
+    token = safe_token(prefix, "attempt", 40) or "attempt"
+    folder = trace_dir / f"{token}-{stamp}"
     folder.mkdir(parents=True, exist_ok=True)
     return folder
 
@@ -500,6 +567,118 @@ def _derive_what_i_can_do(summary: str, inventory: list[str]) -> list[str]:
     return _ensure_first_person_list(summary, "我当前可以：", limit=5, item_limit=180)
 
 
+def _release_review_warning_text(value: Any, *, limit: int = 220) -> str:
+    return _ensure_first_person_text(value, "我当前补充说明：", limit=limit)
+
+
+def _release_review_is_traceability_warning(text: str) -> bool:
+    value = str(text or "").strip().lower()
+    if not value:
+        return False
+    return any(
+        token in value
+        for token in (
+            "readme",
+            "changelog",
+            "release note",
+            "release-note",
+            "release notes",
+            "release_note",
+            "发布说明",
+            "发布 note",
+        )
+    )
+
+
+def _release_review_is_workspace_external_warning(text: str) -> bool:
+    value = str(text or "").strip()
+    lowered = value.lower()
+    if not value:
+        return False
+    if "../" in value or "..\\" in value:
+        return True
+    return any(
+        token in lowered
+        for token in (
+            "工作区外",
+            "兄弟目录",
+            "sibling",
+            "outside workspace",
+            "external workspace",
+            "other workspace",
+        )
+    )
+
+
+def _release_review_is_metadata_conflict_text(text: str) -> bool:
+    value = str(text or "").strip()
+    lowered = value.lower()
+    if not value:
+        return False
+    if "metadata_conflict" in lowered:
+        return True
+    keys = (
+        "target_version",
+        "current_registry_version",
+        "latest_release_version",
+        "bound_release_version",
+        "released_versions",
+    )
+    conflict_markers = ("冲突", "矛盾", "不一致", "conflict", "mismatch", "inconsistent")
+    return any(key in lowered for key in keys) and any(marker in lowered for marker in conflict_markers)
+
+
+def _release_review_filter_risks(raw_items: Any) -> dict[str, Any]:
+    filtered: list[str] = []
+    warnings: list[str] = []
+    metadata_conflicts: list[str] = []
+    demoted_count = 0
+    for item in _normalize_text_list(raw_items, limit=220):
+        if _release_review_is_traceability_warning(item):
+            warnings.append(_release_review_warning_text(item))
+            demoted_count += 1
+            continue
+        if _release_review_is_workspace_external_warning(item):
+            warnings.append(_release_review_warning_text(item))
+            demoted_count += 1
+            continue
+        if _release_review_is_metadata_conflict_text(item):
+            metadata_conflicts.append(_short_text(item, 220))
+            warnings.append(_release_review_warning_text("我识别到版本元数据存在冲突，本次需要先修复元数据再重新进入发布评审。"))
+            continue
+        filtered.append(_ensure_first_person_text(item, "我当前识别到的风险是：", limit=220))
+    return {
+        "risk_list": filtered,
+        "warnings": warnings,
+        "metadata_conflicts": metadata_conflicts,
+        "demoted_count": demoted_count,
+    }
+
+
+def _release_review_metadata_conflicts(
+    *,
+    agent: dict[str, Any],
+    target_version: str,
+    released_versions: list[str],
+) -> list[str]:
+    labels = [str(item or "").strip() for item in released_versions if str(item or "").strip()]
+    label_set = set(labels)
+    conflicts: list[str] = []
+    latest_release_version = str(agent.get("latest_release_version") or "").strip()
+    bound_release_version = str(agent.get("bound_release_version") or "").strip()
+    if target_version and target_version in label_set:
+        conflicts.append(f"target_version={target_version} 已存在于 released_versions 中，无法作为新的正式发布目标版本。")
+    if latest_release_version and label_set and latest_release_version not in label_set:
+        conflicts.append(
+            f"latest_release_version={latest_release_version} 未出现在 released_versions 中，请先修复版本元数据。"
+        )
+    if bound_release_version and label_set and bound_release_version not in label_set:
+        conflicts.append(
+            f"bound_release_version={bound_release_version} 未出现在 released_versions 中，请先修复版本元数据。"
+        )
+    return conflicts
+
+
 def _build_release_public_profile_snapshot(
     *,
     agent: dict[str, Any],
@@ -681,13 +860,25 @@ def _build_release_review_prompt(
             f"- released_versions: {', '.join(released_versions[:20]) or '(none)'}",
             "",
             "任务:",
-            "1) 阅读 AGENTS.md、当前工作区 Git 信息、最近已发布版本，评估当前预发布内容是否适合确认发布。",
+            "1) 这是一份“角色发布评审报告”，不是纯仓库卫生巡检单。你的主目标是回答：",
+            "   - 当前角色完整能做什么；",
+            "   - 相对上一正式发布版本变了什么；",
+            "   - 当前是否适合确认发布。",
+            "2) 这是一次性发布评审任务，不是常规对话，也不是工作区状态维护任务。",
+            "   - 不要执行会话恢复、状态快照维护、偏好写回、复盘归档、训练计划、方法编排、技能编排等与发布评审无关的流程。",
+            "   - 不要读取 `workspace_state/`、`user_profile/`、`logs/`、`runs/`、`incidents/`、`metrics/` 等目录来做会话恢复或工作流维护。",
+            "   - 不要读取本地 skill 的 `SKILL.md` 正文来展开技能工作流；如需识别技能，只允许根据 `.codex/skills/` 目录名枚举技能名称。",
+            "   - 不要输出过程说明、计划、进度播报、todo、推理文字；只允许在任务结束时输出最终 JSON。",
+            "3) 阅读 AGENTS.md、当前工作区 Git 信息、最近已发布版本，评估当前预发布内容是否适合确认发布。",
+            "   - 生成 first_person_summary / full_capability_inventory / knowledge_scope / agent_skills / applicable_scenarios 时，优先结合 AGENTS.md、当前角色画像字段、本地 skills、工作区说明文档与版本上下文补齐。",
             "   - 优先只读取：AGENTS.md、README.md、CHANGELOG.md（若存在）、最近 release note、git status、git log 最近 20 条、git tag 最近 20 条。",
             "   - 不要递归扫描大型目录；不要遍历 .git 全量历史、node_modules、dist、build、coverage、.venv、site-packages、logs 等大目录。",
-            "2) 报告要同时服务两个用途：",
+            "   - Git 风险判断默认只限当前目标工作区路径范围；工作区外或兄弟目录的脏文件只能作为 warnings，不能主导 release_recommendation。",
+            "   - README / CHANGELOG / release note 缺失默认写入 warnings，除非输入上下文明确声明其为硬门禁，不要仅因这些缺失直接 reject。",
+            "4) 报告要同时服务两个用途：",
             "   - 用途 A：作为发布评审页的“功能差异报告”，重点说明相对上一正式发布版本的变化、风险与证据。",
             "   - 用途 B：作为正式发布成功后可绑定到角色详情页的“第一人称角色述职介绍”，用于说明当前正式发布版本完整能做什么。",
-            "3) 输出一份结构化发布报告，必须覆盖：",
+            "5) 输出一份结构化发布报告，必须覆盖：",
             "   - target_version",
             "   - current_workspace_ref",
             "   - previous_release_version",
@@ -702,17 +893,18 @@ def _build_release_review_prompt(
             "   - validation_evidence",
             "   - release_recommendation",
             "   - next_action_suggestion",
-            "4) full_capability_inventory / agent_skills / applicable_scenarios / capability_delta / risk_list / validation_evidence 必须是字符串数组。",
-            "5) release_recommendation 推荐使用：approve / reject / needs_more_validation 之一。",
-            "6) 将这份报告理解为该 agent 面向发布评审环节提交的“述职报告”，自然语言字段统一使用第一人称视角描述。",
+            "6) full_capability_inventory / agent_skills / applicable_scenarios / capability_delta / risk_list / validation_evidence 必须是字符串数组。",
+            "7) release_recommendation 只允许输出：approve / reject / needs_more_validation 之一。不要输出人工审核决策枚举。",
+            "8) 将这份报告理解为该 agent 面向发布评审环节提交的“述职报告”，自然语言字段统一使用第一人称视角描述。",
             "   - 例如：“我当前补充了… / 我识别到… / 我已完成… / 我建议下一步…”。",
             "   - 适用字段包括：first_person_summary、change_summary、capability_delta[]、risk_list[]、validation_evidence[]、next_action_suggestion、warnings[]。",
             "   - 人工审核结论不在本 JSON 中表达，因此这里不需要输出 reviewer 视角内容。",
-            "7) full_capability_inventory 必须描述“当前目标版本完整能做什么”，不能只写 capability_delta。",
-            "8) capability_delta 必须明确说明“相对上一正式发布版本”的变化；若上一正式发布版本不存在，需在 warnings[] 中写明。",
-            "9) 若信息不足，不要编造；在 warnings[] 里明确指出。",
-            "10) target_version 必须直接复制输入上下文中的 target_version；current_workspace_ref 必须直接复制输入上下文中的 current_workspace_ref。",
-            "11) 即使信息不足，也不要省略字段；必须保留完整 JSON 结构，并在 warnings[] / next_action_suggestion 里说明不足。",
+            "9) full_capability_inventory 必须描述“当前目标版本完整能做什么”，不能只写 capability_delta。",
+            "10) capability_delta 必须明确说明“相对上一正式发布版本”的变化；若上一正式发布版本不存在，则按“首发基线评审”处理：previous_release_version 允许为空，但仍必须输出完整第一人称全量能力报告，并在 warnings[] 里写明当前是首发基线。",
+            "11) 若输入上下文中的版本元数据自相矛盾，请在 warnings[] 和 next_action_suggestion 中明确指出元数据冲突，不要把它伪装成 agent 能力风险。",
+            "12) 若信息不足，不要编造；在 warnings[] 里明确指出。",
+            "13) target_version 必须直接复制输入上下文中的 target_version；current_workspace_ref 必须直接复制输入上下文中的 current_workspace_ref。",
+            "14) 即使信息不足，也不要省略字段；必须保留完整 JSON 结构，并在 warnings[] / next_action_suggestion 里说明不足。",
             "",
             "输出要求:",
             "- 仅输出一个 JSON 对象。",
@@ -762,7 +954,7 @@ def _build_release_review_fallback_prompt(
     )
     return "\n".join(
         [
-            "你是“角色发布失败兜底助手”。请分析失败原因，并给出一次自动重试所需的结构化结果，只输出 JSON。",
+            "你是“角色发布失败兜底助手”。请先分析失败原因，再尽量在当前 agent 工作区内执行可落地修复，然后给出一次自动重试所需的结构化结果，只输出 JSON。",
             "",
             f"prompt_version: {RELEASE_REVIEW_FALLBACK_PROMPT_VERSION}",
             "",
@@ -771,12 +963,15 @@ def _build_release_review_fallback_prompt(
             "",
             "任务:",
             "1) 分析本次 Git 发布 / release note / 校验失败原因。",
-            "2) 给出一次自动重试建议。",
-            "3) 输出下一步人工建议。",
+            "2) 若问题位于当前 agent 工作区内且你能在当前权限内修复，请直接执行修复动作；若属于环境/系统依赖问题且当前权限无法修复，请明确说明无法自动修复。",
+            "3) 给出并执行一次自动重试前需要补充的 release note 建议（如无需修改可留空）。",
+            "4) 输出已执行的修复动作、自动重试建议与下一步人工建议。",
             "",
             "输出要求:",
             "{",
             '  "failure_reason": "",',
+            '  "repair_summary": "",',
+            '  "repair_actions": ["..."],',
             '  "retry_target_version": "",',
             '  "retry_release_notes": "",',
             '  "next_action_suggestion": "",',
@@ -863,6 +1058,7 @@ def _run_codex_exec_for_release_review(
     _write_release_review_text(stderr_path, stderr_text)
 
     message_texts: list[str] = []
+    event_errors: list[str] = []
     for line in stdout_text.splitlines():
         cleaned = str(line or "").strip()
         if not cleaned:
@@ -876,6 +1072,22 @@ def _run_codex_exec_for_release_review(
             msg = _release_review_extract_codex_event_text(event)
             if msg:
                 message_texts.append(msg)
+            err_text = str(event.get("message") or "").strip()
+            if err_text and str(event.get("type") or "").strip().lower() == "error":
+                event_errors.append(err_text)
+            failed_error = event.get("error")
+            if isinstance(failed_error, dict):
+                failed_message = str(failed_error.get("message") or "").strip()
+                if failed_message:
+                    event_errors.append(failed_message)
+
+    stream_disconnected = any(
+        "stream disconnected before completion" in str(item or "").strip().lower()
+        or "stream closed before response.completed" in str(item or "").strip().lower()
+        for item in event_errors
+    )
+    if stream_disconnected:
+        error_text = "codex_stream_disconnected"
 
     message_candidates: list[dict[str, Any]] = []
     for text in message_texts:
@@ -933,6 +1145,7 @@ def _normalize_release_review_report(
     target_version: str,
     current_workspace_ref: str,
     codex_error: str = "",
+    allow_incomplete: bool = False,
 ) -> dict[str, Any]:
     raw = raw_result if isinstance(raw_result, dict) else {}
     source = _release_review_best_payload(raw) if raw else {}
@@ -1018,14 +1231,28 @@ def _normalize_release_review_report(
         else (source.get("capability_changes") if isinstance(source, dict) else []),
         limit=280,
     )
-    capability_delta = _ensure_first_person_list(capability_delta, "我本次主要补充了：", limit=8, item_limit=220)
-    risk_list = _normalize_text_list(
+    previous_release_version = _short_text(
+        _release_review_pick_text(source, "previous_release_version", "latest_release_version", "base_release_version")
+        or str(context.get("previous_release_version") or "").strip(),
+        80,
+    )
+    if not previous_release_version:
+        warnings.append("当前未找到上一正式发布版本，本次按首发基线评审处理。")
+    if not capability_delta and not previous_release_version and full_capability_inventory:
+        capability_delta = [f"我本次首发基线已包含：{item}" for item in full_capability_inventory[:3]]
+    capability_delta = _ensure_first_person_list(
+        capability_delta,
+        "我本次主要补充了：",
+        limit=8,
+        item_limit=220,
+    )
+    risk_filter = _release_review_filter_risks(
         source.get("risk_list")
         if isinstance(source, dict) and "risk_list" in source
         else (source.get("risks") if isinstance(source, dict) else []),
-        limit=220,
     )
-    risk_list = _ensure_first_person_list(risk_list, "我当前识别到的风险是：", limit=8, item_limit=220)
+    risk_list = risk_filter["risk_list"]
+    warnings.extend(risk_filter["warnings"])
     validation_evidence = _normalize_text_list(
         source.get("validation_evidence")
         if isinstance(source, dict) and "validation_evidence" in source
@@ -1059,6 +1286,13 @@ def _normalize_release_review_report(
     if not recommendation:
         recommendation = "needs_more_validation"
         warnings.append("未提取到有效发布建议，系统已默认保守建议为 needs_more_validation。")
+    if risk_filter["metadata_conflicts"]:
+        if recommendation == "approve":
+            recommendation = "needs_more_validation"
+            warnings.append("检测到版本元数据冲突，本次发布建议已自动降级为 needs_more_validation。")
+    elif risk_filter["demoted_count"] and not risk_list and recommendation == "reject":
+        recommendation = "needs_more_validation"
+        warnings.append("仅识别到可追溯性或工作区外告警，系统已将发布建议从 reject 降级为 needs_more_validation。")
 
     has_structured_content = bool(full_capability_inventory or capability_delta or risk_list or validation_evidence or raw)
     next_action_suggestion = _ensure_first_person_text(
@@ -1069,12 +1303,6 @@ def _normalize_release_review_report(
     )
     if not _release_review_pick_text(source, "next_action_suggestion", "next_action", "suggestion", "recommended_action"):
         warnings.append("未提取到下一步建议，系统已自动补齐。")
-
-    previous_release_version = _short_text(
-        _release_review_pick_text(source, "previous_release_version", "latest_release_version", "base_release_version")
-        or str(context.get("previous_release_version") or "").strip(),
-        80,
-    )
 
     report = {
         "target_version": _short_text(
@@ -1100,20 +1328,98 @@ def _normalize_release_review_report(
         "release_recommendation": _short_text(recommendation, 80),
         "version_notes": _short_text(change_summary, 320),
         "next_action_suggestion": next_action_suggestion,
-        "warnings": [item for item in dict.fromkeys([str(item).strip() for item in warnings if str(item or "").strip()])],
+        "warnings": [
+            item
+            for item in dict.fromkeys(
+                [
+                    _release_review_warning_text(item, limit=220)
+                    for item in warnings
+                    if str(item or "").strip()
+                ]
+            )
+            if item
+        ],
         "raw_result": raw,
     }
-    missing: list[str] = []
-    for key in RELEASE_REVIEW_REQUIRED_FIELDS:
-        if not str(report.get(key) or "").strip():
-            missing.append(f"missing_{key}")
-    if missing:
+    missing = _release_review_missing_fields(report, RELEASE_REVIEW_REQUIRED_FIELDS)
+    if missing and not allow_incomplete:
         raise TrainingCenterError(
             500,
             "release review report incomplete",
             "release_review_report_incomplete",
             {"missing_fields": missing},
         )
+    return report
+
+
+def _build_release_review_failure_report(
+    raw_result: dict[str, Any],
+    *,
+    agent: dict[str, Any] | None = None,
+    target_version: str,
+    current_workspace_ref: str,
+    codex_error: str = "",
+    error_code: str = "",
+    error_message: str = "",
+    missing_fields: list[str] | None = None,
+    metadata_conflicts: list[str] | None = None,
+) -> dict[str, Any]:
+    report = _normalize_release_review_report(
+        raw_result,
+        agent=agent,
+        target_version=target_version,
+        current_workspace_ref=current_workspace_ref,
+        codex_error=codex_error,
+        allow_incomplete=True,
+    )
+    warning_items = _normalize_text_list(report.get("warnings"), limit=220)
+    missing = [str(item or "").strip() for item in (missing_fields or []) if str(item or "").strip()]
+    conflicts = [str(item or "").strip() for item in (metadata_conflicts or []) if str(item or "").strip()]
+    code = str(error_code or "").strip().lower()
+
+    if conflicts:
+        warning_items.extend([_release_review_warning_text("版本元数据冲突：" + item) for item in conflicts])
+    if missing:
+        warning_items.append(_release_review_warning_text("结构化报告仍缺少关键字段：" + " / ".join(missing)))
+    if error_message:
+        warning_items.append(_release_review_warning_text(error_message))
+
+    report["target_version"] = _short_text(str(report.get("target_version") or "").strip() or target_version, 80)
+    report["current_workspace_ref"] = _short_text(
+        str(report.get("current_workspace_ref") or "").strip() or current_workspace_ref,
+        80,
+    )
+    if not _release_review_field_present(report.get("change_summary")):
+        if code == "release_review_metadata_conflict":
+            report["change_summary"] = "我在进入发布评审前识别到版本元数据存在冲突，因此本次未继续执行正常发布报告生成。"
+        elif missing:
+            report["change_summary"] = "我已从当前链路中提取到部分结构化内容，但关键字段仍不完整。"
+        else:
+            report["change_summary"] = "我本次未能成功产出完整结构化发布报告，当前已保留失败排查所需的骨架信息。"
+    if not _release_review_field_present(report.get("release_recommendation")):
+        report["release_recommendation"] = "needs_more_validation"
+    if not _release_review_field_present(report.get("next_action_suggestion")):
+        if code == "release_review_metadata_conflict":
+            report["next_action_suggestion"] = "我建议先修复 target_version / latest_release_version / released_versions 等版本元数据冲突，再重新进入发布评审。"
+        elif missing:
+            report["next_action_suggestion"] = "我建议先检查报告文件与 stdout，补齐缺失字段后再重新进入发布评审。"
+        else:
+            report["next_action_suggestion"] = "我建议先查看分析链路中的 stdout / stderr / 报告文件，定位失败原因后再重新进入发布评审。"
+    if not isinstance(raw_result, dict):
+        report["raw_result"] = {"raw_text": _short_text(str(raw_result or "").strip(), 4000)}
+    else:
+        report["raw_result"] = raw_result
+    report["warnings"] = [
+        item
+        for item in dict.fromkeys(
+            [
+                _release_review_warning_text(item, limit=220)
+                for item in warning_items
+                if str(item or "").strip()
+            ]
+        )
+        if item
+    ]
     return report
 
 
@@ -1129,7 +1435,7 @@ def _describe_release_review_report_failure(
 
     if code == "release_review_report_incomplete":
         missing = [
-            str(item or "").strip().replace("missing_", "")
+            str(item or "").strip()
             for item in (extra.get("missing_fields") or [])
             if str(item or "").strip()
         ]
@@ -1137,11 +1443,23 @@ def _describe_release_review_report_failure(
             return "结构化发布报告缺少关键字段（" + " / ".join(missing) + "）。请先检查分析链路中的报告文件与 stdout 输出，修正后点击“重新进入发布评审”。"
         return "结构化发布报告字段不完整。请先检查分析链路中的报告文件与 stdout 输出，修正后点击“重新进入发布评审”。"
 
+    if code == "release_review_metadata_conflict":
+        conflicts = [
+            str(item or "").strip()
+            for item in (extra.get("metadata_conflicts") or [])
+            if str(item or "").strip()
+        ]
+        if conflicts:
+            return "进入发布评审前检测到版本元数据冲突（" + " / ".join(conflicts[:3]) + "）。请先修复版本元数据后再重新进入发布评审。"
+        return "进入发布评审前检测到版本元数据冲突。请先修复 target_version / latest_release_version / released_versions 等元数据后再重新进入发布评审。"
+
     if code == "release_review_report_failed":
         if codex_error == "codex_command_not_found":
             return "生成发布报告失败：当前环境未找到 codex 命令。请先确认服务端已安装并可执行 codex，然后点击“重新进入发布评审”。"
         if codex_error == "codex_exec_timeout":
             return "生成发布报告失败：Codex 执行超时。请先查看分析链路中的 stdout / stderr / trace 目录定位卡点，必要时缩小本次改动范围后重试。"
+        if codex_error == "codex_stream_disconnected":
+            return "生成发布报告失败：Codex 在流式返回过程中断线，任务未完成。请先检查目标工作区是否触发了冗长的会话恢复/技能编排链路，再重新进入发布评审。"
         if codex_error.startswith("codex_exec_failed_exit_"):
             exit_code = codex_error.rsplit("_", 1)[-1]
             return f"生成发布报告失败：Codex 执行异常退出（exit={exit_code}）。请先查看分析链路中的 stderr / stdout，修复工作区或提示词问题后重新进入发布评审。"
@@ -1197,6 +1515,136 @@ def _run_git_mutation(
     except Exception as exc:
         return False, "", str(exc or "")
     return proc.returncode == 0, str(proc.stdout or ""), str(proc.stderr or "")
+
+
+def _git_publish_identity_defaults(agent: dict[str, Any]) -> tuple[str, str]:
+    token = safe_token(
+        str(agent.get("agent_id") or agent.get("agent_name") or "workflow-release"),
+        "workflow-release",
+        80,
+    )
+    name = str(agent.get("agent_name") or token or "workflow-release").strip() or "workflow-release"
+    email = f"{token or 'workflow-release'}@workflow.local"
+    return _short_text(name, 120), _short_text(email, 160)
+
+
+def _workspace_has_own_git_repo(workspace: Path) -> tuple[bool, str]:
+    ok_root, root_out, _ = _run_git_readonly_verbose(
+        workspace,
+        ["rev-parse", "--show-toplevel"],
+        timeout_s=12,
+    )
+    if not ok_root:
+        return False, ""
+    root_line = ""
+    for line in str(root_out or "").splitlines():
+        candidate = str(line or "").strip()
+        if candidate:
+            root_line = candidate
+    if not root_line:
+        return False, ""
+    repo_root = Path(root_line).resolve(strict=False)
+    workspace_root = workspace.resolve(strict=False)
+    same_root = os.path.normcase(str(repo_root)) == os.path.normcase(str(workspace_root))
+    return same_root, repo_root.as_posix()
+
+
+def _ensure_workspace_git_ready_for_publish(
+    cfg: AppConfig,
+    *,
+    workspace: Path,
+    agent: dict[str, Any],
+    execution_logs: list[dict[str, Any]],
+) -> dict[str, Any]:
+    has_own_repo, detected_repo_root = _workspace_has_own_git_repo(workspace)
+    repo_initialized = False
+    if not has_own_repo:
+        ok_init, init_out, init_err = _run_git_mutation(workspace, ["init"], timeout_s=30)
+        if not ok_init:
+            _append_release_review_log(
+                execution_logs,
+                phase="prepare",
+                status="failed",
+                message="自动初始化 Git 仓库失败",
+                details={"stdout": _short_text(init_out, 300), "stderr": _short_text(init_err, 400)},
+            )
+            return {"ok": False, "error": "git_init_failed", "stdout": init_out, "stderr": init_err}
+        repo_initialized = True
+        _append_release_review_log(
+            execution_logs,
+            phase="prepare",
+            status="done",
+            message="当前 agent 工作区未绑定独立 Git 仓库，已自动执行 git init",
+            details={
+                "stdout": _short_text(init_out, 240),
+                "detected_repo_root": detected_repo_root,
+            },
+        )
+
+    if repo_initialized:
+        desired_name, desired_email = _git_publish_identity_defaults(agent)
+        ok_name, name_out, _ = _run_git_mutation(workspace, ["config", "--get", "user.name"], timeout_s=12)
+        ok_email, email_out, _ = _run_git_mutation(workspace, ["config", "--get", "user.email"], timeout_s=12)
+        current_name = str(name_out or "").strip() if ok_name else ""
+        current_email = str(email_out or "").strip() if ok_email else ""
+        configured_fields: list[str] = []
+        if not current_name:
+            set_name_ok, _, set_name_err = _run_git_mutation(
+                workspace,
+                ["config", "--local", "user.name", desired_name],
+                timeout_s=12,
+            )
+            if not set_name_ok:
+                _append_release_review_log(
+                    execution_logs,
+                    phase="prepare",
+                    status="failed",
+                    message="自动写入 Git 用户名失败",
+                    details={"stderr": _short_text(set_name_err, 400)},
+                )
+                return {"ok": False, "error": "git_identity_config_failed", "stderr": set_name_err}
+            configured_fields.append("user.name")
+        if not current_email:
+            set_email_ok, _, set_email_err = _run_git_mutation(
+                workspace,
+                ["config", "--local", "user.email", desired_email],
+                timeout_s=12,
+            )
+            if not set_email_ok:
+                _append_release_review_log(
+                    execution_logs,
+                    phase="prepare",
+                    status="failed",
+                    message="自动写入 Git 邮箱失败",
+                    details={"stderr": _short_text(set_email_err, 400)},
+                )
+                return {"ok": False, "error": "git_identity_config_failed", "stderr": set_email_err}
+            configured_fields.append("user.email")
+        if configured_fields:
+            _append_release_review_log(
+                execution_logs,
+                phase="prepare",
+                status="done",
+                message="已为自动初始化的 Git 仓库补齐本地提交身份",
+                details={"configured_fields": configured_fields, "user_name": desired_name, "user_email": desired_email},
+            )
+
+    status_ok, _, status_err = _run_git_readonly_verbose(
+        workspace,
+        ["status", "--porcelain", "--untracked-files=normal"],
+        timeout_s=12,
+    )
+    if not status_ok:
+        _append_release_review_log(
+            execution_logs,
+            phase="prepare",
+            status="failed",
+            message="Git 仓库已就绪，但读取状态失败",
+            details={"stderr": _short_text(status_err, 400)},
+        )
+        return {"ok": False, "error": "git_status_failed", "stderr": status_err}
+
+    return {"ok": True, "repo_initialized": repo_initialized}
 
 
 def _build_publish_release_note(
@@ -1583,6 +2031,12 @@ def _release_review_payload(agent: dict[str, Any], row: dict[str, Any] | None) -
     fallback = _json_load_dict((row or {}).get("fallback_json"))
     review_decision = str((row or {}).get("review_decision") or "").strip()
     publish_status = str((row or {}).get("publish_status") or "").strip()
+    report_error_code = str(analysis_chain.get("report_error_code") or "").strip()
+    report_missing_fields = [
+        str(item or "").strip()
+        for item in (analysis_chain.get("report_missing_fields") or [])
+        if str(item or "").strip()
+    ] if isinstance(analysis_chain.get("report_missing_fields"), list) else []
     payload = {
         "review_id": str((row or {}).get("review_id") or "").strip(),
         "agent_id": str(agent.get("agent_id") or "").strip(),
@@ -1594,6 +2048,9 @@ def _release_review_payload(agent: dict[str, Any], row: dict[str, Any] | None) -
         "analysis_chain": analysis_chain,
         "report": report,
         "report_error": str((row or {}).get("report_error") or "").strip(),
+        "report_error_code": report_error_code,
+        "report_missing_fields": report_missing_fields,
+        "required_report_fields": list(RELEASE_REVIEW_REQUIRED_FIELDS),
         "review_decision": review_decision,
         "reviewer": str((row or {}).get("reviewer") or "").strip(),
         "review_comment": str((row or {}).get("review_comment") or "").strip(),
@@ -1608,8 +2065,9 @@ def _release_review_payload(agent: dict[str, Any], row: dict[str, Any] | None) -
         "created_at": str((row or {}).get("created_at") or "").strip(),
         "updated_at": str((row or {}).get("updated_at") or "").strip(),
         "can_enter": _can_enter_release_review(lifecycle_state, current_state),
+        "can_discard": _can_discard_release_review(lifecycle_state, current_state, str((row or {}).get("review_id") or "").strip()),
         "can_review": current_state == "report_ready",
-        "can_confirm": current_state == "review_approved" and review_decision == "approve_publish",
+        "can_confirm": _can_confirm_release_review(lifecycle_state, current_state, review_decision),
         "publish_succeeded": publish_status == "success",
         "lifecycle_state": lifecycle_state,
     }
@@ -2344,6 +2802,64 @@ def enter_training_agent_release_review(
         },
     )
 
+    metadata_conflicts = _release_review_metadata_conflicts(
+        agent=agent,
+        target_version=target_version,
+        released_versions=release_labels,
+    )
+    if metadata_conflicts:
+        metadata_exc = TrainingCenterError(
+            409,
+            "release review metadata conflict",
+            "release_review_metadata_conflict",
+            {"metadata_conflicts": metadata_conflicts},
+        )
+        report_error = _describe_release_review_report_failure(metadata_exc)
+        failure_report = _build_release_review_failure_report(
+            {"metadata_conflicts": metadata_conflicts},
+            agent=agent,
+            target_version=target_version,
+            current_workspace_ref=current_workspace_ref,
+            codex_error="metadata_conflict",
+            error_code=metadata_exc.code,
+            error_message=report_error,
+            metadata_conflicts=metadata_conflicts,
+        )
+        _write_release_review_json(trace_dir / "parsed-result.json", failure_report)
+        analysis_chain = {
+            "trace_dir": _path_for_ui(cfg.root, trace_dir),
+            "report_path": _path_for_ui(cfg.root, trace_dir / "parsed-result.json"),
+            "prompt_version": RELEASE_REVIEW_PROMPT_VERSION,
+            "error": "metadata_conflict",
+            "report_error_code": metadata_exc.code,
+            "report_missing_fields": [],
+            "metadata_conflicts": metadata_conflicts,
+        }
+        _update_release_review_row(
+            cfg.root,
+            review_id,
+            {
+                "release_review_state": "report_failed",
+                "analysis_chain_json": analysis_chain,
+                "report_json": failure_report,
+                "report_error": report_error,
+            },
+        )
+        append_training_center_audit(
+            cfg.root,
+            action="release_review_report_failed",
+            operator=operator_text,
+            target_id=source_agent_id,
+            detail={
+                "review_id": review_id,
+                "error": str(metadata_exc),
+                "code": metadata_exc.code,
+                "metadata_conflicts": metadata_conflicts,
+                "enter_audit_id": enter_audit_id,
+            },
+        )
+        return get_training_agent_release_review(cfg.root, source_agent_id)
+
     prompt_text = _build_release_review_prompt(
         agent=agent,
         workspace_path=workspace_path,
@@ -2375,6 +2891,9 @@ def enter_training_agent_release_review(
         )
         analysis_chain = codex_result.get("analysis_chain") if isinstance(codex_result.get("analysis_chain"), dict) else {}
         analysis_chain["prompt_version"] = RELEASE_REVIEW_PROMPT_VERSION
+        analysis_chain["report_error_code"] = ""
+        analysis_chain["report_missing_fields"] = []
+        _write_release_review_json(trace_dir / "parsed-result.json", report)
         profile_assets = _write_release_review_profile_assets(
             root=cfg.root,
             trace_dir=trace_dir,
@@ -2418,14 +2937,42 @@ def enter_training_agent_release_review(
         analysis_chain = codex_result.get("analysis_chain") if isinstance(codex_result.get("analysis_chain"), dict) else {}
         analysis_chain["prompt_version"] = RELEASE_REVIEW_PROMPT_VERSION
         analysis_chain["error"] = str(codex_result.get("error") or exc.code or "").strip()
+        extra = getattr(exc, "extra", {}) if isinstance(getattr(exc, "extra", {}), dict) else {}
+        report_error = _describe_release_review_report_failure(exc, codex_result=codex_result)
+        missing_fields = [
+            str(item or "").strip()
+            for item in (extra.get("missing_fields") or [])
+            if str(item or "").strip()
+        ]
+        metadata_conflicts = [
+            str(item or "").strip()
+            for item in (extra.get("metadata_conflicts") or [])
+            if str(item or "").strip()
+        ]
+        failure_report = _build_release_review_failure_report(
+            codex_result.get("parsed_result") if isinstance(codex_result.get("parsed_result"), dict) else {},
+            agent=agent,
+            target_version=target_version,
+            current_workspace_ref=current_workspace_ref,
+            codex_error=str(codex_result.get("error") or "").strip(),
+            error_code=str(exc.code or "").strip(),
+            error_message=report_error,
+            missing_fields=missing_fields,
+            metadata_conflicts=metadata_conflicts,
+        )
+        _write_release_review_json(trace_dir / "parsed-result.json", failure_report)
+        analysis_chain["report_error_code"] = str(exc.code or "").strip()
+        analysis_chain["report_missing_fields"] = missing_fields
+        if metadata_conflicts:
+            analysis_chain["metadata_conflicts"] = metadata_conflicts
         _update_release_review_row(
             cfg.root,
             review_id,
             {
                 "release_review_state": "report_failed",
                 "analysis_chain_json": analysis_chain,
-                "report_json": codex_result.get("parsed_result") if isinstance(codex_result.get("parsed_result"), dict) else {},
-                "report_error": _describe_release_review_report_failure(exc, codex_result=codex_result),
+                "report_json": failure_report,
+                "report_error": report_error,
             },
         )
         append_training_center_audit(
@@ -2441,6 +2988,94 @@ def enter_training_agent_release_review(
             },
         )
     return get_training_agent_release_review(cfg.root, source_agent_id)
+
+
+def discard_training_agent_release_review(
+    cfg: AppConfig,
+    *,
+    agent_id: str,
+    operator: str,
+    reason: str = "",
+) -> dict[str, Any]:
+    sync_training_agent_registry(cfg)
+    pid = safe_token(str(agent_id or ""), "", 120)
+    if not pid:
+        raise TrainingCenterError(400, "agent_id required", "agent_id_required")
+    operator_text = safe_token(str(operator or "web-user"), "web-user", 80)
+    reason_text = _short_text(str(reason or "").strip(), 500)
+
+    conn = connect_db(cfg.root)
+    try:
+        agent = _resolve_training_agent(conn, pid)
+        if agent is None:
+            raise TrainingCenterError(404, "agent not found", "agent_not_found", {"agent_id": pid})
+        source_agent_id = str(agent.get("agent_id") or "").strip()
+        lifecycle_state = normalize_lifecycle_state(agent.get("lifecycle_state"))
+        row = _latest_release_review_row(conn, source_agent_id)
+    finally:
+        conn.close()
+
+    if lifecycle_state != "pre_release":
+        raise TrainingCenterError(
+            409,
+            "agent not in pre_release",
+            "not_in_pre_release",
+            {"agent_id": source_agent_id, "lifecycle_state": lifecycle_state},
+        )
+    if row is None:
+        raise TrainingCenterError(409, "release review not found", "release_review_not_found", {"agent_id": pid})
+
+    review_id = str(row.get("review_id") or "").strip()
+    current_state = str(row.get("release_review_state") or "").strip().lower() or "idle"
+    if not _can_discard_release_review(lifecycle_state, current_state, review_id):
+        raise TrainingCenterError(
+            409,
+            "release review not discardable",
+            "release_review_not_discardable",
+            {"agent_id": source_agent_id, "release_review_state": current_state},
+        )
+
+    execution_logs = _json_load_list(row.get("execution_log_json"))
+    reviewed_at = iso_ts(now_local())
+    comment_text = reason_text or "已废弃当前发布评审记录"
+    _append_release_review_log(
+        execution_logs,
+        phase="review_discard",
+        status="done",
+        message="已废弃当前发布评审记录，可重新进入发布评审",
+        details={
+            "operator": operator_text,
+            "reason": reason_text,
+            "from_state": current_state,
+        },
+    )
+    _update_release_review_row(
+        cfg.root,
+        review_id,
+        {
+            "release_review_state": "review_discarded",
+            "review_decision": "discard_review",
+            "reviewer": operator_text,
+            "review_comment": comment_text,
+            "reviewed_at": reviewed_at,
+            "execution_log_json": execution_logs,
+        },
+    )
+    append_training_center_audit(
+        cfg.root,
+        action="release_review_discard",
+        operator=operator_text,
+        target_id=source_agent_id,
+        detail={
+            "review_id": review_id,
+            "from_state": current_state,
+            "reason": reason_text,
+        },
+    )
+    payload = get_training_agent_release_review(cfg.root, source_agent_id)
+    payload["discarded"] = True
+    payload["discard_reason"] = reason_text
+    return payload
 
 
 def submit_training_agent_release_review_manual(
@@ -2561,9 +3196,19 @@ def _execute_publish_attempt(
     workspace = Path(str(agent.get("workspace_path") or "")).resolve(strict=False)
     if not workspace.exists() or not workspace.is_dir():
         return {"ok": False, "error": "workspace_missing", "agent": agent}
-    ok_git, _ = _run_git_readonly(workspace, ["rev-parse", "--is-inside-work-tree"], timeout_s=12)
-    if not ok_git:
-        return {"ok": False, "error": "git_unavailable", "agent": agent}
+    git_ready = _ensure_workspace_git_ready_for_publish(
+        cfg,
+        workspace=workspace,
+        agent=agent,
+        execution_logs=execution_logs,
+    )
+    if not git_ready.get("ok"):
+        return {
+            "ok": False,
+            "error": str(git_ready.get("error") or "git_unavailable").strip() or "git_unavailable",
+            "agent": agent,
+            "stderr": str(git_ready.get("stderr") or "").strip(),
+        }
 
     current_ref_before = _workspace_current_ref(workspace)
     status_ok, status_out, status_err = _run_git_readonly_verbose(
@@ -2757,8 +3402,11 @@ def _run_publish_fallback_once(
         "error": str(codex_result.get("error") or ""),
         "analysis_chain": codex_result.get("analysis_chain") if isinstance(codex_result.get("analysis_chain"), dict) else {},
         "result": codex_result.get("parsed_result") if isinstance(codex_result.get("parsed_result"), dict) else {},
+        "repair_summary": "",
+        "repair_actions": [],
+        "warnings": [],
         "retry_result": {},
-        "next_action_suggestion": "请人工介入排查发布失败原因。",
+        "next_action_suggestion": "请先根据失败原因修复工作区或环境，再重试发布；若报告本身需要更新，再重新进入发布评审。",
     }
     if not codex_result.get("ok"):
         _append_release_review_log(
@@ -2772,7 +3420,22 @@ def _run_publish_fallback_once(
 
     fallback_result = codex_result.get("parsed_result") if isinstance(codex_result.get("parsed_result"), dict) else {}
     reason_text = _short_text(str(fallback_result.get("failure_reason") or failed_error or "发布失败").strip(), 320)
+    repair_summary = _short_text(str(fallback_result.get("repair_summary") or "").strip(), 320)
+    repair_actions = _ensure_first_person_list(fallback_result.get("repair_actions"), "我已执行的修复动作：", limit=8, item_limit=220)
+    fallback_warnings = _ensure_first_person_list(fallback_result.get("warnings"), "我还需要提示：", limit=8, item_limit=220)
     retry_note_text = str(fallback_result.get("retry_release_notes") or "").strip()
+    _append_release_review_log(
+        execution_logs,
+        phase="fallback_trigger",
+        status="done",
+        message="兜底已完成失败诊断，并给出修复动作后准备自动重试",
+        details={
+            "failure_reason": reason_text,
+            "repair_summary": repair_summary,
+            "repair_actions": repair_actions,
+            "warnings": fallback_warnings,
+        },
+    )
     _, _, rows = _parse_git_release_rows(Path(str(agent.get("workspace_path") or "")).resolve(strict=False), limit=120)
     existing_labels = [str(row.get("version_label") or "").strip() for row in rows if str(row.get("version_label") or "").strip()]
     retry_version = _next_release_version_label(existing_labels, str(fallback_result.get("retry_target_version") or failed_publish_version).strip())
@@ -2791,9 +3454,15 @@ def _run_publish_fallback_once(
         "failure_reason": reason_text,
         "analysis_chain": codex_result.get("analysis_chain") if isinstance(codex_result.get("analysis_chain"), dict) else {},
         "result": fallback_result,
+        "repair_summary": repair_summary,
+        "repair_actions": repair_actions,
+        "warnings": fallback_warnings,
         "retry_result": retry_attempt,
         "next_action_suggestion": _short_text(
-            str(fallback_result.get("next_action_suggestion") or "请人工复核失败原因后重新发布。").strip(),
+            str(
+                fallback_result.get("next_action_suggestion")
+                or "请先根据兜底诊断修复工作区或环境，然后直接重试发布；若报告本身需要更新，再重新进入发布评审。"
+            ).strip(),
             320,
         ),
     }
@@ -2832,19 +3501,22 @@ def confirm_training_agent_release_review(
         conn.close()
     if row is None:
         raise TrainingCenterError(409, "release review not found", "release_review_not_found", {"agent_id": pid})
-    if str(row.get("release_review_state") or "").strip() != "review_approved":
+    current_state = str(row.get("release_review_state") or "").strip()
+    review_decision = str(row.get("review_decision") or "").strip()
+    lifecycle_state = str(agent.get("lifecycle_state") or "").strip()
+    if not _can_confirm_release_review(lifecycle_state, current_state, review_decision):
         raise TrainingCenterError(
             409,
             "release review not approved",
             "release_review_not_approved",
-            {"release_review_state": str(row.get("release_review_state") or "").strip()},
+            {"release_review_state": current_state, "review_decision": review_decision, "lifecycle_state": lifecycle_state},
         )
-    if str(row.get("review_decision") or "").strip() != "approve_publish":
+    if review_decision != "approve_publish":
         raise TrainingCenterError(
             409,
             "review decision is not approve_publish",
             "review_decision_not_approve_publish",
-            {"review_decision": str(row.get("review_decision") or "").strip()},
+            {"review_decision": review_decision},
         )
 
     review_payload = _release_review_payload(agent, row)
@@ -2853,6 +3525,16 @@ def confirm_training_agent_release_review(
     trace_dir = (cfg.root / trace_dir_text).resolve(strict=False) if trace_dir_text else _release_review_trace_dir(cfg.root, str(agent.get("agent_name") or source_agent_id), review_id)
     execution_logs = review_payload.get("execution_logs") if isinstance(review_payload.get("execution_logs"), list) else []
     workspace = Path(str(agent.get("workspace_path") or "")).resolve(strict=False)
+    retrying_failed_publish = current_state == "publish_failed"
+    attempt_trace_dir = _release_review_attempt_dir(trace_dir, "manual-retry") if retrying_failed_publish else trace_dir
+    if retrying_failed_publish:
+        _append_release_review_log(
+            execution_logs,
+            phase="prepare",
+            status="running",
+            message="检测到上次确认发布失败，开始基于当前评审记录手动重试发布",
+            details={"review_id": review_id},
+        )
     publish_version = _next_release_version_label(
         _workspace_release_labels(workspace),
         str(review_payload.get("target_version") or "").strip(),
@@ -2875,7 +3557,7 @@ def confirm_training_agent_release_review(
         action="release_review_confirm",
         operator=operator_text,
         target_id=source_agent_id,
-        detail={"review_id": review_id, "publish_version": publish_version},
+        detail={"review_id": review_id, "publish_version": publish_version, "retry_mode": "manual" if retrying_failed_publish else "initial"},
     )
 
     publish_result = _execute_publish_attempt(
@@ -2884,7 +3566,7 @@ def confirm_training_agent_release_review(
         report=review_payload.get("report") if isinstance(review_payload.get("report"), dict) else {},
         publish_version=publish_version,
         review_comment=str(review_payload.get("review_comment") or "").strip(),
-        trace_dir=trace_dir,
+        trace_dir=attempt_trace_dir,
         execution_logs=execution_logs,
     )
     if publish_result.get("ok"):
@@ -2918,7 +3600,7 @@ def confirm_training_agent_release_review(
         agent=agent,
         failed_publish_version=publish_version,
         failed_error=publish_error,
-        trace_dir=trace_dir,
+        trace_dir=attempt_trace_dir,
         execution_logs=execution_logs,
     )
     retry_result = fallback_payload.get("retry_result") if isinstance(fallback_payload.get("retry_result"), dict) else {}
