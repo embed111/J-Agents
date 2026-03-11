@@ -1,0 +1,1109 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>训练闭环-创建任务参考图</title>
+  <style>
+    :root {
+      --bg: #f2f3f5;
+      --bg-grad: #f7f8fa;
+      --panel: #ffffff;
+      --panel-soft: #fafbfc;
+      --line: #e5e6eb;
+      --line-soft: #eff0f2;
+      --text: #1f2329;
+      --muted: #646a73;
+      --accent: #3370ff;
+      --accent-soft: #edf3ff;
+      --ok: #00a871;
+      --ok-soft: #edfdf6;
+      --warn: #d97904;
+      --shadow: 0 1px 3px rgba(31, 35, 41, 0.08);
+      --rail-width: 248px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: linear-gradient(180deg, var(--bg-grad), var(--bg));
+      color: var(--text);
+      font: 13px/1.5 "PingFang SC", "Helvetica Neue", "Segoe UI", "Microsoft YaHei", sans-serif;
+      overflow: hidden;
+    }
+
+    button, input {
+      font: inherit;
+    }
+
+    button {
+      border: none;
+      border-radius: 6px;
+      padding: 6px 10px;
+      background: var(--accent);
+      color: #fff;
+      cursor: default;
+    }
+
+    button.alt {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+    }
+
+    .task-list,
+    .form-scroll,
+    .side-scroll {
+      scrollbar-width: thin;
+      scrollbar-color: #c9cfda #f5f6f8;
+      scrollbar-gutter: stable;
+    }
+
+    .task-list::-webkit-scrollbar,
+    .form-scroll::-webkit-scrollbar,
+    .side-scroll::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    .task-list::-webkit-scrollbar-track,
+    .form-scroll::-webkit-scrollbar-track,
+    .side-scroll::-webkit-scrollbar-track {
+      background: #f5f6f8;
+      border-radius: 999px;
+    }
+
+    .task-list::-webkit-scrollbar-thumb,
+    .form-scroll::-webkit-scrollbar-thumb,
+    .side-scroll::-webkit-scrollbar-thumb {
+      background: #c9cfda;
+      border-radius: 999px;
+      border: 2px solid #f5f6f8;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: var(--rail-width) minmax(0, 1fr);
+      gap: 10px;
+      height: 100vh;
+      max-height: 100vh;
+      padding: 10px;
+      overflow: hidden;
+    }
+
+    .rail,
+    .window {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .rail {
+      padding: 12px;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 10px;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .brand {
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      padding: 10px;
+      background: var(--panel-soft);
+    }
+
+    .title {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .meta {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .tabs {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .tab {
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      color: #4e5969;
+      padding: 8px 12px;
+      font-weight: 500;
+    }
+
+    .tab.active {
+      border-color: #c8d9ff;
+      background: var(--accent-soft);
+      color: #245bdb;
+      font-weight: 700;
+    }
+
+    .workspace {
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .window {
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1 1 auto;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .window-head,
+    .window-top,
+    .mode-tabs,
+    .module-tabs,
+    .chip-row,
+    .action-row,
+    .field-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .window-title {
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .window-note,
+    .current-role {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .module-tabs,
+    .mode-tabs {
+      justify-content: flex-start;
+    }
+
+    .module-tab,
+    .mode-tab,
+    .chip {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--text);
+      padding: 6px 12px;
+      font-weight: 600;
+    }
+
+    .module-tab.active,
+    .mode-tab.active {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .chip {
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      line-height: 1.4;
+      font-weight: 500;
+    }
+
+    .chip.blue {
+      background: var(--accent-soft);
+      border-color: #c8d9ff;
+      color: #245bdb;
+    }
+
+    .chip.green {
+      background: var(--ok-soft);
+      border-color: #b7ebd3;
+      color: #06794f;
+    }
+
+    .workbench {
+      display: grid;
+      grid-template-columns: 250px minmax(0, 1fr) 270px;
+      gap: 8px;
+      flex: 1 1 auto;
+      min-height: 0;
+      align-items: stretch;
+      overflow: hidden;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 8px;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .panel-title {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .panel-desc,
+    .field-hint,
+    .side-text,
+    .window-foot {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .task-list {
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: scroll;
+      overflow-x: hidden;
+      padding-right: 4px;
+    }
+
+    .task-card {
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      background: #fff;
+      padding: 9px 10px;
+    }
+
+    .task-card.create {
+      border-color: #c8d9ff;
+      background: #f5f8ff;
+    }
+
+    .task-name {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .task-meta {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .form-pane {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 0;
+      height: 100%;
+    }
+
+    .column-shell {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1 1 auto;
+      min-height: 0;
+      height: 100%;
+    }
+
+    .hero-card {
+      border: 1px solid #dce6f7;
+      border-radius: 8px;
+      background: linear-gradient(180deg, #fbfdff 0%, #f6f9ff 100%);
+      padding: 10px;
+    }
+
+    .hero-title {
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .hero-sub {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .process-card {
+      border: 1px solid #dce6f7;
+      border-radius: 8px;
+      background: linear-gradient(180deg, #fbfdff 0%, #f6f9ff 100%);
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .process-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+
+    .process-title {
+      font-size: 16px;
+      font-weight: 800;
+      line-height: 1.15;
+    }
+
+    .process-sub {
+      margin-top: 3px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .process-status {
+      border: 1px solid #dce2eb;
+      border-radius: 8px;
+      background: #fff;
+      padding: 8px 10px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 240px;
+      gap: 8px;
+      align-items: start;
+    }
+
+    .process-status-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .process-status-desc {
+      margin-top: 3px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .process-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .process-meta-card {
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      padding: 7px 8px;
+    }
+
+    .process-steps {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .process-step {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 8px 9px;
+      display: flex;
+      gap: 8px;
+      min-width: 0;
+      align-items: flex-start;
+    }
+
+    .process-step.done {
+      border-color: #b7ebd3;
+      background: #f5fbf8;
+    }
+
+    .process-step.active {
+      border-color: #c8d9ff;
+      background: #f5f8ff;
+    }
+
+    .process-step-index {
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      background: #f2f3f5;
+      color: #4e5969;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .process-step.done .process-step-index {
+      background: #d7f5e7;
+      color: #06794f;
+    }
+
+    .process-step.active .process-step-index {
+      background: #dbe8ff;
+      color: #245bdb;
+    }
+
+    .process-step-body {
+      min-width: 0;
+    }
+
+    .process-step-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.35;
+    }
+
+    .process-step-desc {
+      margin-top: 2px;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .evolution-card {
+      border: 1px solid #dce2eb;
+      border-radius: 8px;
+      background: #fff;
+      padding: 8px 10px;
+    }
+
+    .evolution-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+
+    .evolution-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .evolution-desc {
+      margin-top: 3px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .evolution-legend {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.3;
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      flex: 0 0 auto;
+    }
+
+    .legend-dot.main {
+      background: #3370ff;
+    }
+
+    .legend-dot.fail {
+      background: #d84b4b;
+    }
+
+    .legend-dot.future {
+      background: #c2c7d0;
+    }
+
+    .evolution-svg {
+      display: block;
+      width: 100%;
+      height: 126px;
+      margin-top: 8px;
+    }
+
+    .graph-line {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 3;
+    }
+
+    .graph-line.main {
+      stroke: #3370ff;
+    }
+
+    .graph-line.fail {
+      stroke: #d84b4b;
+    }
+
+    .graph-line.future {
+      stroke: #b7bec8;
+      stroke-dasharray: 7 5;
+    }
+
+    .graph-line.branch {
+      stroke: #b7c8ff;
+    }
+
+    .graph-node {
+      stroke-width: 2;
+    }
+
+    .graph-node.base {
+      fill: #3370ff;
+      stroke: #3370ff;
+    }
+
+    .graph-node.fail {
+      fill: #d84b4b;
+      stroke: #d84b4b;
+    }
+
+    .graph-node.done {
+      fill: #3370ff;
+      stroke: #3370ff;
+    }
+
+    .graph-node.future {
+      fill: #fff;
+      stroke: #b7bec8;
+    }
+
+    .graph-label {
+      fill: #1f2329;
+      font: 11px "PingFang SC", "Helvetica Neue", "Segoe UI", "Microsoft YaHei", sans-serif;
+      font-weight: 700;
+    }
+
+    .graph-muted {
+      fill: #646a73;
+      font: 10px "PingFang SC", "Helvetica Neue", "Segoe UI", "Microsoft YaHei", sans-serif;
+    }
+
+    .evolution-caption {
+      margin-top: 6px;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .form-scroll {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: scroll;
+      overflow-x: hidden;
+      padding-right: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .form-section {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 10px;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .field {
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      padding: 8px 9px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    .field-k {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .field-v {
+      margin-top: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .list-box {
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .list-item {
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      padding: 8px 9px;
+    }
+
+    .list-item-title {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .side-pane {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 0;
+      height: 100%;
+    }
+
+    .side-scroll {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: scroll;
+      overflow-x: hidden;
+      padding-right: 4px;
+    }
+
+    .side-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 10px;
+    }
+
+    .side-card.primary {
+      border-color: #c8d9ff;
+      background: #f5f8ff;
+    }
+
+    .summary-list {
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .summary-item {
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      padding: 8px 9px;
+    }
+
+    .summary-k {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .summary-v {
+      margin-top: 2px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    @media (max-width: 1080px) {
+      html, body {
+        overflow: auto;
+      }
+
+      .app {
+        grid-template-columns: 1fr;
+        min-height: 100vh;
+        height: auto;
+      }
+
+      .tabs {
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+
+      .window {
+        overflow: visible;
+      }
+
+      .workbench,
+      .field-grid,
+      .process-status,
+      .process-steps,
+      .process-meta-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="rail">
+      <div class="brand">
+        <div class="title">workflow</div>
+        <div class="meta">[14:16:08] 就绪</div>
+        <div class="meta">活跃训练任务=4 · 创建草稿=1 · 可用Agent=10</div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab">对话</div>
+        <div class="tab">工作记录与训练</div>
+        <div class="tab active">训练中心</div>
+        <div class="tab">设置</div>
+      </div>
+
+      <div></div>
+    </aside>
+
+    <main class="workspace">
+      <section class="window">
+        <div class="window-head">
+          <div>
+            <div class="window-title">训练中心</div>
+          </div>
+          <div class="current-role">当前角色: Analyst</div>
+        </div>
+
+        <div class="window-top">
+          <div class="module-tabs">
+            <div class="module-tab">角色资产与版本</div>
+            <div class="module-tab active">训练闭环</div>
+          </div>
+          <div class="mode-tabs">
+            <div class="mode-tab active">创建任务</div>
+            <div class="mode-tab">任务状态</div>
+          </div>
+        </div>
+
+        <div class="workbench">
+          <aside class="panel column-shell">
+            <div class="panel-title">训练任务</div>
+            <div class="action-row" style="margin-top: 8px;">
+              <button>新建任务</button>
+              <button class="alt">查看状态</button>
+            </div>
+
+            <div class="task-list">
+              <div class="task-card create">
+                <div class="task-name">+ 新建训练任务</div>
+                <div class="task-meta">当前处于创建模式</div>
+              </div>
+              <div class="task-card">
+                <div class="task-name">开发者训练计划1</div>
+                <div class="task-meta">代码重构能力 · 第 2 轮 · Avg 78.3</div>
+              </div>
+              <div class="task-card">
+                <div class="task-name">开发者训练计划2</div>
+                <div class="task-meta">测试补齐能力 · 待评测</div>
+              </div>
+              <div class="task-card">
+                <div class="task-name">前端训练计划3</div>
+                <div class="task-meta">交互压缩与布局优化 · 已通过</div>
+              </div>
+            </div>
+          </aside>
+
+          <section class="panel form-pane">
+            <div class="process-card">
+              <div class="process-head">
+                <div>
+                  <div class="process-title">创建训练任务</div>
+                  <div class="process-sub">当前位于训练闭环的 `创建任务` 阶段，完成本页配置后可直接启动首轮评测。</div>
+                </div>
+                <div class="chip-row">
+                  <span class="chip blue">创建任务模式</span>
+                  <span class="chip green">首轮可直接启动</span>
+                </div>
+              </div>
+
+              <div class="process-status">
+                <div>
+                  <div class="process-status-title">当前阶段：创建任务</div>
+                  <div class="process-status-desc">当前正在定义训练目标、通过阈值与首轮工作集；保存后自动进入工作集已配置状态，并可立即发起首轮三次评测。</div>
+                </div>
+                <div class="process-meta-grid">
+                  <div class="process-meta-card">
+                    <div class="field-k">目标 Agent</div>
+                    <div class="field-v">Analyst</div>
+                  </div>
+                  <div class="process-meta-card">
+                    <div class="field-k">目标能力</div>
+                    <div class="field-v">复杂页面重构能力</div>
+                  </div>
+                  <div class="process-meta-card">
+                    <div class="field-k">通过阈值</div>
+                    <div class="field-v">Avg &gt;= 85</div>
+                  </div>
+                  <div class="process-meta-card">
+                    <div class="field-k">下一步</div>
+                    <div class="field-v">启动首轮评测</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="process-steps">
+                <div class="process-step active">
+                  <div class="process-step-index">1</div>
+                  <div class="process-step-body">
+                    <div class="process-step-title">创建任务</div>
+                    <div class="process-step-desc">当前阶段</div>
+                  </div>
+                </div>
+                <div class="process-step">
+                  <div class="process-step-index">2</div>
+                  <div class="process-step-body">
+                    <div class="process-step-title">配置本轮工作集</div>
+                    <div class="process-step-desc">本页同步准备</div>
+                  </div>
+                </div>
+                <div class="process-step">
+                  <div class="process-step-index">3</div>
+                  <div class="process-step-body">
+                    <div class="process-step-title">执行三轮评测</div>
+                    <div class="process-step-desc">创建后立即启动</div>
+                  </div>
+                </div>
+                <div class="process-step">
+                  <div class="process-step-index">4</div>
+                  <div class="process-step-body">
+                    <div class="process-step-title">生成结果判定</div>
+                    <div class="process-step-desc">首轮结果回写</div>
+                  </div>
+                </div>
+                <div class="process-step">
+                  <div class="process-step-index">5</div>
+                  <div class="process-step-body">
+                    <div class="process-step-title">进入下一轮 / 完成</div>
+                    <div class="process-step-desc">按阈值决策</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="evolution-card">
+                <div class="evolution-head">
+                  <div>
+                    <div class="evolution-title">训练路径预览</div>
+                    <div class="evolution-desc">创建阶段先把训练可能如何分叉、何时回退、何时进入下一轮说清楚，避免把后续策略藏在长文案里。</div>
+                  </div>
+                  <div class="evolution-legend">
+                    <span class="legend-item"><span class="legend-dot main"></span>继续主线</span>
+                    <span class="legend-item"><span class="legend-dot fail"></span>劣化回退</span>
+                    <span class="legend-item"><span class="legend-dot future"></span>未来收敛</span>
+                  </div>
+                </div>
+
+                <svg class="evolution-svg" viewBox="0 0 620 126" preserveAspectRatio="none" aria-label="训练路径预览">
+                  <path class="graph-line branch" d="M72 64 H200" />
+                  <path class="graph-line fail" d="M200 64 V34 H372" />
+                  <path class="graph-line main" d="M200 64 V96 H520" />
+                  <path class="graph-line future" d="M520 96 H600" />
+
+                  <circle class="graph-node base" cx="72" cy="64" r="7"></circle>
+                  <circle class="graph-node done" cx="200" cy="64" r="7"></circle>
+                  <circle class="graph-node fail" cx="372" cy="34" r="7"></circle>
+                  <circle class="graph-node done" cx="372" cy="96" r="7"></circle>
+                  <circle class="graph-node done" cx="520" cy="96" r="7"></circle>
+                  <circle class="graph-node future" cx="600" cy="96" r="7"></circle>
+
+                  <text class="graph-label" x="34" y="86">创建任务</text>
+                  <text class="graph-muted" x="28" y="100">定义目标与阈值</text>
+
+                  <text class="graph-label" x="170" y="52">首轮评测</text>
+                  <text class="graph-muted" x="148" y="66">3 次独立运行</text>
+
+                  <text class="graph-label" x="334" y="16">评分劣化</text>
+                  <text class="graph-muted" x="314" y="28">回退本轮新增</text>
+
+                  <text class="graph-label" x="330" y="114">提升但不足</text>
+                  <text class="graph-muted" x="316" y="126">进入第 2 轮</text>
+
+                  <text class="graph-label" x="494" y="114">继续主线</text>
+                  <text class="graph-muted" x="474" y="126">补强工作集再评测</text>
+
+                  <text class="graph-label" x="568" y="84">收敛完成</text>
+                  <text class="graph-muted" x="552" y="98">达到阈值后结束</text>
+                </svg>
+
+                <div class="evolution-caption">这张预览图提前说明训练策略：首轮若能力劣化就回退本轮新增；若分数提升但仍不足阈值，则沿保留主线继续进入第 2 轮，而不是停在首轮结果页。</div>
+              </div>
+            </div>
+
+            <div class="form-scroll">
+              <section class="form-section">
+                <div class="panel-title">基础信息</div>
+                <div class="field-grid">
+                  <div class="field">
+                    <div class="field-k">计划名称</div>
+                    <div class="field-v">开发者训练计划5</div>
+                  </div>
+                  <div class="field">
+                    <div class="field-k">目标 Agent</div>
+                    <div class="field-v">Analyst</div>
+                  </div>
+                  <div class="field">
+                    <div class="field-k">目标能力</div>
+                    <div class="field-v">复杂页面重构能力</div>
+                  </div>
+                  <div class="field">
+                    <div class="field-k">通过阈值</div>
+                    <div class="field-v">Avg >= 85</div>
+                  </div>
+                  <div class="field full">
+                    <div class="field-k">验收标准</div>
+                    <div class="field-v">3 轮清空上下文平均分达到阈值；如低于上一轮则回退本轮新增参考资料与 Skill。</div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="form-section">
+                <div class="panel-title">初始用例集</div>
+                <div class="field-hint">创建阶段只填首轮要验证的关键用例，避免把后续多轮结果混到这里。</div>
+                <div class="list-box">
+                  <div class="list-item">
+                    <div class="list-item-title">用例 1：压缩高密度看板但不损失主路径</div>
+                    <div class="field-hint">关注布局拆分、主次结构与阅读顺序。</div>
+                  </div>
+                  <div class="list-item">
+                    <div class="list-item-title">用例 2：把创建态与运行态信息拆开</div>
+                    <div class="field-hint">关注交互入口清晰、切换成本低。</div>
+                  </div>
+                  <div class="list-item">
+                    <div class="list-item-title">用例 3：提供其他任务切换入口</div>
+                    <div class="field-hint">关注左侧任务列表是否足够清晰。</div>
+                  </div>
+                </div>
+                <div class="field-actions" style="margin-top: 8px;">
+                  <button class="alt">添加用例</button>
+                  <button class="alt">导入模板</button>
+                </div>
+              </section>
+
+              <section class="form-section">
+                <div class="panel-title">初始参考资料与 Skill</div>
+                <div class="field-hint">这里展示创建任务时如何纳入第一轮工作集；搜索候选和后续增量在 `任务状态 -> 工作集` 中继续维护。</div>
+                <div class="list-box">
+                  <div class="list-item">
+                    <div class="list-item-title">https://skills.homes/zh-CN</div>
+                    <div class="field-hint">来源：URL · 作用：布局与技能结构参考</div>
+                  </div>
+                  <div class="list-item">
+                    <div class="list-item-title">C:\knowledge\refactor\dashboard-cleanup.md</div>
+                    <div class="field-hint">来源：Local · 作用：信息压缩与重排策略</div>
+                  </div>
+                  <div class="list-item">
+                    <div class="list-item-title">skill: layout-simplification</div>
+                    <div class="field-hint">来源：Skill 工作集 · 作用：大面板拆分套路</div>
+                  </div>
+                </div>
+                <div class="field-actions" style="margin-top: 8px;">
+                  <button>Codex 搜索资料</button>
+                  <button class="alt">添加本地文件</button>
+                  <button class="alt">添加 GitHub</button>
+                </div>
+              </section>
+
+              <section class="form-section">
+                <div class="panel-title">启动策略</div>
+                <div class="field-grid">
+                  <div class="field">
+                    <div class="field-k">执行方式</div>
+                    <div class="field-v">创建后立即启动首轮三次独立评测</div>
+                  </div>
+                  <div class="field">
+                    <div class="field-k">上下文策略</div>
+                    <div class="field-v">每次运行前自动清空上下文</div>
+                  </div>
+                  <div class="field full">
+                    <div class="field-k">失败时默认策略</div>
+                    <div class="field-v">若首轮分数低于上一轮基线则不适用；若后续分数下降，则只回退本轮新增参考资料与 Skill。</div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </section>
+
+          <aside class="panel side-pane">
+            <div class="panel-title">创建结果与校验</div>
+
+            <div class="side-scroll">
+              <div class="side-card primary">
+                <div class="panel-title">创建后将生成</div>
+                <div class="summary-list">
+                  <div class="summary-item">
+                    <div class="summary-k">任务名称</div>
+                    <div class="summary-v">开发者训练计划5</div>
+                  </div>
+                  <div class="summary-item">
+                    <div class="summary-k">首轮工作集</div>
+                    <div class="summary-v">2 份资料 + 1 个 Skill</div>
+                  </div>
+                  <div class="summary-item">
+                    <div class="summary-k">首轮动作</div>
+                    <div class="summary-v">立即执行三轮评测</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="side-card">
+                <div class="panel-title">必填校验</div>
+                <div class="side-text">计划名称、目标 Agent、目标能力、阈值、初始用例至少 1 个、初始工作集至少 1 项。</div>
+                <div class="summary-list">
+                  <div class="summary-item">
+                    <div class="summary-k">当前状态</div>
+                    <div class="summary-v">已满足创建条件</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="side-card">
+                <div class="panel-title">创建后去哪看</div>
+                <div class="side-text">创建完成后自动切到 `任务状态`，默认先看 `当前任务总览` 与 `当前判定`，不直接掉进长列表明细。</div>
+                <div class="action-row" style="margin-top: 8px;">
+                  <button>创建并启动首轮</button>
+                  <button class="alt">仅创建草稿</button>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,6 +1,6 @@
 # Session Snapshot
 
-- last_update: 2026-03-10 20:46:12+0800
+- last_update: 2026-03-11 16:33:04+0800
 - current_track: runtime-baseline
 - current_focus: Phase0: web 对话 + 训练工作流
 
@@ -19,7 +19,7 @@
 7. latest_training: none
 
 ## Next Start
-1. First log to check: logs/events/events-20260310.jsonl
+1. First log to check: logs/events/events-20260311.jsonl
 2. First action: continue chat rounds and keep logs complete.
 
 ## Session

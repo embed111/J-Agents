@@ -1,6 +1,6 @@
 # 本地技能总览
 
-- 最后更新: 2026-03-06
+- 最后更新: 2026-03-11
 - 加载目录: `./.codex/skills/`
 - 目标: 统一记录当前工作区可用本地技能与触发建议。
 
@@ -29,12 +29,16 @@
 8. `directory-maintenance-governor`
    - 路径: `./.codex/skills/directory-maintenance-governor/SKILL.md`
    - 适用: 当任意目录需要“顶层单导读 + 模块化落位 + 阈值归档”治理时，执行通用目录整理与动态维护。
+9. `subrole-invocation-orchestrator`
+   - 路径: `./.codex/skills/subrole-invocation-orchestrator/SKILL.md`
+   - 适用: 当任务跨多个工作流、需要目录级一致性检查，或用户质疑子角色是否真正参与时，显式外化子角色激活、职责归属、并行结构与检查结果。
 
 ## 使用策略
 1. 命中技能适用场景时优先使用，避免重复造轮子。
 2. 仅按任务需要读取技能文件，控制上下文体积。
 3. 若技能文件缺失或不可读，记录问题并按兜底流程继续执行。
 4. 需求讨论场景默认先触发 `requirement-convergence-gate` 并完成内部收敛自检，未到 `start_design` 不进入文档细化与任务拆解。
+5. 若任务需要让子角色参与过程对用户可见，默认优先触发 `subrole-invocation-orchestrator`，避免只在内部隐式切换角色。
 
 ## 能力扩展评估（默认启用）
 1. 每轮分析增加“能力扩展评估”小节，至少回答三件事：

@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import base64
 import binascii
+import threading
+
+_REGISTRY_SYNC_LOCK = threading.Lock()
 
 def bind_runtime_symbols(symbols: dict[str, object]) -> None:
     if not isinstance(symbols, dict):
@@ -84,20 +87,36 @@ def _list_workspace_local_skills(workspace_path_raw: Any) -> list[str]:
 def sync_training_agent_registry(cfg: AppConfig) -> list[dict[str, Any]]:
     root = cfg.agent_search_root
     if root is None:
-        conn = connect_db(cfg.root)
+        _REGISTRY_SYNC_LOCK.acquire()
         try:
+            conn = connect_db(cfg.root)
+        except Exception:
+            _REGISTRY_SYNC_LOCK.release()
+            raise
+        try:
+            conn.execute("BEGIN IMMEDIATE")
             conn.execute("DELETE FROM agent_registry")
             conn.execute("DELETE FROM agent_release_history")
             conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
         finally:
             conn.close()
+            _REGISTRY_SYNC_LOCK.release()
         return []
 
     available = list_available_agents(cfg, analyze_policy=False)
     now_text = iso_ts(now_local())
-    conn = connect_db(cfg.root)
+    _REGISTRY_SYNC_LOCK.acquire()
+    try:
+        conn = connect_db(cfg.root)
+    except Exception:
+        _REGISTRY_SYNC_LOCK.release()
+        raise
     keep_ids: list[str] = []
     try:
+        conn.execute("BEGIN IMMEDIATE")
         for item in available:
             agent_name = safe_token(str(item.get("agent_name") or ""), "", 80)
             agents_path_text = str(item.get("agents_md_path") or "").strip()
@@ -388,8 +407,12 @@ def sync_training_agent_registry(cfg: AppConfig) -> list[dict[str, Any]]:
             conn.execute("DELETE FROM agent_registry")
             conn.execute("DELETE FROM agent_release_history")
         conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()
+        _REGISTRY_SYNC_LOCK.release()
     return available
 
 

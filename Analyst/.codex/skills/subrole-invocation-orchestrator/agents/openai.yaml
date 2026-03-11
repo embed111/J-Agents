@@ -1,0 +1,4 @@
+interface:
+  display_name: "Subrole Invocation"
+  short_description: "Activate visible subroles and externalize work ownership."
+  default_prompt: "Use $subrole-invocation-orchestrator to make subrole ownership, parallel steps, and checks visible for this task."

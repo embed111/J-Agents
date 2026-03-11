@@ -17,7 +17,7 @@ python .codex/skills/windows-desktop-control-gate/scripts/install_skill.py --wor
 - `scripts/control_ui.py`
 - `scripts/lib/interactive-control.ps1`
 - `scripts/lib/window-activation.ps1`
-- `scripts/test-control-request.ps1`
+- `.test/test-control-request.ps1`
 
 ## PowerShell 接入范式
 
@@ -48,12 +48,14 @@ try {
 
 ## 验证步骤
 
-1. 跑 `powershell -ExecutionPolicy Bypass -File scripts/test-control-request.ps1`。
+1. 跑 `powershell -ExecutionPolicy Bypass -File .test/test-control-request.ps1`。
 2. 观察 `workspace_state/control/control-log.jsonl` 是否记录：
    - `control_requested`
    - `control_granted` 或 `control_auto_granted`
    - `control_released`
 3. 做一次真实安全预览，只展示审批窗和操作中提示，不立刻发送业务输入。
+
+mock 测试生成的 `result.json` 与隔离样例目录会落在 `.test/runs/`。
 
 ## 运行依赖
 

@@ -15,17 +15,19 @@
 9. 读取 `user_profile/core/thinking-patterns-overview.md`，恢复用户思维模式上下文。
 10. 读取 `knowledge_base/analysis-methods-overview.md`，恢复可用分析方法与案例索引。
 11. 读取 `skills/local-skills-overview.md`，恢复本地技能使用策略。
-12. 检查 `user_profile/logs/thinking-patterns-change-log.md` 最近一条，确认最新偏好变化。
-13. 若涉及执行提示词分发，检查 `docs/workflow/prompts/` 是否存在，并确认提示词保留窗口未超过 7 轮。
-14. 检查历史归档索引是否可读：
+12. 检查 `workspace_state/collaboration/通用子角色协作卡.md` 是否存在并可读，确认当前通用子角色机制与职责口径。
+13. 若存在 `./.codex/skills/subrole-invocation-orchestrator/SKILL.md`，检查其与 `通用子角色协作卡` 中的子角色清单与外化协议是否一致。
+14. 检查 `user_profile/logs/thinking-patterns-change-log.md` 最近一条，确认最新偏好变化。
+15. 若涉及执行提示词分发，检查 `docs/workflow/prompts/` 是否存在，并确认提示词保留窗口未超过 7 轮。
+16. 检查历史归档索引是否可读：
     - `workspace_state/logs/session-history-index.md`
     - `user_profile/logs/change-log-history-index.md`
-15. 检查长期偏好行数门禁是否通过：
+17. 检查长期偏好行数门禁是否通过：
     - 执行 `scripts/check-long-term-preference-cap.ps1`
     - 若超限，启动偏好评审并更新：
       1) `user_profile/core/thinking-patterns-short-term.md`
       2) `user_profile/governance/preference-review-log.md`
-16. 执行 `scripts/maintain-state-health.ps1 -AutoArchive`，按阈值触发动态归档。
+18. 执行 `scripts/maintain-state-health.ps1 -AutoArchive`，按阈值触发动态归档。
 
 ## 执行前自检
 1. 是否识别当前任务所属领域？
@@ -44,4 +46,6 @@
 14. 是否保持 `workspace_state/` 与 `user_profile/` 顶层“仅 `目录导读.md` 一个文件”？
 15. 若本轮涉及目录整理，是否先执行 `scripts/maintain-directory-health.ps1 -TargetDir <dir>` 做通用目录门禁检查？
 16. 若本轮涉及已有系统的展示/交互需求，是否计划先输出与现有设计风格一致的原型预览，再进行跨工作区交付？
+17. 若本轮计划使用通用子角色，是否确认其仍为抽象、通用角色，且与具体交付物解耦？
+18. 若本轮任务跨多个工作流、需要目录级一致性检查，或用户对过程可见性有要求，是否计划使用 `subrole-invocation-orchestrator` 显式外化子角色职责、并行结构与检查结果？
 

@@ -146,3 +146,24 @@
 3. 变更原因：
    - 用户明确要求“需求确认后先确认原型图”，且原型必须保持现有产品设计风格。
 
+## 2026-03-11
+1. 通用子角色维护机制入规：
+   - `AGENTS.md` 新增“通用子角色维护约定”。
+   - 明确：子角色应保持抽象、通用，不得绑定具体交付物。
+   - 权威清单路径固定为 `workspace_state/collaboration/通用子角色协作卡.md`。
+2. 重启与执行自检同步更新：
+   - `workspace_state/core/startup-checklist.md` 启动步骤新增对子角色协作卡的可读性检查。
+   - `workspace_state/core/startup-checklist.md` 执行前自检新增“通用子角色保持抽象解耦”的检查项。
+3. 变更原因：
+   - 用户确认应在顶层机制文件中记录通用子角色的维护约定，以避免重启后丢失协作机制，但不希望将完整角色定义塞入 `AGENTS.md`。
+4. 新增子角色显式调用技能：
+   - 新增 `./.codex/skills/subrole-invocation-orchestrator/SKILL.md`。
+   - 新增 `./.codex/skills/subrole-invocation-orchestrator/agents/openai.yaml`。
+5. 协作机制同步更新：
+   - `workspace_state/collaboration/通用子角色协作卡.md` 新增“显式调用协议”，固定子角色可见化输出顺序。
+   - `skills/local-skills-overview.md` 新增该技能索引与触发建议。
+   - `workspace_state/core/startup-checklist.md` 新增对子角色显式调用技能一致性与触发条件的检查项。
+   - `AGENTS.md` 的本地技能清单、默认策略与子角色维护约定同步接入该技能。
+6. 变更原因：
+   - 用户明确要求不仅维护通用子角色，还要让其参与过程可见化、可复用，并更倾向用技能而不是每次临时说明。
+

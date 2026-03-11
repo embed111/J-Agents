@@ -1,0 +1,1649 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>训练闭环参考图</title>
+  <style>
+    :root {
+      --bg: #f2f3f5;
+      --bg-grad: #f7f8fa;
+      --panel: #ffffff;
+      --panel-soft: #fafbfc;
+      --line: #e5e6eb;
+      --line-soft: #eff0f2;
+      --text: #1f2329;
+      --muted: #646a73;
+      --accent: #3370ff;
+      --accent-soft: #edf3ff;
+      --ok: #00a871;
+      --ok-soft: #edfdf6;
+      --warn: #d97904;
+      --warn-soft: #fff7eb;
+      --bad: #d84b4b;
+      --bad-soft: #fff2f0;
+      --shadow: 0 1px 3px rgba(31, 35, 41, 0.08);
+      --rail-width: 228px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: linear-gradient(180deg, var(--bg-grad), var(--bg));
+      color: var(--text);
+      font: 13px/1.5 "PingFang SC", "Helvetica Neue", "Segoe UI", "Microsoft YaHei", sans-serif;
+      overflow: hidden;
+    }
+
+    button, input {
+      font: inherit;
+    }
+
+    button {
+      border: none;
+      border-radius: 6px;
+      padding: 6px 10px;
+      background: var(--accent);
+      color: #fff;
+      cursor: default;
+    }
+
+    button.alt {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+    }
+
+    .task-list,
+    .fold-stack,
+    .decision-shell {
+      scrollbar-width: thin;
+      scrollbar-color: #c9cfda #f5f6f8;
+      scrollbar-gutter: stable;
+    }
+
+    .task-list::-webkit-scrollbar,
+    .fold-stack::-webkit-scrollbar,
+    .decision-shell::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    .task-list::-webkit-scrollbar-track,
+    .fold-stack::-webkit-scrollbar-track,
+    .decision-shell::-webkit-scrollbar-track {
+      background: #f5f6f8;
+      border-radius: 999px;
+    }
+
+    .task-list::-webkit-scrollbar-thumb,
+    .fold-stack::-webkit-scrollbar-thumb,
+    .decision-shell::-webkit-scrollbar-thumb {
+      background: #c9cfda;
+      border-radius: 999px;
+      border: 2px solid #f5f6f8;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: var(--rail-width) minmax(0, 1fr);
+      gap: 10px;
+      height: 100vh;
+      max-height: 100vh;
+      padding: 10px;
+      overflow: hidden;
+    }
+
+    .rail,
+    .window {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .rail {
+      padding: 12px;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 10px;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .brand {
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      padding: 10px;
+      background: var(--panel-soft);
+    }
+
+    .brand .title {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .meta {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .tabs {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .tab {
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      color: #4e5969;
+      padding: 8px 12px;
+      font-weight: 500;
+    }
+
+    .tab.active {
+      border-color: #c8d9ff;
+      background: var(--accent-soft);
+      color: #245bdb;
+      font-weight: 700;
+    }
+
+    .workspace {
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .window {
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1 1 auto;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .window-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .window-title {
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .window-note,
+    .current-role {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+      text-align: right;
+    }
+
+    .window-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .module-tabs,
+    .mode-tabs,
+    .detail-tabs,
+    .chip-row,
+    .action-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .module-tab,
+    .mode-tab,
+    .detail-tab {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--text);
+      padding: 6px 12px;
+      font-weight: 600;
+    }
+
+    .module-tab.active,
+    .mode-tab.active,
+    .detail-tab.active {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .risk-line {
+      font-size: 11px;
+      color: var(--warn);
+      line-height: 1.45;
+    }
+
+    .reading-line {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr) 280px;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      padding: 9px 10px;
+      align-items: center;
+    }
+
+    .reading-box {
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      background: #fff;
+      padding: 8px 10px;
+    }
+
+    .reading-k {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .reading-v {
+      margin-top: 3px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .workbench {
+      display: grid;
+      grid-template-columns: 208px minmax(0, 1fr) 214px;
+      gap: 8px;
+      flex: 1 1 auto;
+      min-height: 0;
+      align-items: stretch;
+      overflow: hidden;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 8px;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .panel-title {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .panel-desc {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .task-pane,
+    .decision-pane,
+    .center-pane {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .decision-pane {
+      overflow: hidden;
+    }
+
+    .column-shell {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1 1 auto;
+      min-height: 0;
+      height: 100%;
+    }
+
+    .task-toolbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .task-search {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px 12px;
+      background: #fff;
+    }
+
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      font-size: 12px;
+      line-height: 1.4;
+      white-space: nowrap;
+    }
+
+    .chip.blue {
+      background: var(--accent-soft);
+      border-color: #c8d9ff;
+      color: #245bdb;
+    }
+
+    .chip.green {
+      background: var(--ok-soft);
+      border-color: #b7ebd3;
+      color: #06794f;
+    }
+
+    .chip.orange {
+      background: var(--warn-soft);
+      border-color: #ffd8a8;
+      color: #ad6800;
+    }
+
+    .chip.red {
+      background: var(--bad-soft);
+      border-color: #ffccc7;
+      color: #a8071a;
+    }
+
+    .chip.gray {
+      background: #f2f3f5;
+      border-color: #e5e6eb;
+      color: #4e5969;
+    }
+
+    .task-list {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: scroll;
+      overflow-x: hidden;
+      padding-right: 2px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .task-card {
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      background: #fff;
+      padding: 9px 10px;
+    }
+
+    .task-card.active {
+      border-color: #c8d9ff;
+      background: #f5f8ff;
+    }
+
+    .task-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .task-goal,
+    .task-meta,
+    .hint-text,
+    .metric-note {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .task-metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .priority-strip {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .priority-caption {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .metric-box {
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      padding: 6px 8px;
+    }
+
+    .metric-k {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .metric-v {
+      margin-top: 2px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .hero-card {
+      border: 1px solid #dce6f7;
+      border-radius: 8px;
+      background: linear-gradient(180deg, #fbfdff 0%, #f6f9ff 100%);
+      padding: 7px 9px;
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .hero-title {
+      font-size: 16px;
+      font-weight: 800;
+      line-height: 1.15;
+    }
+
+    .hero-sub {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .process-card {
+      border: 1px solid #dce6f7;
+      border-radius: 8px;
+      background: linear-gradient(180deg, #fbfdff 0%, #f6f9ff 100%);
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .process-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+
+    .process-title {
+      font-size: 16px;
+      font-weight: 800;
+      line-height: 1.15;
+    }
+
+    .process-sub {
+      margin-top: 3px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .process-status {
+      border: 1px solid #dce2eb;
+      border-radius: 8px;
+      background: #fff;
+      padding: 8px 10px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 240px;
+      gap: 8px;
+      align-items: start;
+    }
+
+    .process-status-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .process-status-desc {
+      margin-top: 3px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .process-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .process-meta-card {
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      padding: 7px 8px;
+    }
+
+    .process-steps {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .process-step {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 8px 9px;
+      display: flex;
+      gap: 8px;
+      min-width: 0;
+      align-items: flex-start;
+    }
+
+    .process-step.done {
+      border-color: #b7ebd3;
+      background: #f5fbf8;
+    }
+
+    .process-step.active {
+      border-color: #c8d9ff;
+      background: #f5f8ff;
+    }
+
+    .process-step-index {
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      background: #f2f3f5;
+      color: #4e5969;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .process-step.done .process-step-index {
+      background: #d7f5e7;
+      color: #06794f;
+    }
+
+    .process-step.active .process-step-index {
+      background: #dbe8ff;
+      color: #245bdb;
+    }
+
+    .process-step-body {
+      min-width: 0;
+    }
+
+    .process-step-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.35;
+    }
+
+    .process-step-desc {
+      margin-top: 2px;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .evolution-card {
+      border: 1px solid #dce2eb;
+      border-radius: 8px;
+      background: #fff;
+      padding: 8px 10px;
+    }
+
+    .evolution-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+
+    .evolution-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .evolution-desc {
+      margin-top: 3px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .evolution-legend {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.3;
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      flex: 0 0 auto;
+    }
+
+    .legend-dot.main {
+      background: #3370ff;
+    }
+
+    .legend-dot.fail {
+      background: #d84b4b;
+    }
+
+    .legend-dot.future {
+      background: #c2c7d0;
+    }
+
+    .evolution-svg {
+      display: block;
+      width: 100%;
+      height: 126px;
+      margin-top: 8px;
+    }
+
+    .graph-line {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 3;
+    }
+
+    .graph-line.branch {
+      stroke: #b7c8ff;
+    }
+
+    .graph-line.main {
+      stroke: #3370ff;
+    }
+
+    .graph-line.fail {
+      stroke: #d84b4b;
+    }
+
+    .graph-line.future {
+      stroke: #b7bec8;
+      stroke-dasharray: 7 5;
+    }
+
+    .graph-node {
+      stroke-width: 2;
+    }
+
+    .graph-node.base {
+      fill: #00a871;
+      stroke: #00a871;
+    }
+
+    .graph-node.done {
+      fill: #3370ff;
+      stroke: #3370ff;
+    }
+
+    .graph-node.fail {
+      fill: #d84b4b;
+      stroke: #d84b4b;
+    }
+
+    .graph-node.rollback {
+      fill: #fff7eb;
+      stroke: #d97904;
+    }
+
+    .graph-node.active {
+      fill: #3370ff;
+      stroke: #245bdb;
+      stroke-width: 4;
+    }
+
+    .graph-node.future {
+      fill: #fff;
+      stroke: #b7bec8;
+    }
+
+    .graph-label {
+      fill: #1f2329;
+      font: 11px "PingFang SC", "Helvetica Neue", "Segoe UI", "Microsoft YaHei", sans-serif;
+      font-weight: 700;
+    }
+
+    .graph-muted {
+      fill: #646a73;
+      font: 10px "PingFang SC", "Helvetica Neue", "Segoe UI", "Microsoft YaHei", sans-serif;
+    }
+
+    .evolution-caption {
+      margin-top: 6px;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .hero-grid,
+    .summary-grid,
+    .decision-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .hero-grid {
+      margin-top: 6px;
+    }
+
+    .detail-head {
+      margin-top: 0;
+    }
+
+    .detail-shell {
+      border: 1px solid #dce2eb;
+      border-radius: 10px;
+      background: linear-gradient(180deg, #fcfdff 0%, #f7f9fc 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92);
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .detail-scroll {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: scroll;
+      overflow-x: hidden;
+      padding-right: 4px;
+      scrollbar-width: thin;
+      scrollbar-color: #c9cfda #f5f6f8;
+      scrollbar-gutter: stable;
+    }
+
+    .detail-scroll::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    .detail-scroll::-webkit-scrollbar-track {
+      background: #f5f6f8;
+      border-radius: 999px;
+    }
+
+    .detail-scroll::-webkit-scrollbar-thumb {
+      background: #c9cfda;
+      border-radius: 999px;
+      border: 2px solid #f5f6f8;
+    }
+
+    .fold-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 0 0 auto;
+      min-height: auto;
+      overflow: visible;
+      padding-right: 0;
+    }
+
+    .fold-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .fold-card[open] {
+      box-shadow: 0 1px 2px rgba(31, 35, 41, 0.04);
+    }
+
+    .fold-card summary {
+      list-style: none;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 10px 12px;
+      cursor: default;
+    }
+
+    .fold-card summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .fold-title-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1 1 280px;
+      min-width: 0;
+    }
+
+    .fold-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .fold-desc {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .fold-state {
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+      flex: 0 0 auto;
+      margin-left: auto;
+    }
+
+    .fold-state.high {
+      color: #245bdb;
+    }
+
+    .fold-state.low {
+      color: #ad6800;
+    }
+
+    .fold-body {
+      border-top: 1px solid var(--line-soft);
+      padding: 10px 12px 12px;
+      background: #fff;
+    }
+
+    .kv-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .kv-card {
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      padding: 8px 9px;
+    }
+
+    .kv-k {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .kv-v {
+      margin-top: 2px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .dual-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .compact-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .compact-item {
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      padding: 8px 9px;
+    }
+
+    .compact-item .k {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .compact-item .v {
+      margin-top: 2px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .summary-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 10px;
+    }
+
+    .summary-title {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .summary-body {
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .summary-list {
+      margin-top: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .summary-item {
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      padding: 8px 9px;
+    }
+
+    .summary-item .k {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .summary-item .v {
+      margin-top: 2px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .mini-table {
+      margin-top: 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .mini-row {
+      display: grid;
+      grid-template-columns: minmax(120px, 1fr) 58px 58px 58px 58px;
+      gap: 8px;
+      align-items: center;
+      padding: 9px 11px;
+      font-size: 12px;
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    .mini-row.head {
+      background: var(--panel-soft);
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .mini-row:last-child {
+      border-bottom: none;
+    }
+
+    .score-avg {
+      color: #245bdb;
+      font-weight: 700;
+    }
+
+    .decision-pane .panel {
+      padding: 0;
+      border: none;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .decision-shell {
+      overflow-y: scroll;
+      overflow-x: hidden;
+      padding-right: 4px;
+    }
+
+    .decision-shell .next-card {
+      margin-top: auto;
+    }
+
+    .decision-card,
+    .next-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 8px;
+    }
+
+    .decision-card {
+      border-color: #c8d9ff;
+      background: #f5f8ff;
+    }
+
+    .decision-big {
+      margin-top: 4px;
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1;
+      color: var(--text);
+    }
+
+    .decision-delta {
+      margin-top: 4px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #06794f;
+    }
+
+    .next-card {
+      border-color: #dce6f7;
+      background: linear-gradient(180deg, #fbfdff 0%, #f6f9ff 100%);
+    }
+
+    .window-foot {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    @media (max-width: 1360px) {
+      .workbench {
+        grid-template-columns: 196px minmax(0, 1fr) 202px;
+      }
+
+      .reading-line,
+      .process-status,
+      .process-steps,
+      .process-meta-grid,
+      .hero-grid,
+      .summary-grid,
+      .kv-grid,
+      .dual-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 1080px) {
+      html, body {
+        overflow: auto;
+      }
+
+      .app {
+        grid-template-columns: 1fr;
+        min-height: 100vh;
+        height: auto;
+      }
+
+      .tabs {
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+
+      .window {
+        overflow: visible;
+      }
+
+      .reading-line,
+      .workbench,
+      .hero-grid,
+      .summary-grid,
+      .kv-grid,
+      .dual-grid,
+      .decision-grid,
+      .task-metrics {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="rail">
+      <div class="brand">
+        <div class="title">workflow</div>
+        <div class="meta">[14:12:27] 就绪</div>
+        <div class="meta">活跃训练任务=4 · 待分析=3 · 待发布=1 · 可用Agent=10</div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab">对话</div>
+        <div class="tab">工作记录与训练</div>
+        <div class="tab active">训练中心</div>
+        <div class="tab">设置</div>
+      </div>
+
+      <div></div>
+    </aside>
+
+    <main class="workspace">
+      <section class="window">
+        <div class="window-head">
+          <div>
+            <div class="window-title">训练中心</div>
+            <div class="meta">训练对象是 agent 工作区能力，独立于会话流程</div>
+          </div>
+          <div class="current-role">当前角色: Analyst</div>
+        </div>
+
+        <div class="window-top">
+          <div class="module-tabs">
+            <div class="module-tab">角色资产与版本</div>
+            <div class="module-tab active">训练闭环</div>
+          </div>
+          <div class="mode-tabs">
+            <div class="mode-tab">创建任务</div>
+            <div class="mode-tab active">任务状态</div>
+          </div>
+        </div>
+
+        <div class="workbench">
+          <aside class="task-pane">
+            <section class="panel column-shell">
+              <div class="panel-head">
+                <div>
+                  <div class="panel-title">训练任务</div>
+                </div>
+                <button>新建任务</button>
+              </div>
+
+              <div class="task-toolbar">
+                <input class="task-search" value="搜索任务 / 能力目标" />
+                <button class="alt">筛选</button>
+              </div>
+
+              <div class="filter-row" style="margin-top: 8px;">
+                <span class="chip blue">全部</span>
+                <span class="chip gray">进行中</span>
+                <span class="chip gray">待评测</span>
+                <span class="chip gray">已通过</span>
+              </div>
+
+              <div class="task-list" style="margin-top: 8px;">
+                <div class="task-card active">
+                  <div class="task-name">开发者训练计划1</div>
+                  <div class="task-goal">目标能力：代码重构能力</div>
+                  <div class="chip-row" style="margin-top: 6px;">
+                    <span class="chip blue">进行中</span>
+                    <span class="chip orange">第 2 轮</span>
+                  </div>
+                  <div class="task-metrics">
+                    <div class="metric-box">
+                      <div class="metric-k">当前 Avg</div>
+                      <div class="metric-v">78.3</div>
+                    </div>
+                    <div class="metric-box">
+                      <div class="metric-k">阈值</div>
+                      <div class="metric-v">85</div>
+                    </div>
+                  </div>
+                  <div class="task-meta">最近更新：2 分钟前</div>
+                </div>
+
+                <div class="task-card">
+                  <div class="task-name">开发者训练计划2</div>
+                  <div class="task-goal">目标能力：测试补齐能力</div>
+                  <div class="chip-row" style="margin-top: 6px;">
+                    <span class="chip gray">待评测</span>
+                    <span class="chip gray">第 1 轮</span>
+                  </div>
+                  <div class="task-metrics">
+                    <div class="metric-box">
+                      <div class="metric-k">当前 Avg</div>
+                      <div class="metric-v">-</div>
+                    </div>
+                    <div class="metric-box">
+                      <div class="metric-k">阈值</div>
+                      <div class="metric-v">82</div>
+                    </div>
+                  </div>
+                  <div class="task-meta">最近更新：14 分钟前</div>
+                </div>
+
+                <div class="task-card">
+                  <div class="task-name">前端训练计划3</div>
+                  <div class="task-goal">目标能力：交互压缩与布局优化</div>
+                  <div class="chip-row" style="margin-top: 6px;">
+                    <span class="chip green">已通过</span>
+                    <span class="chip gray">第 3 轮</span>
+                  </div>
+                  <div class="task-metrics">
+                    <div class="metric-box">
+                      <div class="metric-k">当前 Avg</div>
+                      <div class="metric-v">86.7</div>
+                    </div>
+                    <div class="metric-box">
+                      <div class="metric-k">阈值</div>
+                      <div class="metric-v">85</div>
+                    </div>
+                  </div>
+                  <div class="task-meta">最近更新：29 分钟前</div>
+                </div>
+
+                <div class="task-card">
+                  <div class="task-name">数据治理训练计划4</div>
+                  <div class="task-goal">目标能力：脚本去重与规范化</div>
+                  <div class="chip-row" style="margin-top: 6px;">
+                    <span class="chip red">需回退</span>
+                    <span class="chip gray">第 3 轮</span>
+                  </div>
+                  <div class="task-metrics">
+                    <div class="metric-box">
+                      <div class="metric-k">当前 Avg</div>
+                      <div class="metric-v">69.4</div>
+                    </div>
+                    <div class="metric-box">
+                      <div class="metric-k">较上一轮</div>
+                      <div class="metric-v">-4.8</div>
+                    </div>
+                  </div>
+                  <div class="task-meta">最近更新：1 小时前</div>
+                </div>
+              </div>
+            </section>
+          </aside>
+
+          <section class="center-pane">
+            <section class="panel column-shell">
+              <div class="process-card">
+                <div class="process-head">
+                  <div>
+                    <div class="process-title">开发者训练计划1</div>
+                    <div class="process-sub">代码重构能力训练 · 当前位于第 2 轮 `生成结果判定` 阶段</div>
+                  </div>
+                  <div class="chip-row">
+                    <span class="chip orange">第 2 轮</span>
+                    <span class="chip green">较上一轮 +7.1</span>
+                  </div>
+                </div>
+
+                <div class="process-status">
+                  <div>
+                    <div class="process-status-title">当前阶段：生成结果判定</div>
+                    <div class="process-status-desc">第 2 轮三次独立评测已完成，正在汇总本轮得分、判定原因与下一步动作，决定是否进入第 3 轮。</div>
+                  </div>
+                  <div class="process-meta-grid">
+                    <div class="process-meta-card">
+                      <div class="metric-k">目标能力</div>
+                      <div class="metric-v">代码重构能力</div>
+                    </div>
+                    <div class="process-meta-card">
+                      <div class="metric-k">当前 Avg / 阈值</div>
+                      <div class="metric-v">78.3 / 85</div>
+                    </div>
+                    <div class="process-meta-card">
+                      <div class="metric-k">本轮耗时</div>
+                      <div class="metric-v">13m 42s</div>
+                    </div>
+                    <div class="process-meta-card">
+                      <div class="metric-k">下一步</div>
+                      <div class="metric-v">进入第 3 轮</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="process-steps">
+                  <div class="process-step done">
+                    <div class="process-step-index">1</div>
+                    <div class="process-step-body">
+                      <div class="process-step-title">创建任务</div>
+                      <div class="process-step-desc">已完成</div>
+                    </div>
+                  </div>
+                  <div class="process-step done">
+                    <div class="process-step-index">2</div>
+                    <div class="process-step-body">
+                      <div class="process-step-title">配置本轮工作集</div>
+                      <div class="process-step-desc">第 2 轮工作集已锁定</div>
+                    </div>
+                  </div>
+                  <div class="process-step done">
+                    <div class="process-step-index">3</div>
+                    <div class="process-step-body">
+                      <div class="process-step-title">执行三轮评测</div>
+                      <div class="process-step-desc">3 次独立运行已完成</div>
+                    </div>
+                  </div>
+                  <div class="process-step active">
+                    <div class="process-step-index">4</div>
+                    <div class="process-step-body">
+                      <div class="process-step-title">生成结果判定</div>
+                      <div class="process-step-desc">当前阶段</div>
+                    </div>
+                  </div>
+                  <div class="process-step">
+                    <div class="process-step-index">5</div>
+                    <div class="process-step-body">
+                      <div class="process-step-title">进入下一轮 / 完成</div>
+                      <div class="process-step-desc">待判定放行</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="evolution-card">
+                  <div class="evolution-head">
+                    <div>
+                      <div class="evolution-title">训练演进图</div>
+                      <div class="evolution-desc">像 `git graph` 一样展示训练如何分叉、哪些分支被回退、当前保留哪条主线继续进入下一轮。</div>
+                    </div>
+                    <div class="evolution-legend">
+                      <span class="legend-item"><span class="legend-dot main"></span>保留主线</span>
+                      <span class="legend-item"><span class="legend-dot fail"></span>劣化回退</span>
+                      <span class="legend-item"><span class="legend-dot future"></span>未来收敛</span>
+                    </div>
+                  </div>
+
+                  <svg class="evolution-svg" viewBox="0 0 620 126" preserveAspectRatio="none" aria-label="训练演进图">
+                    <path class="graph-line branch" d="M72 64 H140" />
+                    <path class="graph-line fail" d="M140 64 V34 H332" />
+                    <path class="graph-line main" d="M140 64 V96 H520" />
+                    <path class="graph-line future" d="M520 96 H600" />
+
+                    <circle class="graph-node base" cx="72" cy="64" r="7"></circle>
+                    <circle class="graph-node fail" cx="220" cy="34" r="7"></circle>
+                    <circle class="graph-node rollback" cx="332" cy="34" r="7"></circle>
+                    <circle class="graph-node done" cx="220" cy="96" r="7"></circle>
+                    <circle class="graph-node done" cx="360" cy="96" r="7"></circle>
+                    <circle class="graph-node active" cx="520" cy="96" r="8"></circle>
+                    <circle class="graph-node future" cx="600" cy="96" r="7"></circle>
+
+                    <text class="graph-label" x="28" y="86">R0 基线</text>
+                    <text class="graph-muted" x="28" y="100">Avg 71.2</text>
+
+                    <text class="graph-label" x="180" y="16">R1-A 劣化</text>
+                    <text class="graph-muted" x="166" y="28">68.4，已回退</text>
+
+                    <text class="graph-label" x="292" y="16">回退 A 分支</text>
+                    <text class="graph-muted" x="282" y="28">移除本轮新增</text>
+
+                    <text class="graph-label" x="176" y="114">R1-B 提升</text>
+                    <text class="graph-muted" x="156" y="126">78.3，未达阈值</text>
+
+                    <text class="graph-label" x="330" y="114">进入 R2</text>
+                    <text class="graph-muted" x="320" y="126">保留有效工作集</text>
+
+                    <text class="graph-label" x="486" y="114">R2 当前</text>
+                    <text class="graph-muted" x="464" y="126">正在判定去留</text>
+
+                    <text class="graph-label" x="566" y="84">R3 / 完成</text>
+                    <text class="graph-muted" x="550" y="98">达阈值后收敛</text>
+                  </svg>
+
+                  <div class="evolution-caption">当前主线来自 `R1-B`：第 1 轮分数提升但仍不足 85，因此保留有效工作集进入第 2 轮；`R1-A` 因能力劣化已回退，不再继续扩散。</div>
+                </div>
+              </div>
+
+              <div class="panel-head detail-head">
+                <div>
+                  <div class="panel-title">任务状态详情</div>
+                  <div class="panel-desc">当前展示第 2 轮结果判定所需的评分摘要、工作集变化与判定依据。</div>
+                </div>
+              </div>
+
+              <div class="detail-shell">
+                <div class="detail-scroll">
+                  <div class="detail-tabs">
+                    <div class="detail-tab active">本轮评分摘要</div>
+                    <div class="detail-tab">本轮工作集变化</div>
+                    <div class="detail-tab">当前判定原因</div>
+                  </div>
+
+                  <div class="summary-card">
+                    <div class="summary-title">本轮评分摘要</div>
+                    <div class="summary-body">第 2 轮三次独立评测已完成，Avg 为 78.3，较上一轮提升 7.1，但仍未达到阈值 85。</div>
+                    <div class="kv-grid" style="margin-top: 8px;">
+                      <div class="kv-card">
+                        <div class="kv-k">本轮 Avg</div>
+                        <div class="kv-v">78.3</div>
+                      </div>
+                      <div class="kv-card">
+                        <div class="kv-k">阈值</div>
+                        <div class="kv-v">85</div>
+                      </div>
+                      <div class="kv-card">
+                        <div class="kv-k">较上一轮</div>
+                        <div class="kv-v">+7.1</div>
+                      </div>
+                      <div class="kv-card">
+                        <div class="kv-k">当前建议</div>
+                        <div class="kv-v">保留工作集进入第 3 轮</div>
+                      </div>
+                    </div>
+                    <div class="compact-list" style="margin-top: 10px;">
+                      <div class="compact-item">
+                        <div class="k">当前观察</div>
+                        <div class="v">提升最明显的是“提炼公共函数”，最不稳定的是“删除坏味道”；完整 `Run1/Run2/Run3` 表继续放在下方三级折叠区。</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="fold-stack">
+
+                <details class="fold-card">
+                  <summary>
+                    <span class="fold-title-wrap">
+                      <span class="fold-title">Run1 / Run2 / Run3 完整明细</span>
+                      <span class="fold-desc">完整评分明细保留在同页，但默认折叠，避免首屏像日志页。</span>
+                    </span>
+                    <span class="fold-state low">三级</span>
+                  </summary>
+                  <div class="fold-body">
+                    <div class="mini-table">
+                      <div class="mini-row head">
+                        <div>用例</div>
+                        <div>R1</div>
+                        <div>R2</div>
+                        <div>R3</div>
+                        <div>Avg</div>
+                      </div>
+                      <div class="mini-row">
+                        <div>重构重复逻辑</div>
+                        <div>76</div>
+                        <div>80</div>
+                        <div>79</div>
+                        <div class="score-avg">78.3</div>
+                      </div>
+                      <div class="mini-row">
+                        <div>提炼公共函数</div>
+                        <div>82</div>
+                        <div>81</div>
+                        <div>84</div>
+                        <div class="score-avg">82.3</div>
+                      </div>
+                      <div class="mini-row">
+                        <div>删除坏味道</div>
+                        <div>74</div>
+                        <div>75</div>
+                        <div>77</div>
+                        <div class="score-avg">75.3</div>
+                      </div>
+                    </div>
+                  </div>
+                </details>
+
+                <details class="fold-card">
+                  <summary>
+                    <span class="fold-title-wrap">
+                      <span class="fold-title">候选资料与未采纳原因</span>
+                      <span class="fold-desc">候选资料继续保留，但降级为按需查看，避免和生效工作集并列争抢注意力。</span>
+                    </span>
+                    <span class="fold-state low">三级</span>
+                  </summary>
+                  <div class="fold-body">
+                    <div class="compact-list">
+                      <div class="compact-item">
+                        <div class="k">候选资料 A</div>
+                        <div class="v">`large-refactor-case.md`，未采纳：案例跨度过大，和当前任务不够贴合。</div>
+                      </div>
+                      <div class="compact-item">
+                        <div class="k">候选资料 B</div>
+                        <div class="v">`cleanup-smells.md`，未采纳：与现有 Skill 重复度高，当前轮收益有限。</div>
+                      </div>
+                    </div>
+                  </div>
+                </details>
+
+                <details class="fold-card">
+                  <summary>
+                    <span class="fold-title-wrap">
+                      <span class="fold-title">完整迭代记录</span>
+                      <span class="fold-desc">历史轮次仍可追溯，但不再默认占据总览区主视线。</span>
+                    </span>
+                    <span class="fold-state low">三级</span>
+                  </summary>
+                  <div class="fold-body">
+                    <div class="compact-list">
+                      <div class="compact-item">
+                        <div class="k">第 1 轮</div>
+                        <div class="v">建立基线，Avg 71.2；发现主要问题在重复逻辑拆分不稳定。</div>
+                      </div>
+                      <div class="compact-item">
+                        <div class="k">第 2 轮</div>
+                        <div class="v">新增 2 份资料 + 1 个 Skill，Avg 78.3；保持正向提升但仍未过阈值。</div>
+                      </div>
+                    </div>
+                  </div>
+                </details>
+
+                <details class="fold-card">
+                  <summary>
+                    <span class="fold-title-wrap">
+                      <span class="fold-title">辅助说明</span>
+                      <span class="fold-desc">阅读说明和页面辅助解释保留，但不再与业务判断信息并列常显。</span>
+                    </span>
+                    <span class="fold-state low">三级</span>
+                  </summary>
+                  <div class="fold-body">
+                    <div class="compact-list">
+                      <div class="compact-item">
+                        <div class="k">当前阅读顺序</div>
+                        <div class="v">先确认当前任务，再看右侧判定，最后按需展开二级/三级信息。</div>
+                      </div>
+                      <div class="compact-item">
+                        <div class="k">状态页原则</div>
+                        <div class="v">尽量展示信息，但优先保证“任务身份、当前结论、下一步动作”不被低优先级内容淹没。</div>
+                      </div>
+                    </div>
+                  </div>
+                </details>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </section>
+
+          <aside class="decision-pane">
+            <section class="panel column-shell decision-shell">
+              <div class="decision-card">
+                <div class="metric-k">当前选中节点</div>
+                <div class="decision-big">R2 当前</div>
+                <div class="metric-note">主线节点 · 第 2 轮结果判定</div>
+                <div class="decision-delta">保留主线</div>
+                <div class="summary-list" style="margin-top: 10px;">
+                  <div class="summary-item">
+                    <div class="k">节点得分</div>
+                    <div class="v">Avg 78.3 / 阈值 85</div>
+                  </div>
+                  <div class="summary-item">
+                    <div class="k">节点结论</div>
+                    <div class="v">提升但仍不足以收敛</div>
+                  </div>
+                  <div class="summary-item">
+                    <div class="k">关联影响</div>
+                    <div class="v">`R1-A` 劣化分支已回退；当前主线来自 `R1-B`，继续保留有效工作集。</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="next-card">
+                <div class="panel-title">节点判定与下一步</div>
+                <div class="summary-list">
+                  <div class="summary-item">
+                    <div class="k">判定动作</div>
+                    <div class="v">保留本轮工作集，进入第 3 轮</div>
+                  </div>
+                  <div class="summary-item">
+                    <div class="k">若下一轮下降</div>
+                    <div class="v">回退本轮新增参考资料与 Skill</div>
+                  </div>
+                  <div class="summary-item">
+                    <div class="k">为什么继续</div>
+                    <div class="v">当前相较基线已明显提升，但离阈值仍有差距，继续下一轮比直接回退更优。</div>
+                  </div>
+                </div>
+                <div class="action-row" style="margin-top: 10px;">
+                  <button class="alt">进入下一轮</button>
+                  <button class="alt">回退本轮新增</button>
+                </div>
+              </div>
+            </section>
+          </aside>
+        </div>
+
+      </section>
+    </main>
+  </div>
+</body>
+</html>

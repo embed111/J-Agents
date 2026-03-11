@@ -10,6 +10,7 @@ import sqlite3
 import subprocess
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -38,6 +39,19 @@ def call(base_url: str, method: str, path: str, payload: dict[str, Any] | None =
         except Exception:
             payload_obj = {"raw": body}
         return exc.code, payload_obj
+
+
+def call_many(
+    base_url: str,
+    method: str,
+    path: str,
+    *,
+    count: int,
+    payload: dict[str, Any] | None = None,
+) -> list[tuple[int, dict[str, Any]]]:
+    with ThreadPoolExecutor(max_workers=max(1, int(count))) as pool:
+        futures = [pool.submit(call, base_url, method, path, payload) for _ in range(max(1, int(count)))]
+        return [future.result() for future in futures]
 
 
 def wait_health(base_url: str, timeout_s: int = 60) -> None:
@@ -306,12 +320,29 @@ def main() -> int:
 
         st_agents, body_agents = call(base_url, "GET", "/api/training/agents")
         ac01_api = api_file("ac_uo_01_agents", "GET", "/api/training/agents", None, st_agents, body_agents)
+        ac01_concurrent_api = api_dir / "ac_uo_01_agents_concurrent.api.json"
+        concurrent_agents = call_many(base_url, "GET", "/api/training/agents", count=4)
+        write_json(
+            ac01_concurrent_api,
+            {
+                "request": {"method": "GET", "path": "/api/training/agents", "concurrency": 4},
+                "responses": [
+                    {"index": idx + 1, "status": status, "body": body}
+                    for idx, (status, body) in enumerate(concurrent_agents)
+                ],
+            },
+        )
         items = list(body_agents.get("items") or [])
         alpha = find_agent(items, "alpha-agent")
         beta = find_agent(items, "beta-agent")
         ac["AC-UO-01"] = {
-            "pass": bool(st_agents == 200 and items and all(k in alpha for k in ["agent_name", "vector_icon", "current_version", "core_capabilities", "last_release_at"])),
-            "api": [ac01_api],
+            "pass": bool(
+                st_agents == 200
+                and items
+                and all(k in alpha for k in ["agent_name", "vector_icon", "current_version", "core_capabilities", "last_release_at"])
+                and all(status == 200 for status, _body in concurrent_agents)
+            ),
+            "api": [ac01_api, ac01_concurrent_api.as_posix()],
         }
         dump_sql(db_path, "SELECT agent_id,agent_name,vector_icon,current_version,core_capabilities,last_release_at,status_tags_json FROM agent_registry ORDER BY agent_name", (), db_dir / "ac_uo_01_agent_registry.db.json")
 

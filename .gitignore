@@ -1,4 +1,6 @@
 .test/
+!skill_manager/.codex/skills/windows-desktop-control-gate/.test/
+!skill_manager/.codex/skills/windows-desktop-control-gate/.test/test-control-request.ps1
 .tmp/
 .output/
 .git.codex-backup/

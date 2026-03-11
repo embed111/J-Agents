@@ -1,0 +1,2 @@
+﻿{"timestamp":"2026-03-11T09:15:23.9072655+08:00","event":"control_requested","detail":{"timeoutPolicy":"auto_approve","promptTimeoutSeconds":10,"details":"测试用户拒绝路径","processId":35752,"requestId":"e3a8d838-2f66-420c-9af2-d29bfe542888","operationName":"拒绝测试","ui":"pyside6"}}
+{"timestamp":"2026-03-11T09:15:23.9966957+08:00","event":"control_denied","detail":{"processId":35752,"decision":"cancelled","ui":"pyside6","operationName":"拒绝测试","requestId":"e3a8d838-2f66-420c-9af2-d29bfe542888"}}

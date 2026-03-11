@@ -73,8 +73,8 @@ def main() -> int:
             workspace_root / "scripts" / "lib" / "window-activation.ps1",
         ),
         (
-            script_root / "test-control-request.ps1",
-            workspace_root / "scripts" / "test-control-request.ps1",
+            skill_root / ".test" / "test-control-request.ps1",
+            workspace_root / ".test" / "test-control-request.ps1",
         ),
     ]
 
@@ -82,9 +82,10 @@ def main() -> int:
     for relative in (
         workspace_root / "scripts",
         workspace_root / "scripts" / "lib",
+        workspace_root / ".test",
+        workspace_root / ".test" / "runs",
         workspace_root / "workspace_state",
         workspace_root / "workspace_state" / "control",
-        workspace_root / "workspace_state" / "runs",
     ):
         if not relative.exists():
             relative.mkdir(parents=True, exist_ok=True)
