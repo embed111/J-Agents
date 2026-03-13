@@ -10,9 +10,6 @@
 [submodule "Analyst2"]
 	path = Analyst2
 	url = https://github.com/embed111/Analyst2.git
-[submodule "embedded-git-bundles"]
-	path = embedded-git-bundles
-	url = https://github.com/embed111/embedded-git-bundles.git
 [submodule "openclaw"]
 	path = openclaw
 	url = https://github.com/embed111/openclaw.git
