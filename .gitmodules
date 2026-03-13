@@ -1,0 +1,27 @@
+[submodule "PortraitRpDemo"]
+	path = PortraitRpDemo
+	url = C:\\work\\J-Agents-submodule-remotes\\PortraitRpDemo.git
+[submodule "agent_gen"]
+	path = agent_gen
+	url = C:\\work\\J-Agents-submodule-remotes\\agent_gen.git
+[submodule "Analyst"]
+	path = Analyst
+	url = C:\\work\\J-Agents-submodule-remotes\\Analyst.git
+[submodule "Analyst2"]
+	path = Analyst2
+	url = C:\\work\\J-Agents-submodule-remotes\\Analyst2.git
+[submodule "embedded-git-bundles"]
+	path = embedded-git-bundles
+	url = C:\\work\\J-Agents-submodule-remotes\\embedded-git-bundles.git
+[submodule "openclaw"]
+	path = openclaw
+	url = C:\\work\\J-Agents-submodule-remotes\\openclaw.git
+[submodule "skill_manager"]
+	path = skill_manager
+	url = C:\\work\\J-Agents-submodule-remotes\\skill_manager.git
+[submodule "trainer"]
+	path = trainer
+	url = C:\\work\\J-Agents-submodule-remotes\\trainer.git
+[submodule "workflow"]
+	path = workflow
+	url = C:\\work\\J-Agents-submodule-remotes\\workflow.git

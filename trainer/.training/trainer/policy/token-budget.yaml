@@ -1,7 +1,0 @@
-﻿mode: "continuous_until_usable"
-window: "rolling_24h"
-max_training_tokens_per_window: 500000
-reserve_for_prod_ratio: 0.30
-stop_condition:
-  usable_gate_reached: true
-  manual_stop: true

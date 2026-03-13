@@ -1,7 +1,0 @@
-﻿role: tester
-focus:
-  - smoke_cases
-  - sit_uat_design
-  - defect_regression
-handoff_to:
-  - trainer_judge

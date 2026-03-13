@@ -1,2 +1,0 @@
-"""Workflow application source package."""
-

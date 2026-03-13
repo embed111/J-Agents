@@ -1,9 +1,0 @@
-[workflow] workspace: C:\work\J-Agents\workflow
-[workflow] runtime root: C:\work\J-Agents\workflow\.runtime
-[workflow] python: C:\Users\think\AppData\Local\Programs\Python\Python314\python.exe
-[workflow] backfill JSONL -> SQLite ...
-backfill> scanned=407 inserted=0 malformed=0 created_analysis=0 pending_analysis=3 pending_training=0
-[workflow] refresh status ...
-status> pending_analysis=3 pending_training=0
-[workflow] web => http://127.0.0.1:8090
-[workflow] press Ctrl+C to stop.

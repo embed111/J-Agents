@@ -1,3 +1,0 @@
-# Decisions - 2026-02-28
-
-- 2026-02-28 18:38:27+0800 analysis_id=ana-sess-web-20260228-183810-687444 session_id=sess-web-20260228-183810-687444 decision=skip reason=workflow_plan_selected; goal=在不影响生产分析师稳定性的前提下，持续训练候选分析师并形成可晋升闭环。 默认先覆盖分析师角色，后续按策略扩展到架构师、开发、测试角色。; constraints=不直接修改 `.training/agents/prod/`。 候选体仅允许修改 `.training/trainer/policy/mutable-files.txt` 列出的文件。 高风险任务必须由生产体对外交付，候选体仅影子执行。 信息不足时必须先澄清，不得直接...

@@ -1,4 +1,0 @@
-interface:
-  display_name: "Session State Maintainer"
-  short_description: "Maintain restart-ready workspace state"
-  default_prompt: "Update session snapshot and changelogs after this task."

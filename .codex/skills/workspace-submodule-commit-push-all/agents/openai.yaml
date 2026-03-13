@@ -1,0 +1,4 @@
+interface:
+  display_name: "Workspace Submodule Commit Push"
+  short_description: "Commit and push all submodules and root"
+  default_prompt: "Use $workspace-submodule-commit-push-all to commit and push all submodules plus the workspace root."

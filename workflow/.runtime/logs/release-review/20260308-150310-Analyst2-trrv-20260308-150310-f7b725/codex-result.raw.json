@@ -1,7 +1,0 @@
-{
-  "command_summary": "codex exec --json --skip-git-repo-check --sandbox workspace-write --add-dir <workspace_root> -C <workspace_root> -",
-  "exit_code": 124,
-  "error": "codex_exec_timeout",
-  "event_count": 0,
-  "events": []
-}

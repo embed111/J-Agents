@@ -1,2 +1,0 @@
-﻿{"event_id":"evt-20260224-001","timestamp":"2026-02-24T13:00:00+08:00","task_id":"REQ-20260224-001","stage":"intake","actor":"trainer_intake","target_role":"analyst","risk_level":"high","risk_type":"data_security","input_summary":"用户对话摘要","output_ref":".training/trainer/queue/inbox/REQ-20260224-001.yaml","score":0,"critical_regression":false,"decision":"keep_training","reason_tags":["goal_hit"],"notes":"示例事件"}
-

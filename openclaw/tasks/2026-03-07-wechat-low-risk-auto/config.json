@@ -1,7 +1,0 @@
-{
-  "target_contact": "Ever",
-  "auto_reply_text": "收到，我先帮他占个位～他看到后会尽快回复你。",
-  "poll_seconds": 6,
-  "cooldown_seconds": 120,
-  "workdir": "D:/code/AI/workspace/agents/openclaw/tasks/2026-03-07-wechat-low-risk-auto"
-}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Workspace Full Commit"
+  short_description: "Commit and push workspace with nested Git handling"
+  default_prompt: "Use $workspace-full-commit to commit this workspace, restore nested Git metadata, and push to GitHub."

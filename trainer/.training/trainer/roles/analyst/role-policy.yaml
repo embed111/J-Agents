@@ -1,7 +1,0 @@
-﻿role: analyst
-focus:
-  - requirement_clarification
-  - scope_definition
-  - acceptance_criteria
-handoff_to:
-  - architect

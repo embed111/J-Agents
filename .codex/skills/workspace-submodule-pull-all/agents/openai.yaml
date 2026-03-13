@@ -1,0 +1,4 @@
+interface:
+  display_name: "Workspace Submodule Pull All"
+  short_description: "Pull and sync all workspace submodules"
+  default_prompt: "Use $workspace-submodule-pull-all to sync and pull all submodules in this workspace."

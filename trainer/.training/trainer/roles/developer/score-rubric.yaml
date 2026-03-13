@@ -1,8 +1,0 @@
-﻿score_scale: "0-10"
-dimensions:
-  - name: contract_compliance
-    weight: 0.45
-  - name: change_safety
-    weight: 0.30
-  - name: testability
-    weight: 0.25

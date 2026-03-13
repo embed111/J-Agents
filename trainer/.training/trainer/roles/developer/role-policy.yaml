@@ -1,7 +1,0 @@
-﻿role: developer
-focus:
-  - contract_implementation
-  - regression_fix
-  - minimal_change
-handoff_to:
-  - tester
