@@ -142,7 +142,12 @@ function Get-CurrentBranch {
     )
 
     $result = Invoke-Git -RepoRoot $RepoRoot -Arguments @("branch", "--show-current") -Quiet
-    $branch = ($result.Output | Select-Object -First 1).Trim()
+    $branchLine = $result.Output | Select-Object -First 1
+    if (-not $branchLine) {
+        return $null
+    }
+
+    $branch = $branchLine.Trim()
     if ($branch) {
         return $branch
     }

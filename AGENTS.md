@@ -31,8 +31,14 @@
 2. 若执行了提交，必须说明哪些子仓已完成 `commit`、哪些已完成 `push`，以及根仓是否已推送。
 3. 若未执行某一步，必须明确原因，例如仓库 dirty、无 upstream、无远端、detached HEAD 或用户只要求 dry-run。
 
+## 连续性文件（.codex）
+1. `AGENTS.md` 是本工作区的治理入口，负责定义角色、边界、工作流与输出要求。
+2. `.codex/SOUL.md`、`.codex/IDENTITY.md`、`.codex/USER.md`、`.codex/MEMORY.md` 与 `.codex/memory/` 用于记录连续性信息，不得覆盖或弱化 `AGENTS.md` 的治理约束。
+3. 稳定、已确认的用户偏好写入 `.codex/MEMORY.md`；会话级、待验证或临时运维记录写入 `.codex/memory/YYYY-MM-DD.md`。
+4. 本地环境细节、网络绕行方式、技能入口等可写入 `.codex/TOOLS.md`，但不得存放凭证、token 或其他秘密。
+
 ## 工作区本地技能
 ### Available skills
-- workspace-submodule-pull-all: 在当前工作区递归同步并拉取全部 Git submodule，默认只处理子仓，必要时可连根仓一起 fast-forward 拉取。用于用户要求一次性拉取全部子仓、同步所有 submodule、检查哪些子仓因本地改动无法拉取的场景。 (file: C:/work/J-Agents/.codex/skills/workspace-submodule-pull-all/SKILL.md)
-- workspace-submodule-commit-push-all: 在当前工作区递归提交并推送全部 Git submodule，再提交并推送根仓。用于用户要求一次性提交所有子仓和本仓、批量 commit + push 全部 submodule、把 gitlink 更新一并推送的场景。 (file: C:/work/J-Agents/.codex/skills/workspace-submodule-commit-push-all/SKILL.md)
-- workspace-full-commit: 兼容旧式“临时隔离嵌套 `.git` -> 顶层全量提交 -> 还原 `.git`”工作流。仅在仓库尚未改造成 submodule，且用户明确要求沿用旧流程时使用。 (file: C:/work/J-Agents/.codex/skills/workspace-full-commit/SKILL.md)
+- workspace-submodule-pull-all: 在当前工作区递归同步并拉取全部 Git submodule，默认只处理子仓，必要时可连根仓一起 fast-forward 拉取。用于用户要求一次性拉取全部子仓、同步所有 submodule、检查哪些子仓因本地改动无法拉取的场景。 (file: ./.codex/skills/workspace-submodule-pull-all/SKILL.md)
+- workspace-submodule-commit-push-all: 在当前工作区递归提交并推送全部 Git submodule，再提交并推送根仓。用于用户要求一次性提交所有子仓和本仓、批量 commit + push 全部 submodule、把 gitlink 更新一并推送的场景。 (file: ./.codex/skills/workspace-submodule-commit-push-all/SKILL.md)
+- workspace-full-commit: 兼容旧式“临时隔离嵌套 `.git` -> 顶层全量提交 -> 还原 `.git`”工作流。仅在仓库尚未改造成 submodule，且用户明确要求沿用旧流程时使用。 (file: ./.codex/skills/workspace-full-commit/SKILL.md)
