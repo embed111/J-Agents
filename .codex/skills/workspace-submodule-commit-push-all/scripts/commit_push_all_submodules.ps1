@@ -39,7 +39,7 @@ function Invoke-Git {
         [switch]$Quiet
     )
 
-    $allArguments = @("-C", $RepoRoot) + $Arguments
+    $allArguments = @("-c", "http.version=HTTP/1.1", "-C", $RepoRoot) + $Arguments
     $argumentString = ($allArguments | ForEach-Object { Quote-ProcessArgument -Value $_ }) -join " "
 
     $startInfo = New-Object System.Diagnostics.ProcessStartInfo
@@ -170,7 +170,12 @@ function Get-CurrentBranch {
     )
 
     $result = Invoke-Git -RepoRoot $RepoRoot -Arguments @("branch", "--show-current") -Quiet
-    $branch = ($result.Output | Select-Object -First 1).Trim()
+    $firstLine = $result.Output | Select-Object -First 1
+    if ($null -eq $firstLine) {
+        return $null
+    }
+
+    $branch = $firstLine.Trim()
     if ($branch) {
         return $branch
     }
@@ -185,12 +190,31 @@ function Get-UpstreamRef {
 
     $result = Invoke-Git -RepoRoot $RepoRoot -Arguments @("rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}") -AllowFailure -Quiet
     if ($result.ExitCode -eq 0) {
-        return (($result.Output | Select-Object -First 1).Trim())
+        $firstLine = $result.Output | Select-Object -First 1
+        if ($null -eq $firstLine) {
+            return $null
+        }
+
+        return $firstLine.Trim()
     }
     if ($result.ExitCode -eq 128) {
         return $null
     }
     throw "Unable to resolve upstream branch for '$RepoRoot'."
+}
+
+function Test-HeadContainedInRemote {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot
+    )
+
+    $result = Invoke-Git -RepoRoot $RepoRoot -Arguments @("branch", "-r", "--contains", "HEAD") -AllowFailure -Quiet
+    if ($result.ExitCode -ne 0) {
+        return $false
+    }
+
+    return @($result.Output | ForEach-Object { $_.Trim() } | Where-Object { $_ }).Count -gt 0
 }
 
 function Assert-RemoteExists {
@@ -283,14 +307,21 @@ function Invoke-RepoCommitAndPush {
     $upstream = Get-UpstreamRef -RepoRoot $RepoRoot
     $branch = Get-CurrentBranch -RepoRoot $RepoRoot
     $aheadCount = if ($upstream) { Get-AheadCount -RepoRoot $RepoRoot } else { $null }
+    $headContainedInRemote = if ($hasHead -and (-not $upstream) -and (-not $branch)) {
+        Test-HeadContainedInRemote -RepoRoot $RepoRoot
+    } else {
+        $null
+    }
     $pushRequired = if ($NoPush) {
         $false
     } elseif ($dirty -or (-not $hasHead)) {
         $true
     } elseif ($upstream) {
         $aheadCount -gt 0
-    } else {
+    } elseif ($branch) {
         $true
+    } else {
+        -not $headContainedInRemote
     }
 
     if ($DryRun) {
@@ -369,10 +400,8 @@ Write-Host "[INFO] NoPush: $($NoPush.IsPresent)"
 
 if (-not $DryRun) {
     Invoke-Git -RepoRoot $workspaceRoot -Arguments @("submodule", "sync", "--recursive") -Quiet | Out-Null
-    Invoke-Git -RepoRoot $workspaceRoot -Arguments @("submodule", "update", "--init", "--recursive") -Quiet | Out-Null
 } else {
     Write-Host "[DRY-RUN] Would run: git -C $workspaceRoot submodule sync --recursive"
-    Write-Host "[DRY-RUN] Would run: git -C $workspaceRoot submodule update --init --recursive"
 }
 
 $results = New-Object System.Collections.Generic.List[object]

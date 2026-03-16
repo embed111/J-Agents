@@ -2,7 +2,9 @@
 param(
     [string]$WorkspaceRoot = ".",
     [switch]$IncludeRoot,
-    [switch]$DryRun
+    [switch]$DryRun,
+    [int]$RetryCount = 3,
+    [int]$RetryDelaySeconds = 2
 )
 
 Set-StrictMode -Version Latest
@@ -36,7 +38,7 @@ function Invoke-Git {
         [switch]$Quiet
     )
 
-    $allArguments = @("-C", $RepoRoot) + $Arguments
+    $allArguments = @("-c", "http.version=HTTP/1.1", "-C", $RepoRoot) + $Arguments
     $argumentString = ($allArguments | ForEach-Object { Quote-ProcessArgument -Value $_ }) -join " "
 
     $startInfo = New-Object System.Diagnostics.ProcessStartInfo
@@ -142,7 +144,12 @@ function Get-CurrentBranch {
     )
 
     $result = Invoke-Git -RepoRoot $RepoRoot -Arguments @("branch", "--show-current") -Quiet
-    $branch = ($result.Output | Select-Object -First 1).Trim()
+    $firstLine = $result.Output | Select-Object -First 1
+    if ($null -eq $firstLine) {
+        return $null
+    }
+
+    $branch = $firstLine.Trim()
     if ($branch) {
         return $branch
     }
@@ -157,12 +164,39 @@ function Get-UpstreamRef {
 
     $result = Invoke-Git -RepoRoot $RepoRoot -Arguments @("rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}") -AllowFailure -Quiet
     if ($result.ExitCode -eq 0) {
-        return (($result.Output | Select-Object -First 1).Trim())
+        $firstLine = $result.Output | Select-Object -First 1
+        if ($null -eq $firstLine) {
+            return $null
+        }
+
+        return $firstLine.Trim()
     }
     if ($result.ExitCode -eq 128) {
         return $null
     }
     throw "Unable to resolve upstream branch for '$RepoRoot'."
+}
+
+function Get-RemoteHeadRef {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot
+    )
+
+    $result = Invoke-Git -RepoRoot $RepoRoot -Arguments @("symbolic-ref", "refs/remotes/origin/HEAD") -AllowFailure -Quiet
+    if ($result.ExitCode -eq 0) {
+        $firstLine = $result.Output | Select-Object -First 1
+        if ($null -eq $firstLine) {
+            return $null
+        }
+
+        $remoteHeadRef = $firstLine.Trim()
+        if ($remoteHeadRef) {
+            return $remoteHeadRef
+        }
+    }
+
+    return $null
 }
 
 function Invoke-RepoPull {
@@ -173,7 +207,11 @@ function Invoke-RepoPull {
         [Parameter(Mandatory = $true)]
         [string]$Label,
 
-        [switch]$DryRun
+        [switch]$DryRun,
+
+        [int]$RetryCount,
+
+        [int]$RetryDelaySeconds
     )
 
     $dirty = Test-RepoDirty -RepoRoot $RepoRoot
@@ -185,25 +223,60 @@ function Invoke-RepoPull {
     $branch = Get-CurrentBranch -RepoRoot $RepoRoot
     $upstream = Get-UpstreamRef -RepoRoot $RepoRoot
 
-    if (-not $upstream) {
+    if ($DryRun) {
+        if ($upstream) {
+            Write-Host "[DRY-RUN] Would fetch and pull $Label via $upstream."
+            return [pscustomobject]@{ Label = $Label; Status = "dry-run" }
+        }
+
         if ($branch) {
             Write-Host "[SKIP] $Label branch '$branch' has no upstream."
             return [pscustomobject]@{ Label = $Label; Status = "skipped-no-upstream" }
         }
 
-        Write-Host "[SKIP] $Label is in detached HEAD."
-        return [pscustomobject]@{ Label = $Label; Status = "skipped-detached" }
-    }
-
-    if ($DryRun) {
-        Write-Host "[DRY-RUN] Would fetch and pull $Label via $upstream."
+        Write-Host "[DRY-RUN] Would fetch and advance detached HEAD for $Label to origin/HEAD."
         return [pscustomobject]@{ Label = $Label; Status = "dry-run" }
     }
 
-    Invoke-Git -RepoRoot $RepoRoot -Arguments @("fetch", "--all", "--prune") -Quiet | Out-Null
-    Invoke-Git -RepoRoot $RepoRoot -Arguments @("pull", "--ff-only") -Quiet | Out-Null
-    Write-Host "[OK] Updated $Label"
-    return [pscustomobject]@{ Label = $Label; Status = "updated" }
+    $attempt = 0
+    while ($attempt -lt $RetryCount) {
+        $attempt += 1
+        try {
+            Invoke-Git -RepoRoot $RepoRoot -Arguments @("fetch", "--all", "--prune") -Quiet | Out-Null
+
+            if ($upstream) {
+                Invoke-Git -RepoRoot $RepoRoot -Arguments @("pull", "--ff-only") -Quiet | Out-Null
+            } else {
+                if ($branch) {
+                    Write-Host "[SKIP] $Label branch '$branch' has no upstream."
+                    return [pscustomobject]@{ Label = $Label; Status = "skipped-no-upstream" }
+                }
+
+                $remoteHeadRef = Get-RemoteHeadRef -RepoRoot $RepoRoot
+                if (-not $remoteHeadRef) {
+                    Write-Host "[SKIP] $Label detached HEAD has no origin/HEAD."
+                    return [pscustomobject]@{ Label = $Label; Status = "skipped-detached" }
+                }
+
+                Invoke-Git -RepoRoot $RepoRoot -Arguments @("checkout", "--detach", $remoteHeadRef) -Quiet | Out-Null
+            }
+
+            Write-Host "[OK] Updated $Label"
+            return [pscustomobject]@{ Label = $Label; Status = "updated" }
+        } catch {
+            if ($attempt -ge $RetryCount) {
+                Write-Host "[FAIL] $Label pull failed after $attempt attempt(s)."
+                return [pscustomobject]@{
+                    Label   = $Label
+                    Status  = "failed"
+                    Message = $_.Exception.Message
+                }
+            }
+
+            Write-Host "[RETRY] $Label pull failed on attempt $attempt/$RetryCount. Waiting $RetryDelaySeconds second(s)."
+            Start-Sleep -Seconds $RetryDelaySeconds
+        }
+    }
 }
 
 $workspaceRoot = Resolve-WorkspaceGitRoot -CandidatePath $WorkspaceRoot
@@ -228,12 +301,24 @@ Write-Host "[INFO] Recursive submodule count: $($submodulePaths.Count)"
 
 foreach ($relativePath in $submodulePaths) {
     $repoRoot = Join-Path $workspaceRoot $relativePath
-    $results.Add((Invoke-RepoPull -RepoRoot $repoRoot -Label $relativePath -DryRun:$DryRun))
+    $results.Add((Invoke-RepoPull -RepoRoot $repoRoot -Label $relativePath -DryRun:$DryRun -RetryCount $RetryCount -RetryDelaySeconds $RetryDelaySeconds))
 }
 
 $updatedCount = @($results | Where-Object { $_.Status -eq "updated" }).Count
 $skippedCount = @($results | Where-Object { $_.Status -like "skipped-*" }).Count
 $dryRunCount = @($results | Where-Object { $_.Status -eq "dry-run" }).Count
+$failedResults = @($results | Where-Object { $_.Status -eq "failed" })
+$failedCount = $failedResults.Count
 
-Write-Host "[SUMMARY] updated=$updatedCount skipped=$skippedCount dry_run=$dryRunCount"
+Write-Host "[SUMMARY] updated=$updatedCount skipped=$skippedCount dry_run=$dryRunCount failed=$failedCount"
+if ($failedCount -gt 0) {
+    foreach ($failed in $failedResults) {
+        Write-Host "[FAILED-REPO] $($failed.Label)"
+        if ($failed.PSObject.Properties.Name -contains "Message") {
+            Write-Host $failed.Message
+        }
+    }
+    exit 1
+}
+
 Write-Host "[NOTE] Successful submodule pulls may leave the root repo dirty because gitlinks changed."
