@@ -203,6 +203,47 @@ function Get-UpstreamRef {
     throw "Unable to resolve upstream branch for '$RepoRoot'."
 }
 
+function Get-RemoteHeadRef {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot
+    )
+
+    $result = Invoke-Git -RepoRoot $RepoRoot -Arguments @("symbolic-ref", "refs/remotes/origin/HEAD") -AllowFailure -Quiet
+    if ($result.ExitCode -eq 0) {
+        $firstLine = $result.Output | Select-Object -First 1
+        if ($null -eq $firstLine) {
+            return $null
+        }
+
+        $remoteHeadRef = $firstLine.Trim()
+        if ($remoteHeadRef) {
+            return $remoteHeadRef
+        }
+    }
+
+    return $null
+}
+
+function Get-RemoteHeadBranchName {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot
+    )
+
+    $remoteHeadRef = Get-RemoteHeadRef -RepoRoot $RepoRoot
+    if (-not $remoteHeadRef) {
+        return $null
+    }
+
+    $prefix = "refs/remotes/origin/"
+    if ($remoteHeadRef.StartsWith($prefix)) {
+        return $remoteHeadRef.Substring($prefix.Length)
+    }
+
+    return $null
+}
+
 function Test-HeadContainedInRemote {
     param(
         [Parameter(Mandatory = $true)]
@@ -215,6 +256,63 @@ function Test-HeadContainedInRemote {
     }
 
     return @($result.Output | ForEach-Object { $_.Trim() } | Where-Object { $_ }).Count -gt 0
+}
+
+function Test-LocalBranchExists {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot,
+
+        [Parameter(Mandatory = $true)]
+        [string]$BranchName
+    )
+
+    return (Invoke-Git -RepoRoot $RepoRoot -Arguments @("show-ref", "--verify", "--quiet", "refs/heads/$BranchName") -AllowFailure -Quiet).ExitCode -eq 0
+}
+
+function Ensure-CommitBranch {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Label,
+
+        [switch]$DryRun
+    )
+
+    $branch = Get-CurrentBranch -RepoRoot $RepoRoot
+    if ($branch) {
+        return $branch
+    }
+
+    $remoteHeadRef = Get-RemoteHeadRef -RepoRoot $RepoRoot
+    $remoteHeadBranch = Get-RemoteHeadBranchName -RepoRoot $RepoRoot
+    if ((-not $remoteHeadRef) -or (-not $remoteHeadBranch)) {
+        return $null
+    }
+
+    $trackingRef = "origin/$remoteHeadBranch"
+    $localBranchExists = Test-LocalBranchExists -RepoRoot $RepoRoot -BranchName $remoteHeadBranch
+
+    if ($DryRun) {
+        if ($localBranchExists) {
+            Write-Host "[DRY-RUN] Would switch $Label from detached HEAD to branch '$remoteHeadBranch'."
+        } else {
+            Write-Host "[DRY-RUN] Would create branch '$remoteHeadBranch' for $Label from $trackingRef."
+        }
+        return $remoteHeadBranch
+    }
+
+    if ($localBranchExists) {
+        Invoke-Git -RepoRoot $RepoRoot -Arguments @("checkout", $remoteHeadBranch) -Quiet | Out-Null
+        Write-Host "[INFO] Switched $Label to branch '$remoteHeadBranch'."
+        return $remoteHeadBranch
+    }
+
+    Invoke-Git -RepoRoot $RepoRoot -Arguments @("checkout", "-b", $remoteHeadBranch, "--track", $trackingRef) -Quiet | Out-Null
+    Write-Host "[INFO] Created branch '$remoteHeadBranch' for $Label from $trackingRef."
+    return $remoteHeadBranch
 }
 
 function Assert-RemoteExists {
@@ -232,6 +330,95 @@ function Assert-RemoteExists {
     }
 }
 
+function Get-GitConfigValue {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Key
+    )
+
+    $result = Invoke-Git -RepoRoot $RepoRoot -Arguments @("config", "--get", $Key) -AllowFailure -Quiet
+    if ($result.ExitCode -ne 0) {
+        return $null
+    }
+
+    $firstLine = $result.Output | Select-Object -First 1
+    if ($null -eq $firstLine) {
+        return $null
+    }
+
+    $value = $firstLine.Trim()
+    if ($value) {
+        return $value
+    }
+
+    return $null
+}
+
+function Set-GitConfigValue {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Key,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Value
+    )
+
+    Invoke-Git -RepoRoot $RepoRoot -Arguments @("config", $Key, $Value) -Quiet | Out-Null
+}
+
+function Ensure-CommitIdentity {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Label,
+
+        [string]$FallbackRepoRoot,
+
+        [switch]$DryRun
+    )
+
+    $userName = Get-GitConfigValue -RepoRoot $RepoRoot -Key "user.name"
+    $userEmail = Get-GitConfigValue -RepoRoot $RepoRoot -Key "user.email"
+
+    if ((-not $userName) -and $FallbackRepoRoot) {
+        $fallbackUserName = Get-GitConfigValue -RepoRoot $FallbackRepoRoot -Key "user.name"
+        if ($fallbackUserName) {
+            if ($DryRun) {
+                Write-Host "[DRY-RUN] Would set $Label user.name from workspace root."
+            } else {
+                Set-GitConfigValue -RepoRoot $RepoRoot -Key "user.name" -Value $fallbackUserName
+                Write-Host "[INFO] Set $Label user.name from workspace root."
+            }
+            $userName = $fallbackUserName
+        }
+    }
+
+    if ((-not $userEmail) -and $FallbackRepoRoot) {
+        $fallbackUserEmail = Get-GitConfigValue -RepoRoot $FallbackRepoRoot -Key "user.email"
+        if ($fallbackUserEmail) {
+            if ($DryRun) {
+                Write-Host "[DRY-RUN] Would set $Label user.email from workspace root."
+            } else {
+                Set-GitConfigValue -RepoRoot $RepoRoot -Key "user.email" -Value $fallbackUserEmail
+                Write-Host "[INFO] Set $Label user.email from workspace root."
+            }
+            $userEmail = $fallbackUserEmail
+        }
+    }
+
+    if ((-not $userName) -or (-not $userEmail)) {
+        throw "Commit identity missing in '$RepoRoot'. Configure user.name and user.email, or set them in the workspace root so child repos can inherit them."
+    }
+}
+
 function Get-AheadCount {
     param(
         [Parameter(Mandatory = $true)]
@@ -245,6 +432,44 @@ function Get-AheadCount {
 
     $result = Invoke-Git -RepoRoot $RepoRoot -Arguments @("rev-list", "--count", "@{u}..HEAD") -Quiet
     return [int](($result.Output | Select-Object -First 1).Trim())
+}
+
+function Invoke-PushWithRetry {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Label,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]$Arguments,
+
+        [int]$MaxAttempts = 3,
+
+        [int]$DelaySeconds = 5
+    )
+
+    for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+        $result = Invoke-Git -RepoRoot $RepoRoot -Arguments $Arguments -AllowFailure -Quiet
+        if ($result.ExitCode -eq 0) {
+            return
+        }
+
+        $renderedOutput = if ($result.Output.Count -gt 0) {
+            $result.Output -join [Environment]::NewLine
+        } else {
+            "(no git output)"
+        }
+
+        if ($attempt -lt $MaxAttempts) {
+            Write-Host "[WARN] Push attempt $attempt/$MaxAttempts failed for $Label; retrying in $DelaySeconds seconds."
+            Start-Sleep -Seconds $DelaySeconds
+            continue
+        }
+
+        throw "git $($Arguments -join ' ') failed in '$RepoRoot' with exit code $($result.ExitCode).`n$renderedOutput"
+    }
 }
 
 function Push-Repo {
@@ -267,7 +492,7 @@ function Push-Repo {
             return [pscustomobject]@{ Label = $Label; Status = "push-skipped" }
         }
 
-        Invoke-Git -RepoRoot $RepoRoot -Arguments @("push") -Quiet | Out-Null
+        Invoke-PushWithRetry -RepoRoot $RepoRoot -Label $Label -Arguments @("push")
         Write-Host "[OK] Pushed $Label via $upstream"
         return [pscustomobject]@{ Label = $Label; Status = "pushed" }
     }
@@ -278,7 +503,7 @@ function Push-Repo {
     }
 
     Assert-RemoteExists -RepoRoot $RepoRoot -Remote $Remote
-    Invoke-Git -RepoRoot $RepoRoot -Arguments @("push", "-u", $Remote, $branch) -Quiet | Out-Null
+    Invoke-PushWithRetry -RepoRoot $RepoRoot -Label $Label -Arguments @("push", "-u", $Remote, $branch)
     Write-Host "[OK] Pushed $Label to $Remote/$branch"
     return [pscustomobject]@{ Label = $Label; Status = "pushed" }
 }
@@ -297,6 +522,8 @@ function Invoke-RepoCommitAndPush {
         [Parameter(Mandatory = $true)]
         [string]$Remote,
 
+        [string]$FallbackIdentityRepoRoot,
+
         [switch]$NoPush,
 
         [switch]$DryRun
@@ -306,6 +533,12 @@ function Invoke-RepoCommitAndPush {
     $hasHead = Test-RepoHasHead -RepoRoot $RepoRoot
     $upstream = Get-UpstreamRef -RepoRoot $RepoRoot
     $branch = Get-CurrentBranch -RepoRoot $RepoRoot
+    if ($dirty -and (-not $branch)) {
+        $branch = Ensure-CommitBranch -RepoRoot $RepoRoot -Label $Label -DryRun:$DryRun
+        if ((-not $DryRun) -and $branch) {
+            $upstream = Get-UpstreamRef -RepoRoot $RepoRoot
+        }
+    }
     $aheadCount = if ($upstream) { Get-AheadCount -RepoRoot $RepoRoot } else { $null }
     $headContainedInRemote = if ($hasHead -and (-not $upstream) -and (-not $branch)) {
         Test-HeadContainedInRemote -RepoRoot $RepoRoot
@@ -360,6 +593,7 @@ function Invoke-RepoCommitAndPush {
     Invoke-Git -RepoRoot $RepoRoot -Arguments @("add", "-A") -Quiet | Out-Null
     $stagedChanges = Test-StagedChanges -RepoRoot $RepoRoot
     if ((-not $hasHead) -or $stagedChanges) {
+        Ensure-CommitIdentity -RepoRoot $RepoRoot -Label $Label -FallbackRepoRoot $FallbackIdentityRepoRoot -DryRun:$DryRun
         Invoke-Git -RepoRoot $RepoRoot -Arguments @("commit", "-m", $CommitMessage) -Quiet | Out-Null
         $commitCreated = $true
         $commitHash = ((Invoke-Git -RepoRoot $RepoRoot -Arguments @("rev-parse", "--short", "HEAD") -Quiet).Output | Select-Object -First 1).Trim()
@@ -369,7 +603,7 @@ function Invoke-RepoCommitAndPush {
     }
 
     $pushStatus = "skip"
-    if (-not $NoPush) {
+    if ((-not $NoPush) -and $pushRequired) {
         $pushResult = Push-Repo -RepoRoot $RepoRoot -Label $Label -Remote $Remote
         $pushStatus = $pushResult.Status
     }
@@ -410,10 +644,10 @@ Write-Host "[INFO] Recursive submodule count: $($submodulePaths.Count)"
 
 foreach ($relativePath in $submodulePaths) {
     $repoRoot = Join-Path $workspaceRoot $relativePath
-    $results.Add((Invoke-RepoCommitAndPush -RepoRoot $repoRoot -Label $relativePath -CommitMessage $submoduleMessage -Remote $Remote -NoPush:$NoPush -DryRun:$DryRun))
+    $results.Add((Invoke-RepoCommitAndPush -RepoRoot $repoRoot -Label $relativePath -CommitMessage $submoduleMessage -Remote $Remote -FallbackIdentityRepoRoot $workspaceRoot -NoPush:$NoPush -DryRun:$DryRun))
 }
 
-$results.Add((Invoke-RepoCommitAndPush -RepoRoot $workspaceRoot -Label "." -CommitMessage $rootCommitMessage -Remote $Remote -NoPush:$NoPush -DryRun:$DryRun))
+$results.Add((Invoke-RepoCommitAndPush -RepoRoot $workspaceRoot -Label "." -CommitMessage $rootCommitMessage -Remote $Remote -FallbackIdentityRepoRoot $workspaceRoot -NoPush:$NoPush -DryRun:$DryRun))
 
 $commitCount = @($results | Where-Object { $_.Committed }).Count
 $pushCount = @($results | Where-Object { $_.Pushed }).Count

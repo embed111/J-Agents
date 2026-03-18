@@ -1,0 +1,16 @@
+{
+  "generated_at": "2026-03-18T15:37:50+08:00",
+  "items": [
+    {
+      "patch_task_id": "index",
+      "status": "",
+      "source_session_id": "",
+      "agent_name": "",
+      "created_at": "",
+      "updated_at": "",
+      "completed_at": "",
+      "confirmation_audit_id": 0,
+      "agents_version": ""
+    }
+  ]
+}

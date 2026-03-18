@@ -1,0 +1,37 @@
+{
+  "record_type": "assignment_node",
+  "schema_version": 1,
+  "record_state": "active",
+  "ticket_id": "asg-20260318-133700-1756fe",
+  "node_id": "T20",
+  "node_name": "沙箱试跑",
+  "assigned_agent_id": "执行代理",
+  "assigned_agent_name": "执行代理",
+  "node_goal": "在沙箱环境验证调度与交付链路。",
+  "expected_artifact": "失败日志",
+  "delivery_mode": "none",
+  "delivery_mode_text": "无交付人",
+  "delivery_receiver_agent_id": "",
+  "delivery_receiver_agent_name": "",
+  "artifact_delivery_status": "pending",
+  "artifact_delivery_status_text": "待交付",
+  "artifact_delivered_at": "",
+  "artifact_paths": [
+    "C:/work/J-Agents/.output-test/tasks/asg-20260318-133700-1756fe/artifacts/T20/output/失败日志.md"
+  ],
+  "status": "failed",
+  "status_text": "失败",
+  "priority": 1,
+  "priority_label": "P1",
+  "completed_at": "2026-03-14T12:19:33+08:00",
+  "success_reason": "",
+  "result_ref": "",
+  "failure_reason": "运行失败：沙箱冒烟未通过。",
+  "created_at": "2026-03-14T12:14:00+08:00",
+  "updated_at": "2026-03-14T12:19:33+08:00",
+  "upstream_node_ids": [],
+  "downstream_node_ids": [
+    "T10"
+  ],
+  "delete_meta": {}
+}

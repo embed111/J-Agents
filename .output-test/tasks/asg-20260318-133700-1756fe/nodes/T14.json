@@ -1,0 +1,37 @@
+{
+  "record_type": "assignment_node",
+  "schema_version": 1,
+  "record_state": "active",
+  "ticket_id": "asg-20260318-133700-1756fe",
+  "node_id": "T14",
+  "node_name": "人工确认",
+  "assigned_agent_id": "人工审核",
+  "assigned_agent_name": "人工审核",
+  "node_goal": "在结果广播后执行人工确认。",
+  "expected_artifact": "人工确认结论",
+  "delivery_mode": "none",
+  "delivery_mode_text": "无交付人",
+  "delivery_receiver_agent_id": "",
+  "delivery_receiver_agent_name": "",
+  "artifact_delivery_status": "pending",
+  "artifact_delivery_status_text": "待交付",
+  "artifact_delivered_at": "",
+  "artifact_paths": [],
+  "status": "pending",
+  "status_text": "待开始",
+  "priority": 1,
+  "priority_label": "P1",
+  "completed_at": "",
+  "success_reason": "",
+  "result_ref": "",
+  "failure_reason": "",
+  "created_at": "2026-03-14T12:32:00+08:00",
+  "updated_at": "2026-03-14T12:32:00+08:00",
+  "upstream_node_ids": [
+    "T13"
+  ],
+  "downstream_node_ids": [
+    "T15"
+  ],
+  "delete_meta": {}
+}

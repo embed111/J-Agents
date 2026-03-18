@@ -1,0 +1,40 @@
+{
+  "record_type": "assignment_node",
+  "schema_version": 1,
+  "record_state": "active",
+  "ticket_id": "asg-20260318-133700-1756fe",
+  "node_id": "T8",
+  "node_name": "节点映射",
+  "assigned_agent_id": "协调代理",
+  "assigned_agent_name": "协调代理",
+  "node_goal": "把任务树映射为可视化依赖图节点与连线。",
+  "expected_artifact": "依赖关系图",
+  "delivery_mode": "none",
+  "delivery_mode_text": "无交付人",
+  "delivery_receiver_agent_id": "",
+  "delivery_receiver_agent_name": "",
+  "artifact_delivery_status": "delivered",
+  "artifact_delivery_status_text": "已交付",
+  "artifact_delivered_at": "2026-03-14T12:02:07+08:00",
+  "artifact_paths": [
+    "C:/work/J-Agents/.output-test/tasks/asg-20260318-133700-1756fe/artifacts/T8/output/依赖关系图.md"
+  ],
+  "status": "succeeded",
+  "status_text": "已完成",
+  "priority": 1,
+  "priority_label": "P1",
+  "completed_at": "2026-03-14T12:01:18+08:00",
+  "success_reason": "运行成功",
+  "result_ref": "C:/work/J-Agents/.output-test/tasks/asg-20260318-133700-1756fe/artifacts/T8/output/依赖关系图.md",
+  "failure_reason": "",
+  "created_at": "2026-03-14T11:48:00+08:00",
+  "updated_at": "2026-03-14T12:02:07+08:00",
+  "upstream_node_ids": [
+    "T6",
+    "T7"
+  ],
+  "downstream_node_ids": [
+    "T9"
+  ],
+  "delete_meta": {}
+}

@@ -1,0 +1,147 @@
+{
+  "record_type": "assignment_task",
+  "schema_version": 1,
+  "record_state": "active",
+  "ticket_id": "asg-20260318-133700-1756fe",
+  "graph_name": "任务中心原型测试图",
+  "source_workflow": "assignment-prototype-test-data",
+  "summary": "基于任务中心参考图生成的测试任务图",
+  "review_mode": "none",
+  "global_concurrency_limit": 5,
+  "is_test_data": true,
+  "external_request_id": "task-center-prototype-v1",
+  "scheduler_state": "running",
+  "pause_note": "",
+  "created_at": "2026-03-14T09:40:00+08:00",
+  "updated_at": "2026-03-18T13:37:01+08:00",
+  "deleted_at": "",
+  "deleted_reason": "",
+  "edges": [
+    {
+      "from_node_id": "T1",
+      "to_node_id": "T2",
+      "edge_kind": "depends_on",
+      "created_at": "2026-03-14T09:40:00+08:00",
+      "record_state": "active"
+    },
+    {
+      "from_node_id": "T1",
+      "to_node_id": "T3",
+      "edge_kind": "depends_on",
+      "created_at": "2026-03-14T09:40:00+08:00",
+      "record_state": "active"
+    },
+    {
+      "from_node_id": "T10",
+      "to_node_id": "T11",
+      "edge_kind": "depends_on",
+      "created_at": "2026-03-14T09:40:00+08:00",
+      "record_state": "active"
+    },
+    {
+      "from_node_id": "T11",
+      "to_node_id": "T12",
+      "edge_kind": "depends_on",
+      "created_at": "2026-03-14T09:40:00+08:00",
+      "record_state": "active"
+    },
+    {
+      "from_node_id": "T11",
+      "to_node_id": "T13",
+      "edge_kind": "depends_on",
+      "created_at": "2026-03-14T09:40:00+08:00",
+      "record_state": "active"
+    },
+    {
+      "from_node_id": "T12",
+      "to_node_id": "T15",
+      "edge_kind": "depends_on",
+      "created_at": "2026-03-14T09:40:00+08:00",
+      "record_state": "active"
+    },
+    {
+      "from_node_id": "T13",
+      "to_node_id": "T14",
+      "edge_kind": "depends_on",
+      "created_at": "2026-03-14T09:40:00+08:00",
+      "record_state": "active"
+    },
+    {
+      "from_node_id": "T14",
+      "to_node_id": "T15",
+      "edge_kind": "depends_on",
+      "created_at": "2026-03-14T09:40:00+08:00",
+      "record_state": "active"
+    },
+    {
+      "from_node_id": "T2",
+      "to_node_id": "T4",
+      "edge_kind": "depends_on",
+      "created_at": "2026-03-14T09:40:00+08:00",
+      "record_state": "active"
+    },
+    {
+      "from_node_id": "T20",
+      "to_node_id": "T10",
+      "edge_kind": "depends_on",
+      "created_at": "2026-03-14T09:40:00+08:00",
+      "record_state": "active"
+    },
+    {
+      "from_node_id": "T3",
+      "to_node_id": "T4",
+      "edge_kind": "depends_on",
+      "created_at": "2026-03-14T09:40:00+08:00",
+      "record_state": "active"
+    },
+    {
+      "from_node_id": "T4",
+      "to_node_id": "T5",
+      "edge_kind": "depends_on",
+      "created_at": "2026-03-14T09:40:00+08:00",
+      "record_state": "active"
+    },
+    {
+      "from_node_id": "T5",
+      "to_node_id": "T6",
+      "edge_kind": "depends_on",
+      "created_at": "2026-03-14T09:40:00+08:00",
+      "record_state": "active"
+    },
+    {
+      "from_node_id": "T5",
+      "to_node_id": "T7",
+      "edge_kind": "depends_on",
+      "created_at": "2026-03-14T09:40:00+08:00",
+      "record_state": "active"
+    },
+    {
+      "from_node_id": "T6",
+      "to_node_id": "T8",
+      "edge_kind": "depends_on",
+      "created_at": "2026-03-14T09:40:00+08:00",
+      "record_state": "active"
+    },
+    {
+      "from_node_id": "T7",
+      "to_node_id": "T8",
+      "edge_kind": "depends_on",
+      "created_at": "2026-03-14T09:40:00+08:00",
+      "record_state": "active"
+    },
+    {
+      "from_node_id": "T8",
+      "to_node_id": "T9",
+      "edge_kind": "depends_on",
+      "created_at": "2026-03-14T09:40:00+08:00",
+      "record_state": "active"
+    },
+    {
+      "from_node_id": "T9",
+      "to_node_id": "T10",
+      "edge_kind": "depends_on",
+      "created_at": "2026-03-14T09:40:00+08:00",
+      "record_state": "active"
+    }
+  ]
+}

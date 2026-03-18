@@ -1,0 +1,38 @@
+{
+  "record_type": "assignment_node",
+  "schema_version": 1,
+  "record_state": "active",
+  "ticket_id": "asg-20260318-133700-1756fe",
+  "node_id": "T10",
+  "node_name": "联调验收",
+  "assigned_agent_id": "测试代理",
+  "assigned_agent_name": "测试代理",
+  "node_goal": "等待接口和试跑结果后完成联调验收。",
+  "expected_artifact": "待补充联调记录",
+  "delivery_mode": "specified",
+  "delivery_mode_text": "指定交付人",
+  "delivery_receiver_agent_id": "测试代理",
+  "delivery_receiver_agent_name": "测试代理",
+  "artifact_delivery_status": "pending",
+  "artifact_delivery_status_text": "待交付",
+  "artifact_delivered_at": "",
+  "artifact_paths": [],
+  "status": "blocked",
+  "status_text": "阻塞",
+  "priority": 1,
+  "priority_label": "P1",
+  "completed_at": "",
+  "success_reason": "",
+  "result_ref": "",
+  "failure_reason": "",
+  "created_at": "2026-03-14T12:20:00+08:00",
+  "updated_at": "2026-03-14T12:20:00+08:00",
+  "upstream_node_ids": [
+    "T20",
+    "T9"
+  ],
+  "downstream_node_ids": [
+    "T11"
+  ],
+  "delete_meta": {}
+}
