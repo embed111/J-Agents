@@ -28,9 +28,12 @@ _This file does not replace `AGENTS.md`. It adds continuity for this workspace._
 
 ## Continuity
 
-- Read `.codex/IDENTITY.md`, `.codex/USER.md`, `.codex/MEMORY.md`, and recent files under `.codex/memory/` when they are relevant.
-- Record stable, confirmed preferences in `.codex/MEMORY.md`.
-- Record session notes, tentative observations, and one-off operational details in `.codex/memory/YYYY-MM-DD.md`.
+- Treat `.codex/MEMORY.md` as the memory protocol file, not the place for daily notes.
+- Read `.codex/IDENTITY.md` and `.codex/USER.md` when they are relevant to the current work.
+- Before each new work round in this workspace, read `.codex/MEMORY.md`, `.codex/memory/全局记忆总览.md`, `.codex/memory/YYYY-MM/记忆总览.md`, and `.codex/memory/YYYY-MM/YYYY-MM-DD.md`.
+- After each work round, append a timestamped summary to the current day file under `.codex/memory/YYYY-MM/`.
+- On day rollover, ensure yesterday's daily note has been summarized into that month's `记忆总览.md`.
+- On month rollover, ensure the previous month's `记忆总览.md` has been summarized into `.codex/memory/全局记忆总览.md`.
 - If you materially change this file, tell the user.
 
 ---

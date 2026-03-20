@@ -1,21 +1,84 @@
 # MEMORY.md
 
-## Confirmed Long-Term Preferences
+## 定位
 
-- [2026-03-14 | source: this workspace conversation]
-  Wants an openclaw-style continuity scaffold stored under `.codex/` in this workspace.
-- [2026-03-14 | source: this workspace conversation]
-  Wants workspace continuity content to live under `.codex/`, while governance stays in `AGENTS.md`.
+`.codex/MEMORY.md` 是本工作区的顶层记忆规范文件，不承载每日工作内容本身。
+它定义记忆目录结构、读取顺序、写入规则，以及日切/月切时必须执行的归档检查。
 
-## Confirmed In This Session
+## 目录结构
 
-- [2026-03-14]
-  Wanted the continuity files to live under `.codex/`, not at the repo root.
-- [2026-03-14]
-  Asked to review whether `AGENTS.md` needed maintenance and to backfill relevant operating context into `.codex/`.
+- `.codex/memory/全局记忆总览.md`
+  用于记录跨月归档后的总览信息，以及长期稳定、跨主题仍有效的工作记忆。
+- `.codex/memory/YYYY-MM/记忆总览.md`
+  用于记录某个月内已经归档的“历史日期摘要”。
+  该文件不保存当天的进行中总结，避免和每日记忆重复。
+- `.codex/memory/YYYY-MM/YYYY-MM-DD.md`
+  用于记录当天每一轮工作的带时间戳总结。
 
-## Update Rules
+## 每次工作前的必读顺序
 
-- Write stable, confirmed preferences here.
-- Write tentative observations and session-specific notes under `.codex/memory/YYYY-MM-DD.md`.
-- Promote tentative items here only after explicit confirmation or clear recurrence across separate topics.
+每次开始当前工作区的新一轮任务前，按以下顺序读取：
+
+1. `.codex/MEMORY.md`
+2. `.codex/memory/全局记忆总览.md`
+3. `.codex/memory/YYYY-MM/记忆总览.md`
+4. `.codex/memory/YYYY-MM/YYYY-MM-DD.md`
+
+如果对应月份目录、月度总览或当日记忆不存在，先创建模板文件，再继续读取。
+
+## 每轮工作结束后的写入规则
+
+- 每轮工作结束后，必须向当日记忆文件追加一条总结。
+- 每条总结必须包含完整时间戳，格式优先使用 `yyyy-MM-dd HH:mm:ss zzz`。
+- 每日记忆的粒度应明显细于月度总览和全局总览；它不是一句话时间线，而是面向后续回溯的工作记录。
+- 每轮记录不要求固定结构；只要比一句话更详细一些，能让后续回看时快速恢复上下文即可。
+- 建议至少写清楚以下信息中的已知部分：
+  - 这轮主要做了什么
+  - 涉及哪些关键文件、脚本或仓库
+  - 做了什么判断或取舍
+  - 结果如何，是否验证过
+  - 还有什么遗留问题或下一步
+- 若本轮出现被用户明确确认的长期偏好或跨月仍有效的稳定规则，应在合适时机同步提炼到全局记忆总览。
+
+### 推荐写法
+
+```md
+### [2026-03-19 10:34:27 +08:00]
+
+- 为记忆维护补了两个本地技能入口，并把归档能力从单纯脚本升级成“脚本 + skill”两层。
+- 这轮主要改了 `AGENTS.md`、`.codex/scripts/archive_memory.ps1` 和两个新技能目录，skill 校验与 dry-run 都已通过。
+- 过程中发现 `workspace-memory-archive` 的 dry-run 会误创建未来月份模板，已经修掉；后续可以继续观察月切归档摘要是否还需要再压缩。
+```
+
+## 总览写法建议
+
+- 月度总览应按日期标题归档，每个日期保留少量关键 bullet，优先写“做了什么、为什么重要、结果如何、还有什么遗留”。
+- 全局总览应按月份标题归档，重点保留跨月仍有效的规律、长期偏好和对后续工作仍有指导意义的结论。
+- 总览的目标不是复刻每日全文，而是让后续回溯时能快速定位到“什么时候发生了什么、为什么重要、去哪里看细节”。
+
+## 日切归档检查
+
+当工作日期相对上一次记录发生变化时，必须检查“昨日记忆”是否已经被归入对应月份的月度总览：
+
+- 若存在昨日的每日记忆文件，则对应的月度总览中必须能找到该日期的摘要。
+- 月度总览只归档历史日期，不收录今天的总结。
+- 如果发现昨日记忆尚未进入月度总览，应先补归档，再继续当天工作。
+
+## 月切归档检查
+
+当工作月份相对上一次记录发生变化时，必须检查“上月月度总览”是否已经被归入全局记忆总览：
+
+- 若存在上月目录及其 `记忆总览.md`，则全局记忆总览中必须能找到该月份的归档摘要。
+- 全局记忆总览只保留已完成归档的历史月份，不收录当前进行中的月份。
+- 如果发现上月总览尚未进入全局记忆总览，应先补全局归档，再继续当前月份工作。
+
+## 建议辅助脚本
+
+- 开工前检查与建档：
+  `.codex/scripts/ensure_memory_context.ps1`
+- 日切/月切归档：
+  `.codex/scripts/archive_memory.ps1`
+- 回合结束后追加当日总结：
+  `.codex/scripts/append_daily_memory.ps1`
+
+脚本是辅助工具，不替代实际读取记忆文件本身。

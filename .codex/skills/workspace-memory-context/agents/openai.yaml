@@ -1,0 +1,4 @@
+interface:
+  display_name: "Workspace Memory Context"
+  short_description: "Load and verify workspace memory context"
+  default_prompt: "Use $workspace-memory-context to read and verify this workspace memory context before starting work."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Workspace Memory Archive"
+  short_description: "Archive daily and monthly workspace memory"
+  default_prompt: "Use $workspace-memory-archive to archive daily and monthly memory summaries for this workspace."

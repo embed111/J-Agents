@@ -34,11 +34,16 @@
 ## 连续性文件（.codex）
 1. `AGENTS.md` 是本工作区的治理入口，负责定义角色、边界、工作流与输出要求。
 2. `.codex/SOUL.md`、`.codex/IDENTITY.md`、`.codex/USER.md`、`.codex/MEMORY.md` 与 `.codex/memory/` 用于记录连续性信息，不得覆盖或弱化 `AGENTS.md` 的治理约束。
-3. 稳定、已确认的用户偏好写入 `.codex/MEMORY.md`；会话级、待验证或临时运维记录写入 `.codex/memory/YYYY-MM-DD.md`。
-4. 本地环境细节、网络绕行方式、技能入口等可写入 `.codex/TOOLS.md`，但不得存放凭证、token 或其他秘密。
+3. `.codex/MEMORY.md` 仅作为顶层记忆规范文件，定义记忆目录结构、读取顺序、写入规则与归档检查，不直接承担每日内容存储。
+4. `.codex/memory/全局记忆总览.md` 保存跨月归档总结与长期稳定记忆；`.codex/memory/YYYY-MM/记忆总览.md` 保存该月已归档的历史日期摘要；`.codex/memory/YYYY-MM/YYYY-MM-DD.md` 保存当日带时间戳的逐轮记忆。
+5. 每次开始一轮工作前，必须依次读取 `.codex/MEMORY.md`、全局记忆总览、当月记忆总览、当日记忆；缺失时先补模板，再继续工作。
+6. 每轮工作结束后，必须把本轮总结追加到当日记忆；发生日切时检查昨日记忆是否已归档到对应月度总览；发生月切时检查上月总览是否已归档到全局记忆总览。
+7. 本地环境细节、网络绕行方式、技能入口等可写入 `.codex/TOOLS.md`，但不得存放凭证、token 或其他秘密。
 
 ## 工作区本地技能
 ### Available skills
+- workspace-memory-context: 读取并校验当前工作区的记忆上下文，按规范准备 `.codex/MEMORY.md`、全局记忆总览、月度记忆总览和当日记忆，并提示日切/月切是否存在待归档项。用于开始工作前先加载记忆、检查记忆文件是否齐全或确认记忆归档告警的场景。 (file: ./.codex/skills/workspace-memory-context/SKILL.md)
+- workspace-memory-archive: 归档当前工作区的每日与月度记忆，把昨日每日记忆写入对应月度总览，并在跨月时把上月月度总览写入全局记忆总览。用于处理日切/月切记忆维护、补归档或响应记忆上下文检查告警的场景。 (file: ./.codex/skills/workspace-memory-archive/SKILL.md)
 - workspace-submodule-pull-all: 在当前工作区递归同步并拉取全部 Git submodule，默认只处理子仓，必要时可连根仓一起 fast-forward 拉取。用于用户要求一次性拉取全部子仓、同步所有 submodule、检查哪些子仓因本地改动无法拉取的场景。 (file: ./.codex/skills/workspace-submodule-pull-all/SKILL.md)
 - workspace-submodule-commit-push-all: 在当前工作区递归提交并推送全部 Git submodule，再提交并推送根仓。用于用户要求一次性提交所有子仓和本仓、批量 commit + push 全部 submodule、把 gitlink 更新一并推送的场景。 (file: ./.codex/skills/workspace-submodule-commit-push-all/SKILL.md)
 - workspace-full-commit: 兼容旧式“临时隔离嵌套 `.git` -> 顶层全量提交 -> 还原 `.git`”工作流。仅在仓库尚未改造成 submodule，且用户明确要求沿用旧流程时使用。 (file: ./.codex/skills/workspace-full-commit/SKILL.md)

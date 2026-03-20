@@ -14,6 +14,7 @@
 - `<任务产物路径>/tasks/<ticket_id>/runs/<run_id>/...`: 完整提示词、stdout/stderr、结果与事件链路。
 - `<任务产物路径>/tasks/<ticket_id>/artifacts/<node_id>/output/...`: 当前节点自留产物。
 - `<任务产物路径>/tasks/<ticket_id>/artifacts/<node_id>/delivery/<receiver_agent_id>/...`: 指定交付对象时的交付副本。
+- `<任务产物路径>/delivery/<agent_name>/<task_name>/...`: 面向 agent 的顶层交付收件箱投影，系统会在这里写入最终交付件与交付标记。
 - `<任务产物路径>/tasks/<ticket_id>/TASK_STRUCTURE.md`: 单任务目录结构说明。
 
 ## 维护规则
