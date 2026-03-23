@@ -3,12 +3,82 @@ param(
     [string]$WorkspaceRoot = ".",
     [switch]$IncludeRoot,
     [switch]$DryRun,
+    [switch]$SaveMemoryAfterPull,
+    [string]$MemorySummary,
+    [string]$MemoryDetails,
     [int]$RetryCount = 3,
     [int]$RetryDelaySeconds = 2
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+
+function Get-CodexScriptPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$WorkspaceRoot,
+
+        [Parameter(Mandatory = $true)]
+        [string]$RelativePath
+    )
+
+    return Join-Path (Join-Path $WorkspaceRoot ".codex") $RelativePath
+}
+
+function Join-Labels {
+    param(
+        [AllowEmptyCollection()]
+        [object[]]$Items
+    )
+
+    $labels = @(
+        $Items |
+            Where-Object { $_ } |
+            ForEach-Object { $_.ToString().Trim() } |
+            Where-Object { $_ }
+    )
+
+    if ($labels.Count -eq 0) {
+        return "none"
+    }
+
+    return ($labels -join ", ")
+}
+
+function Invoke-MemoryCheckpoint {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$WorkspaceRoot,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Summary,
+
+        [string]$Details,
+
+        [switch]$DryRun
+    )
+
+    $ensureScript = Get-CodexScriptPath -WorkspaceRoot $WorkspaceRoot -RelativePath "scripts\ensure_memory_context.ps1"
+    $archiveScript = Get-CodexScriptPath -WorkspaceRoot $WorkspaceRoot -RelativePath "scripts\archive_memory.ps1"
+    $appendScript = Get-CodexScriptPath -WorkspaceRoot $WorkspaceRoot -RelativePath "scripts\append_daily_memory.ps1"
+
+    if ($DryRun) {
+        Write-Host "[DRY-RUN] Would save memory after pull via .codex scripts."
+        return
+    }
+
+    foreach ($scriptPath in @($ensureScript, $archiveScript, $appendScript)) {
+        if (-not (Test-Path -LiteralPath $scriptPath)) {
+            throw "Required memory script is missing: $scriptPath"
+        }
+    }
+
+    & $ensureScript -WorkspaceRoot $WorkspaceRoot | Out-Host
+    & $archiveScript -WorkspaceRoot $WorkspaceRoot | Out-Host
+    & $appendScript -WorkspaceRoot $WorkspaceRoot -Summary $Summary -Details $Details | Out-Host
+
+    Write-Host "[OK] Saved memory after pull."
+}
 
 function Quote-ProcessArgument {
     param(
@@ -311,6 +381,22 @@ $failedResults = @($results | Where-Object { $_.Status -eq "failed" })
 $failedCount = $failedResults.Count
 
 Write-Host "[SUMMARY] updated=$updatedCount skipped=$skippedCount dry_run=$dryRunCount failed=$failedCount"
+
+if ($SaveMemoryAfterPull) {
+    $updatedLabels = Join-Labels -Items @($results | Where-Object { $_.Status -eq "updated" } | ForEach-Object { $_.Label })
+    $skippedLabels = Join-Labels -Items @($results | Where-Object { $_.Status -like "skipped-*" } | ForEach-Object { $_.Label })
+    $failedLabels = Join-Labels -Items @($failedResults | ForEach-Object { $_.Label })
+    $defaultSummary = "代码拉取完成：include_root=$($IncludeRoot.IsPresent) submodules=$($submodulePaths.Count) updated=$updatedCount skipped=$skippedCount failed=$failedCount"
+    $defaultDetails = @"
+更新仓库：$updatedLabels
+跳过仓库：$skippedLabels
+失败仓库：$failedLabels
+使用技能：workspace-submodule-pull-all
+"@
+
+    Invoke-MemoryCheckpoint -WorkspaceRoot $workspaceRoot -Summary $(if ($MemorySummary) { $MemorySummary } else { $defaultSummary }) -Details $(if ($MemoryDetails) { $MemoryDetails } else { $defaultDetails }) -DryRun:$DryRun
+}
+
 if ($failedCount -gt 0) {
     foreach ($failed in $failedResults) {
         Write-Host "[FAILED-REPO] $($failed.Label)"

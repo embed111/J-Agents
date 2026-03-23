@@ -5,11 +5,81 @@ param(
     [string]$RootMessage,
     [string]$Remote = "origin",
     [switch]$NoPush,
-    [switch]$DryRun
+    [switch]$DryRun,
+    [switch]$SaveMemoryBeforeRootCommit,
+    [string]$MemorySummary,
+    [string]$MemoryDetails
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+
+function Get-CodexScriptPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$WorkspaceRoot,
+
+        [Parameter(Mandatory = $true)]
+        [string]$RelativePath
+    )
+
+    return Join-Path (Join-Path $WorkspaceRoot ".codex") $RelativePath
+}
+
+function Join-Labels {
+    param(
+        [AllowEmptyCollection()]
+        [object[]]$Items
+    )
+
+    $labels = @(
+        $Items |
+            Where-Object { $_ } |
+            ForEach-Object { $_.ToString().Trim() } |
+            Where-Object { $_ }
+    )
+
+    if ($labels.Count -eq 0) {
+        return "none"
+    }
+
+    return ($labels -join ", ")
+}
+
+function Invoke-MemoryCheckpoint {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$WorkspaceRoot,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Summary,
+
+        [string]$Details,
+
+        [switch]$DryRun
+    )
+
+    $ensureScript = Get-CodexScriptPath -WorkspaceRoot $WorkspaceRoot -RelativePath "scripts\ensure_memory_context.ps1"
+    $archiveScript = Get-CodexScriptPath -WorkspaceRoot $WorkspaceRoot -RelativePath "scripts\archive_memory.ps1"
+    $appendScript = Get-CodexScriptPath -WorkspaceRoot $WorkspaceRoot -RelativePath "scripts\append_daily_memory.ps1"
+
+    if ($DryRun) {
+        Write-Host "[DRY-RUN] Would save memory before root commit."
+        return
+    }
+
+    foreach ($scriptPath in @($ensureScript, $archiveScript, $appendScript)) {
+        if (-not (Test-Path -LiteralPath $scriptPath)) {
+            throw "Required memory script is missing: $scriptPath"
+        }
+    }
+
+    & $ensureScript -WorkspaceRoot $WorkspaceRoot | Out-Host
+    & $archiveScript -WorkspaceRoot $WorkspaceRoot | Out-Host
+    & $appendScript -WorkspaceRoot $WorkspaceRoot -Summary $Summary -Details $Details | Out-Host
+
+    Write-Host "[OK] Saved memory before root commit."
+}
 
 function Quote-ProcessArgument {
     param(
@@ -53,9 +123,12 @@ function Invoke-Git {
     $process = New-Object System.Diagnostics.Process
     $process.StartInfo = $startInfo
     $null = $process.Start()
-    $stdout = $process.StandardOutput.ReadToEnd()
-    $stderr = $process.StandardError.ReadToEnd()
+    $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+    $stderrTask = $process.StandardError.ReadToEndAsync()
     $process.WaitForExit()
+    [System.Threading.Tasks.Task]::WaitAll(@($stdoutTask, $stderrTask))
+    $stdout = $stdoutTask.Result
+    $stderr = $stderrTask.Result
 
     $lines = @()
     if ($stdout) {
@@ -81,6 +154,60 @@ function Invoke-Git {
     return [pscustomobject]@{
         ExitCode = $process.ExitCode
         Output   = $lines
+    }
+}
+
+function Get-GitStdoutBytes {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]$Arguments,
+
+        [switch]$AllowFailure
+    )
+
+    $allArguments = @("-c", "http.version=HTTP/1.1", "-C", $RepoRoot) + $Arguments
+    $argumentString = ($allArguments | ForEach-Object { Quote-ProcessArgument -Value $_ }) -join " "
+
+    $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $startInfo.FileName = "git"
+    $startInfo.Arguments = $argumentString
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $startInfo
+    $null = $process.Start()
+
+    $stdoutStream = New-Object System.IO.MemoryStream
+    $stdoutTask = $process.StandardOutput.BaseStream.CopyToAsync($stdoutStream)
+    $stderrTask = $process.StandardError.ReadToEndAsync()
+    $process.WaitForExit()
+    [System.Threading.Tasks.Task]::WaitAll(@($stdoutTask, $stderrTask))
+    $stderr = $stderrTask.Result
+
+    $stderrLines = @()
+    if ($stderr) {
+        $stderrLines = @($stderr -split "`r?`n" | Where-Object { $_ -ne "" })
+    }
+
+    if ((-not $AllowFailure) -and $process.ExitCode -ne 0) {
+        $renderedOutput = if ($stderrLines.Count -gt 0) {
+            $stderrLines -join [Environment]::NewLine
+        } else {
+            "(no git output)"
+        }
+        throw "git $($Arguments -join ' ') failed in '$RepoRoot' with exit code $($process.ExitCode).`n$renderedOutput"
+    }
+
+    return [pscustomobject]@{
+        ExitCode    = $process.ExitCode
+        StdOutBytes = $stdoutStream.ToArray()
+        ErrorLines  = $stderrLines
     }
 }
 
@@ -161,6 +288,47 @@ function Test-StagedChanges {
         return $true
     }
     throw "Unable to determine whether staged changes exist in '$RepoRoot'."
+}
+
+function Add-PathsFromBytes {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot,
+
+        [Parameter(Mandatory = $true)]
+        [byte[]]$PathBytes
+    )
+
+    if ($PathBytes.Length -eq 0) {
+        return
+    }
+
+    $tempPath = Join-Path ([System.IO.Path]::GetTempPath()) ("codex-git-pathspec-" + [guid]::NewGuid().ToString("N"))
+    try {
+        [System.IO.File]::WriteAllBytes($tempPath, $PathBytes)
+        Invoke-Git -RepoRoot $RepoRoot -Arguments @("add", "--pathspec-from-file=$tempPath", "--pathspec-file-nul") -Quiet | Out-Null
+    } finally {
+        if (Test-Path -LiteralPath $tempPath) {
+            Remove-Item -LiteralPath $tempPath -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+function Stage-RepoWorktreeChanges {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot,
+
+        [bool]$HasHead
+    )
+
+    if ($HasHead) {
+        $trackedResult = Get-GitStdoutBytes -RepoRoot $RepoRoot -Arguments @("diff", "--name-only", "--no-renames", "-z", "HEAD", "--")
+        Add-PathsFromBytes -RepoRoot $RepoRoot -PathBytes $trackedResult.StdOutBytes
+    }
+
+    $untrackedResult = Get-GitStdoutBytes -RepoRoot $RepoRoot -Arguments @("ls-files", "--others", "--exclude-standard", "-z")
+    Add-PathsFromBytes -RepoRoot $RepoRoot -PathBytes $untrackedResult.StdOutBytes
 }
 
 function Get-CurrentBranch {
@@ -590,7 +758,9 @@ function Invoke-RepoCommitAndPush {
     $commitCreated = $false
     $commitHash = $null
 
-    Invoke-Git -RepoRoot $RepoRoot -Arguments @("add", "-A") -Quiet | Out-Null
+    if ($dirty) {
+        Stage-RepoWorktreeChanges -RepoRoot $RepoRoot -HasHead:$hasHead
+    }
     $stagedChanges = Test-StagedChanges -RepoRoot $RepoRoot
     if ((-not $hasHead) -or $stagedChanges) {
         Ensure-CommitIdentity -RepoRoot $RepoRoot -Label $Label -FallbackRepoRoot $FallbackIdentityRepoRoot -DryRun:$DryRun
@@ -645,6 +815,22 @@ Write-Host "[INFO] Recursive submodule count: $($submodulePaths.Count)"
 foreach ($relativePath in $submodulePaths) {
     $repoRoot = Join-Path $workspaceRoot $relativePath
     $results.Add((Invoke-RepoCommitAndPush -RepoRoot $repoRoot -Label $relativePath -CommitMessage $submoduleMessage -Remote $Remote -FallbackIdentityRepoRoot $workspaceRoot -NoPush:$NoPush -DryRun:$DryRun))
+}
+
+if ($SaveMemoryBeforeRootCommit) {
+    $submoduleCommitted = @($results | Where-Object { $_.Committed } | ForEach-Object { $_.Label })
+    $submodulePushed = @($results | Where-Object { $_.Pushed } | ForEach-Object { $_.Label })
+    $submoduleSkipped = @($results | Where-Object { (-not $_.Committed) -and (-not $_.Pushed) } | ForEach-Object { $_.Label })
+    $defaultSummary = "准备提交根仓：submodules=$($submodulePaths.Count) committed=$(@($submoduleCommitted).Count) pushed=$(@($submodulePushed).Count)"
+    $defaultDetails = @"
+已提交子仓：$(Join-Labels -Items $submoduleCommitted)
+已推送子仓：$(Join-Labels -Items $submodulePushed)
+未变更子仓：$(Join-Labels -Items $submoduleSkipped)
+下一步：提交并推送根仓
+使用技能：workspace-submodule-commit-push-all
+"@
+
+    Invoke-MemoryCheckpoint -WorkspaceRoot $workspaceRoot -Summary $(if ($MemorySummary) { $MemorySummary } else { $defaultSummary }) -Details $(if ($MemoryDetails) { $MemoryDetails } else { $defaultDetails }) -DryRun:$DryRun
 }
 
 $results.Add((Invoke-RepoCommitAndPush -RepoRoot $workspaceRoot -Label "." -CommitMessage $rootCommitMessage -Remote $Remote -FallbackIdentityRepoRoot $workspaceRoot -NoPush:$NoPush -DryRun:$DryRun))
