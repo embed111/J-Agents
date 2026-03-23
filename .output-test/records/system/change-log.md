@@ -261,3 +261,66 @@
 ## 2026-03-20T18:15:50+08:00 - reconcile run
 - reason=startup, ingress=0, before=0, after=0, gap_after=0
 
+## 2026-03-23T10:09:02+08:00 - startup_work_records_migrated
+- roots=C:/work/J-Agents/workflow/.running/control/runtime/test,C:/work/J-Agents/workflow/.running/control/runtime/test/.runtime, sessions=0, analyses=0, runs=0
+
+## 2026-03-23T10:09:02+08:00 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-23T13:43:43+08:00 - startup_work_records_migrated
+- roots=C:/work/J-Agents/workflow/.running/control/runtime/test,C:/work/J-Agents/workflow/.running/control/runtime/test/.runtime, sessions=0, analyses=0, runs=0
+
+## 2026-03-23T13:43:44+08:00 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-23T13:43:54+08:00 - startup_work_records_migrated
+- roots=C:/work/J-Agents/workflow/.running/control/runtime/test,C:/work/J-Agents/workflow/.running/control/runtime/test/.runtime, sessions=0, analyses=0, runs=0
+
+## 2026-03-23T14:01:08+08:00 - startup_work_records_migrated
+- roots=C:/work/J-Agents/workflow/.running/control/runtime/test,C:/work/J-Agents/workflow/.running/control/runtime/test/.runtime, sessions=0, analyses=0, runs=0
+
+## 2026-03-23T14:01:09+08:00 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-23T14:03:53+08:00 - startup_work_records_migrated
+- roots=C:/work/J-Agents/workflow/.running/control/runtime/test,C:/work/J-Agents/workflow/.running/control/runtime/test/.runtime, sessions=0, analyses=0, runs=0
+
+## 2026-03-23T14:03:53+08:00 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-23T14:21:09+08:00 - startup_work_records_migrated
+- roots=C:/work/J-Agents/workflow/.running/control/runtime/test,C:/work/J-Agents/workflow/.running/control/runtime/test/.runtime, sessions=0, analyses=0, runs=0
+
+## 2026-03-23T14:21:10+08:00 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-23T14:22:12+08:00 - startup_work_records_migrated
+- roots=C:/work/J-Agents/workflow/.running/control/runtime/test,C:/work/J-Agents/workflow/.running/control/runtime/test/.runtime, sessions=0, analyses=0, runs=0
+
+## 2026-03-23T14:22:13+08:00 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-23T14:35:01+08:00 - startup_work_records_migrated
+- roots=C:/work/J-Agents/workflow/.running/control/runtime/test,C:/work/J-Agents/workflow/.running/control/runtime/test/.runtime, sessions=0, analyses=0, runs=0
+
+## 2026-03-23T14:35:02+08:00 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-23T14:44:50+08:00 - startup_work_records_migrated
+- roots=C:/work/J-Agents/workflow/.running/control/runtime/test,C:/work/J-Agents/workflow/.running/control/runtime/test/.runtime, sessions=0, analyses=0, runs=0
+
+## 2026-03-23T14:44:51+08:00 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-23T18:18:57+08:00 - startup_work_records_migrated
+- roots=C:/work/J-Agents/workflow/.running/control/runtime/test,C:/work/J-Agents/workflow/.running/control/runtime/test/.runtime, sessions=0, analyses=0, runs=0
+
+## 2026-03-23T18:18:57+08:00 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-23T18:19:05+08:00 - startup_work_records_migrated
+- roots=C:/work/J-Agents/workflow/.running/control/runtime/test,C:/work/J-Agents/workflow/.running/control/runtime/test/.runtime, sessions=0, analyses=0, runs=0
+
+## 2026-03-23T18:19:06+08:00 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
