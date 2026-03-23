@@ -1,6 +1,3 @@
-[submodule "PortraitRpDemo"]
-	path = PortraitRpDemo
-	url = https://github.com/embed111/PortraitRpDemo.git
 [submodule "agent_gen"]
 	path = agent_gen
 	url = https://github.com/embed111/agent_gen.git
