@@ -17,7 +17,7 @@
   "artifact_delivery_status_text": "待交付",
   "artifact_delivered_at": "",
   "artifact_paths": [
-    "C:/work/J-Agents/.output-test/tasks/asg-20260318-133700-1756fe/artifacts/T20/output/失败日志.md"
+    "D:/code/AI/J-Agents/.output-test/tasks/asg-20260318-133700-1756fe/artifacts/T20/output/失败日志.md"
   ],
   "status": "failed",
   "status_text": "失败",
