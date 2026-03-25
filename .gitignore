@@ -5,3 +5,5 @@
 .output/
 .output-test/
 .git.codex-backup/
+__pycache__/
+*.py[cod]

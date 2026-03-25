@@ -96,3 +96,93 @@
 ## 2026-03-23T18:19:06+08:00 - reconcile run
 - reason=startup, ingress=0, before=0, after=0, gap_after=0
 
+## 2026-03-24T10:29:48+08:00 - startup work-records migrate failed
+- [WinError 3] 系统找不到指定的路径。: 'D:\\'
+
+## 2026-03-24T10:29:49+08:00 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-24T10:31:04+08:00 - startup work-records migrate failed
+- [WinError 3] 系统找不到指定的路径。: 'D:\\'
+
+## 2026-03-24T10:31:05+08:00 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-24T10:31:30+08:00 - startup work-records migrate failed
+- [WinError 3] 系统找不到指定的路径。: 'D:\\'
+
+## 2026-03-24T10:31:31+08:00 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-24T10:51:22+08:00 - startup_work_records_migrated
+- roots=C:/work/J-Agents/workflow/.running/control/runtime/test,C:/work/J-Agents/workflow/.running/control/runtime/test/.runtime, sessions=0, analyses=0, runs=0
+
+## 2026-03-24T10:51:23+08:00 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-24T10:52:01+08:00 - startup_work_records_migrated
+- roots=C:/work/J-Agents/workflow/.running/control/runtime/test,C:/work/J-Agents/workflow/.running/control/runtime/test/.runtime, sessions=0, analyses=0, runs=0
+
+## 2026-03-24T10:52:02+08:00 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-24T13:35:22+08:00 - startup_work_records_migrated
+- roots=C:/work/J-Agents/workflow/.running/control/runtime/test,C:/work/J-Agents/workflow/.running/control/runtime/test/.runtime, sessions=0, analyses=0, runs=0
+
+## 2026-03-24T13:35:22+08:00 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-24T20:59:39+08:00 - startup_work_records_migrated
+- roots=C:/work/J-Agents/workflow/.running/control/runtime/test,C:/work/J-Agents/workflow/.running/control/runtime/test/.runtime, sessions=0, analyses=0, runs=0
+
+## 2026-03-24T20:59:40+08:00 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-25T09:15:57+08:00 - startup_work_records_migrated
+- roots=C:/work/J-Agents/workflow/.running/control/runtime/test,C:/work/J-Agents/workflow/.running/control/runtime/test/.runtime, sessions=0, analyses=0, runs=0
+
+## 2026-03-25T09:15:58+08:00 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-25T11:11:58+08:00 - startup_work_records_migrated
+- roots=C:/work/J-Agents/workflow/.running/control/runtime/test,C:/work/J-Agents/workflow/.running/control/runtime/test/.runtime, sessions=0, analyses=0, runs=0
+
+## 2026-03-25T11:11:59+08:00 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-25T13:35:59+08:00 - startup_work_records_migrated
+- roots=C:/work/J-Agents/workflow/.running/control/runtime/test,C:/work/J-Agents/workflow/.running/control/runtime/test/.runtime, sessions=0, analyses=0, runs=0
+
+## 2026-03-25T13:36:00+08:00 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-25T13:36:35+08:00 - startup_work_records_migrated
+- roots=C:/work/J-Agents/workflow/.running/control/runtime/test,C:/work/J-Agents/workflow/.running/control/runtime/test/.runtime, sessions=0, analyses=0, runs=0
+
+## 2026-03-25T13:36:36+08:00 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-25T14:50:31+08:00 - startup_work_records_migrated
+- roots=C:/work/J-Agents/workflow/.running/control/runtime/test,C:/work/J-Agents/workflow/.running/control/runtime/test/.runtime, sessions=0, analyses=0, runs=0
+
+## 2026-03-25T14:50:31+08:00 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-25T14:51:00+08:00 - startup_work_records_migrated
+- roots=C:/work/J-Agents/workflow/.running/control/runtime/test,C:/work/J-Agents/workflow/.running/control/runtime/test/.runtime, sessions=0, analyses=0, runs=0
+
+## 2026-03-25T14:51:01+08:00 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-25T16:46:26+08:00 - startup_work_records_migrated
+- roots=C:/work/J-Agents/workflow/.running/control/runtime/test,C:/work/J-Agents/workflow/.running/control/runtime/test/.runtime, sessions=0, analyses=0, runs=0
+
+## 2026-03-25T16:46:27+08:00 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
+## 2026-03-25T16:46:39+08:00 - startup_work_records_migrated
+- roots=C:/work/J-Agents/workflow/.running/control/runtime/test,C:/work/J-Agents/workflow/.running/control/runtime/test/.runtime, sessions=0, analyses=0, runs=0
+
+## 2026-03-25T16:46:40+08:00 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+
