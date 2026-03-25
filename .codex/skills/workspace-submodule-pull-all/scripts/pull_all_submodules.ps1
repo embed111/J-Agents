@@ -374,17 +374,30 @@ foreach ($relativePath in $submodulePaths) {
     $results.Add((Invoke-RepoPull -RepoRoot $repoRoot -Label $relativePath -DryRun:$DryRun -RetryCount $RetryCount -RetryDelaySeconds $RetryDelaySeconds))
 }
 
-$updatedCount = @($results | Where-Object { $_.Status -eq "updated" }).Count
-$skippedCount = @($results | Where-Object { $_.Status -like "skipped-*" }).Count
-$dryRunCount = @($results | Where-Object { $_.Status -eq "dry-run" }).Count
-$failedResults = @($results | Where-Object { $_.Status -eq "failed" })
+$validResults = @(
+    $results |
+        Where-Object {
+            $_ -and
+            $_.PSObject -and
+            $_.PSObject.Properties["Status"]
+        }
+)
+$invalidResults = @($results | Where-Object { -not ($_ -and $_.PSObject -and $_.PSObject.Properties["Status"]) })
+if ($invalidResults.Count -gt 0) {
+    Write-Host "[WARN] Ignoring $($invalidResults.Count) unexpected pull result object(s) during summary."
+}
+
+$updatedCount = @($validResults | Where-Object { $_.Status -eq "updated" }).Count
+$skippedCount = @($validResults | Where-Object { $_.Status -like "skipped-*" }).Count
+$dryRunCount = @($validResults | Where-Object { $_.Status -eq "dry-run" }).Count
+$failedResults = @($validResults | Where-Object { $_.Status -eq "failed" })
 $failedCount = $failedResults.Count
 
 Write-Host "[SUMMARY] updated=$updatedCount skipped=$skippedCount dry_run=$dryRunCount failed=$failedCount"
 
 if ($SaveMemoryAfterPull) {
-    $updatedLabels = Join-Labels -Items @($results | Where-Object { $_.Status -eq "updated" } | ForEach-Object { $_.Label })
-    $skippedLabels = Join-Labels -Items @($results | Where-Object { $_.Status -like "skipped-*" } | ForEach-Object { $_.Label })
+    $updatedLabels = Join-Labels -Items @($validResults | Where-Object { $_.Status -eq "updated" } | ForEach-Object { $_.Label })
+    $skippedLabels = Join-Labels -Items @($validResults | Where-Object { $_.Status -like "skipped-*" } | ForEach-Object { $_.Label })
     $failedLabels = Join-Labels -Items @($failedResults | ForEach-Object { $_.Label })
     $defaultSummary = "代码拉取完成：include_root=$($IncludeRoot.IsPresent) submodules=$($submodulePaths.Count) updated=$updatedCount skipped=$skippedCount failed=$failedCount"
     $defaultDetails = @"
