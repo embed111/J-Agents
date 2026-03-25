@@ -4,8 +4,8 @@
 启动程序时，或在设置中修改任务产物路径后，系统都会生成或刷新本说明文件。
 
 ## 当前配置
-- 任务产物路径: D:/code/AI/J-Agents/.output-test
-- 任务目录根: D:/code/AI/J-Agents/.output-test/tasks
+- 任务产物路径: C:/work/J-Agents/.output-test
+- 任务目录根: C:/work/J-Agents/.output-test/tasks
 - 根目录说明文件: TASKS_STRUCTURE.md
 
 ## 目录结构约定

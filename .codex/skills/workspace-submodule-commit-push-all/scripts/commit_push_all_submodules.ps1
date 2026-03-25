@@ -323,8 +323,7 @@ function Stage-RepoWorktreeChanges {
     )
 
     if ($HasHead) {
-        $trackedResult = Get-GitStdoutBytes -RepoRoot $RepoRoot -Arguments @("diff", "--name-only", "--no-renames", "-z", "HEAD", "--")
-        Add-PathsFromBytes -RepoRoot $RepoRoot -PathBytes $trackedResult.StdOutBytes
+        Invoke-Git -RepoRoot $RepoRoot -Arguments @("add", "--sparse", "-u", "--", ".") -Quiet | Out-Null
     }
 
     $untrackedResult = Get-GitStdoutBytes -RepoRoot $RepoRoot -Arguments @("ls-files", "--others", "--exclude-standard", "-z")
