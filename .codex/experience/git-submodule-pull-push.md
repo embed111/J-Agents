@@ -27,6 +27,9 @@
 - For pull requests in this workspace, pull first and save memory after pull.
 - For push requests in this workspace, save memory before the root commit/push.
 - Prefer the local workspace skills and scripts over ad-hoc commands.
+- Before concluding whether GitHub `main` contains a path, refresh the remote ref
+  first with `git fetch origin main` or compare against `git ls-remote`; do not
+  trust a stale local `origin/main`.
 - In large repos, stage tracked and untracked paths by path list instead of
   relying on a blanket `git add -A`.
 - Do not proactively stop `workflow/.running/prod` related processes during pull.
@@ -86,3 +89,5 @@ git -C workflow pull --ff-only
 - `workflow` runtime artifacts are a recurring source of false-clean and
   hidden-dirty confusion; inspect `.running/prod` early when pull behaves
   inconsistently.
+- GitHub web UI can be ahead of the local cached `origin/main`; when the two
+  disagree, fetch first and then inspect the refreshed Git tree.
