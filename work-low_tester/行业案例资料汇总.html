@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>workflow_tester 行业案例资料汇总</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4efe6;
+      --paper: #fffdf8;
+      --ink: #1e2a2f;
+      --muted: #5d6b72;
+      --line: #d9d1c1;
+      --accent: #0f6b5a;
+      --accent-soft: #d7eee8;
+      --warn: #fff1d6;
+      --shadow: 0 18px 40px rgba(31, 42, 47, 0.08);
+      --radius: 18px;
+      --sans: "IBM Plex Sans", "Segoe UI", sans-serif;
+      --serif: "Source Serif 4", "Georgia", serif;
+      --mono: "IBM Plex Mono", "Consolas", monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top right, rgba(15, 107, 90, 0.14), transparent 28%),
+        linear-gradient(180deg, #efe8db 0%, var(--bg) 32%, #f7f2ea 100%);
+      line-height: 1.6;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .page {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 32px auto 48px;
+    }
+
+    .hero,
+    .panel {
+      background: rgba(255, 253, 248, 0.92);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(217, 209, 193, 0.9);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 240px;
+      height: 240px;
+      right: -60px;
+      top: -80px;
+      background: radial-gradient(circle, rgba(15, 107, 90, 0.18), transparent 70%);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3 {
+      margin: 0 0 12px;
+      line-height: 1.15;
+      font-family: var(--serif);
+    }
+
+    h1 {
+      max-width: 760px;
+      margin-top: 18px;
+      font-size: clamp(32px, 5vw, 54px);
+    }
+
+    h2 {
+      font-size: 28px;
+      margin-bottom: 18px;
+    }
+
+    h3 {
+      font-size: 22px;
+    }
+
+    p {
+      margin: 0 0 14px;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .meta-card {
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(217, 209, 193, 0.85);
+    }
+
+    .meta-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .meta-card strong,
+    .source-list code {
+      font-family: var(--mono);
+    }
+
+    .layout {
+      display: grid;
+      gap: 20px;
+      margin-top: 22px;
+    }
+
+    .panel {
+      padding: 28px;
+    }
+
+    .summary-grid,
+    .case-grid,
+    .ref-grid,
+    .portrait-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .summary-grid,
+    .portrait-grid {
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .case-grid {
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+
+    .ref-grid {
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+
+    .card {
+      padding: 18px;
+      border-radius: 16px;
+      background: #fff;
+      border: 1px solid var(--line);
+    }
+
+    .card .tag {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #edf5f2;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    ul,
+    ol {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    li + li {
+      margin-top: 8px;
+    }
+
+    .callout {
+      padding: 16px 18px;
+      border-left: 4px solid #d1a447;
+      border-radius: 12px;
+      background: var(--warn);
+      margin-top: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 15px;
+      background: #fff;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    th,
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f3efe7;
+      font-weight: 700;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .footer {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .source-list li {
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        width: min(100vw - 20px, 1180px);
+        margin: 16px auto 32px;
+      }
+
+      .hero,
+      .panel {
+        padding: 20px;
+      }
+
+      th,
+      td {
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="eyebrow">workflow_tester research brief</div>
+      <h1>workflow_tester 行业案例资料汇总</h1>
+      <p>本汇总面向后续画像收口，围绕 <strong>低风险 workflow 生产冒烟验证、回归检查、缺陷复现、证据留存与缺陷登记</strong> 收集真实行业案例、官方参考材料和可直接转成角色边界的约束依据。</p>
+      <div class="meta">
+        <div class="meta-card">
+          <span>ticket</span>
+          <strong>asg-20260327-102824-8a62bd</strong>
+        </div>
+        <div class="meta-card">
+          <span>node</span>
+          <strong>rc-47b7c8-collect</strong>
+        </div>
+        <div class="meta-card">
+          <span>workspace</span>
+          <strong>work-low_tester</strong>
+        </div>
+        <div class="meta-card">
+          <span>research date</span>
+          <strong>2026-03-27</strong>
+        </div>
+      </div>
+    </section>
+
+    <div class="layout">
+      <section class="panel">
+        <h2>一、收口结论</h2>
+        <div class="summary-grid">
+          <article class="card">
+            <div class="tag">角色定位</div>
+            <p><strong>workflow_tester</strong> 更接近“受控环境与受控流量中的真实验证执行 worker”，不是泛化 QA，也不是功能开发者。</p>
+          </article>
+          <article class="card">
+            <div class="tag">核心动作</div>
+            <p>执行小爆炸半径的生产冒烟、回归验证、线上问题复现、证据打包，并将确认问题落为结构化缺陷。</p>
+          </article>
+          <article class="card">
+            <div class="tag">关键输入</div>
+            <p>发布上下文、特性开关/目标人群、测试账号与数据、回放/链路/日志入口、回归基线与验收清单。</p>
+          </article>
+          <article class="card">
+            <div class="tag">关键输出</div>
+            <p>通过/失败结论、可复现证据、影响边界、缺陷单、是否需要回滚或升级处理的建议。</p>
+          </article>
+        </div>
+        <div class="callout">
+          画像上必须保留的边界：<strong>只做低风险验证，不伪造结果，不改代码、不改数据库、不动高风险生产设置</strong>。这一点既来自工作区 AGENTS 约束，也与 Google SRE、LaunchDarkly、Playwright 的官方实践一致。
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>二、真实行业案例</h2>
+        <div class="case-grid">
+          <article class="card">
+            <div class="tag">Google SRE</div>
+            <h3>Canarying Releases</h3>
+            <p class="muted">案例类型：生产发布验证 / 低风险生产测试</p>
+            <ul>
+              <li>Google 将 canary 定义为“部分且限时”的生产变更发布，并要求把评估结果直接接入 release process。</li>
+              <li>要能把变更发布到服务子集、对 canary 与 control 进行对比评估，并将评估结论纳入继续发布或回滚决策。</li>
+              <li>Google 明确指出指标必须“代表真实用户影响”且“可归因于本次变更”，否则会让 canary 失真。</li>
+              <li>对 workflow_tester 的启示：生产冒烟验证必须小流量、可比较、可回滚、可观测，不能直接全量验证。</li>
+            </ul>
+            <p class="footer">来源：<a href="https://sre.google/workbook/canarying-releases/">Google SRE Workbook / Canarying Releases</a></p>
+          </article>
+
+          <article class="card">
+            <div class="tag">LaunchDarkly</div>
+            <h3>受控目标人群中的生产验证</h3>
+            <p class="muted">案例类型：feature flag 驱动的 QA/UAT</p>
+            <ul>
+              <li>官方文档指出，成功客户可让 QA/UAT 团队在生产环境中先对“测试上下文”验证，再逐步向真实用户增量放量。</li>
+              <li>如果测试人群发现问题，只需对目标上下文关闭或调整 flag，无需对全量用户回滚。</li>
+              <li>文档同时强调并发测试冲突与统计污染问题，建议使用专用环境、目标人群路由，并过滤测试事件对 APM/统计的影响。</li>
+              <li>对 workflow_tester 的启示：线上验收应建立在特性开关、测试账号、目标规则和观测隔离之上。</li>
+            </ul>
+            <p class="footer">来源：<a href="https://launchdarkly.com/docs/guides/flags/testing-code">LaunchDarkly / Testing code that uses feature flags</a></p>
+          </article>
+
+          <article class="card">
+            <div class="tag">Indeed</div>
+            <h3>测试回放降低复现成本</h3>
+            <p class="muted">案例类型：缺陷复现 / CI 失败诊断</p>
+            <ul>
+              <li>Indeed 在采用 Cypress Cloud Enterprise 后，测试运行时间下降 58%，调试时间下降 50%，R&amp;D 团队采用率达到 80%。</li>
+              <li>官方案例特别点名：仅靠截图和视频很难复现失败，Test Replay 让团队可以准确回看失败过程，减少本地手动复现。</li>
+              <li>这说明 workflow_tester 的价值不止在“报失败”，更在于降低问题重现和定位成本。</li>
+            </ul>
+            <p class="footer">来源：<a href="https://cypress.io/customers/indeed">Cypress Customer Story / Indeed</a></p>
+          </article>
+
+          <article class="card">
+            <div class="tag">Beamery</div>
+            <h3>大规模回归从人工队列转向自动化</h3>
+            <p class="muted">案例类型：回归压缩 / 发布稳定期缩短</p>
+            <ul>
+              <li>Beamery 曾有超过 6,000 条手工测试积压，重大版本稳定期需要 3 到 4 周。</li>
+              <li>采用 Cypress 后，手工回归套件减少超过 50%，稳定期缩短到 7 到 8 天；部分团队把回归从全天人工执行压缩到 30 分钟。</li>
+              <li>官方案例还给出规模数据：每月执行 215,000 次测试，通过并行化节省平均 20 天运行时间。</li>
+              <li>对 workflow_tester 的启示：角色画像里要明确“回归收口”和“验证节拍压缩”能力，而不只是冒烟测试。</li>
+            </ul>
+            <p class="footer">来源：<a href="https://cypress.io/customers/beamery">Cypress Customer Story / Beamery</a></p>
+          </article>
+
+          <article class="card">
+            <div class="tag">ServiceNow</div>
+            <h3>把 35 步人工 QA 流程改造成高频发布验证</h3>
+            <p class="muted">案例类型：发布验证流程改造 / 多环境验证</p>
+            <ul>
+              <li>ServiceNow Cloud Observability 原先依赖一份 35 步、每次部署约 2 小时的人工 QA 文档，导致团队对发布频率和质量焦虑明显。</li>
+              <li>引入 Cypress 后，两周内先自动化最繁琐的人工测试，两个月内消除整套人工 QA 流程，并把测试接入 PR 与并行执行。</li>
+              <li>最终实现 4 倍部署速度提升，并在多环境、不同用户角色下执行更全面的验证，借助 Slack 通知共享与排障。</li>
+              <li>对 workflow_tester 的启示：真实价值在“把验证嵌入交付流水线”，而不是把测试孤立成末端检查。</li>
+            </ul>
+            <p class="footer">来源：<a href="https://cypress.io/customers/servicenow">Cypress Customer Story / ServiceNow Cloud Observability</a></p>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>三、参考材料与方法论映射</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>材料</th>
+              <th>可提炼的做法</th>
+              <th>对 workflow_tester 的直接价值</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><a href="https://playwright.dev/docs/best-practices">Playwright Best Practices</a></td>
+              <td>测试用户可见行为；测试间保持隔离；避免依赖第三方；CI 失败优先用 trace 而不是零散截图。</td>
+              <td>定义“怎么测”与“测到什么粒度”为角色标准动作，避免把实现细节误当验收标准。</td>
+            </tr>
+            <tr>
+              <td><a href="https://playwright.dev/docs/trace-viewer">Playwright Trace Viewer</a></td>
+              <td>同一份 trace 内可查看 action snapshots、source、log、console、network、attachments。</td>
+              <td>非常适合做可交付证据包，支持回放 UI 操作、网络请求与失败位置。</td>
+            </tr>
+            <tr>
+              <td><a href="https://playwright.dev/docs/test-snapshots">Playwright Visual Comparisons</a></td>
+              <td>通过截图基线做视觉回归；强调同一 OS、浏览器与运行环境下比较，降低渲染噪音。</td>
+              <td>为 workflow_tester 增加“视觉回归验证”能力时，可直接作为约束依据。</td>
+            </tr>
+            <tr>
+              <td><a href="https://docs.sentry.io/product/explore/session-replay/">Sentry Session Replay</a></td>
+              <td>用 video-like replay 重放真实用户会话，并可分享、过滤和限制访问权限。</td>
+              <td>适合线上问题复现、用户路径还原和影响范围判定，但要同时考虑权限与隐私控制。</td>
+            </tr>
+            <tr>
+              <td><a href="https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-an-issue">GitHub Creating an Issue</a></td>
+              <td>缺陷可从仓库、代码、讨论或 CLI 创建，并附带标题、描述、标签、项目和里程碑。</td>
+              <td>把“确认问题后登记缺陷”纳入标准输出，且支持从具体代码或上下文直接生成 issue。</td>
+            </tr>
+            <tr>
+              <td><a href="https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/about-issue-and-pull-request-templates">GitHub Issue Templates</a></td>
+              <td>用 issue template / issue form 标准化问题字段，强制收集结构化信息。</td>
+              <td>为缺陷提交流程提供模板化抓手，可要求环境、步骤、预期、实际、证据链接等字段。</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="panel">
+        <h2>四、可直接沉淀到画像的约束依据</h2>
+        <ol>
+          <li><strong>低爆炸半径优先：</strong>生产验证必须依赖 canary、feature flag、目标上下文或专用环境，不做默认全量实测。</li>
+          <li><strong>只验证用户可见行为：</strong>以用户路径、页面结果、接口响应、链路信号为主，不把实现细节当验收对象。</li>
+          <li><strong>证据必须可回放：</strong>失败后至少要能提供 trace、replay、截图、日志、网络请求或 DOM 快照中的一种组合，而不是口头结论。</li>
+          <li><strong>复现数据必须可归因：</strong>Google SRE 明确要求指标具备 representative 和 attributable 属性，说明 workflow_tester 需要控制账号、数据、环境和时间窗口。</li>
+          <li><strong>并发测试要隔离：</strong>LaunchDarkly 指出多人共用环境会相互污染；workflow_tester 需要通过环境隔离或 targeting 规则防冲突。</li>
+          <li><strong>回归基线要稳定：</strong>视觉回归或截图对比必须在一致的 OS、浏览器和配置下运行，否则结果不可信。</li>
+          <li><strong>测试行为不能污染生产统计：</strong>测试流量要尽量从 APM、状态页、业务指标中剔除，或至少可识别、可过滤。</li>
+          <li><strong>缺陷提交流程要结构化：</strong>issue 标题、描述、标签、来源上下文、证据链接和复现步骤应标准化，便于后续流转。</li>
+          <li><strong>敏感回放要控权：</strong>Sentry 官方支持 replay access control，说明涉及真实用户回放时必须有权限边界。</li>
+          <li><strong>工作区本地硬边界：</strong>根据当前 AGENTS，角色不得改代码、改数据库、伪造结果或改高风险生产设置。</li>
+        </ol>
+      </section>
+
+      <section class="panel">
+        <h2>五、建议纳入后续画像收口的字段</h2>
+        <div class="portrait-grid">
+          <article class="card">
+            <h3>定位语</h3>
+            <p>run low-risk workflow production smoke tests, regression checks, defect reproduction, and evidence capture</p>
+          </article>
+          <article class="card">
+            <h3>典型任务</h3>
+            <ul>
+              <li>按 feature flag / canary / 指定账号执行真实流程验收</li>
+              <li>做关键路径冒烟和有限范围回归</li>
+              <li>用 trace / replay / logs / screenshots 复现线上问题</li>
+              <li>把确认问题提交为结构化缺陷</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>成功证据</h3>
+            <ul>
+              <li>通过/失败结论可追溯</li>
+              <li>证据包可被研发或值班人员复看</li>
+              <li>问题具备稳定复现路径或最小影响边界描述</li>
+              <li>缺陷单字段完整、可继续流转</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>硬边界</h3>
+            <ul>
+              <li>不碰高风险配置与生产数据结构</li>
+              <li>不制造虚假验证结果</li>
+              <li>不把一次性测试动作变成不可控的全量影响</li>
+              <li>只在当前角色工作区内留存过程材料</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>六、来源索引</h2>
+        <ul class="source-list">
+          <li><a href="https://sre.google/workbook/canarying-releases/">Google SRE Workbook / Canarying Releases</a></li>
+          <li><a href="https://launchdarkly.com/docs/guides/flags/testing-code">LaunchDarkly / Testing code that uses feature flags</a></li>
+          <li><a href="https://cypress.io/customers/indeed">Cypress Customer Story / Indeed</a></li>
+          <li><a href="https://cypress.io/customers/beamery">Cypress Customer Story / Beamery</a></li>
+          <li><a href="https://cypress.io/customers/servicenow">Cypress Customer Story / ServiceNow Cloud Observability</a></li>
+          <li><a href="https://playwright.dev/docs/best-practices">Playwright / Best Practices</a></li>
+          <li><a href="https://playwright.dev/docs/trace-viewer">Playwright / Trace Viewer</a></li>
+          <li><a href="https://playwright.dev/docs/test-snapshots">Playwright / Visual comparisons</a></li>
+          <li><a href="https://docs.sentry.io/product/explore/session-replay/">Sentry / Session Replay</a></li>
+          <li><a href="https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-an-issue">GitHub Docs / Creating an issue</a></li>
+          <li><a href="https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/about-issue-and-pull-request-templates">GitHub Docs / About issue and pull request templates</a></li>
+        </ul>
+        <p class="footer">说明：本汇总优先采用官方文档和官方客户案例。客户案例具备供应商叙事偏向，但提供了可用于画像收口的真实组织名称、流程改造方式和量化结果。检索时间：2026-03-27。</p>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

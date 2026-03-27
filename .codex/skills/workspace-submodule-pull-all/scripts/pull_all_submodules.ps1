@@ -126,13 +126,17 @@ function Invoke-Git {
     $stderr = $process.StandardError.ReadToEnd()
     $process.WaitForExit()
 
-    $lines = @()
+    $stdoutLines = @()
     if ($stdout) {
-        $lines += @($stdout -split "`r?`n" | Where-Object { $_ -ne "" })
+        $stdoutLines = @($stdout -split "`r?`n" | Where-Object { $_ -ne "" })
     }
+
+    $stderrLines = @()
     if ($stderr) {
-        $lines += @($stderr -split "`r?`n" | Where-Object { $_ -ne "" })
+        $stderrLines = @($stderr -split "`r?`n" | Where-Object { $_ -ne "" })
     }
+
+    $lines = @($stdoutLines + $stderrLines)
 
     if ((-not $Quiet) -and $lines.Count -gt 0) {
         $lines | ForEach-Object { Write-Host $_ }
@@ -148,8 +152,10 @@ function Invoke-Git {
     }
 
     return [pscustomobject]@{
-        ExitCode = $process.ExitCode
-        Output   = $lines
+        ExitCode    = $process.ExitCode
+        Output      = $lines
+        StdoutLines = $stdoutLines
+        StderrLines = $stderrLines
     }
 }
 
@@ -204,7 +210,7 @@ function Test-RepoDirty {
     )
 
     $result = Invoke-Git -RepoRoot $RepoRoot -Arguments @("status", "--porcelain") -Quiet
-    return $result.Output.Count -gt 0
+    return $result.StdoutLines.Count -gt 0
 }
 
 function Get-CurrentBranch {

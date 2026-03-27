@@ -29,8 +29,9 @@
 - Prefer the local workspace skills and scripts over ad-hoc commands.
 - In large repos, stage tracked and untracked paths by path list instead of
   relying on a blanket `git add -A`.
-- Stop local runtime processes before pulling submodules that track runtime
-  artifacts, especially `workflow`.
+- Do not proactively stop `workflow/.running/prod` related processes during pull.
+  That directory should normally stay outside Git tracking; only intervene if Git
+  explicitly shows tracked runtime files there are blocking `pull --ff-only`.
 - Keep `workflow` local Git settings aligned to avoid false-dirty line-ending
   churn:
   - `git -C workflow config core.autocrlf false`
@@ -52,10 +53,12 @@
 - If a wrapper script hangs, inspect whether `stderr` buffering is blocking the
   Git child process.
 
-### `workflow` pull is blocked by hidden runtime files
+### `workflow` pull is blocked by tracked runtime files
 
-- Stop the local `workflow_web_server.py` process first.
-- Restore tracked runtime files even if they are hidden by `skip-worktree`:
+- First confirm Git is actually blocked by tracked files under
+  `.running/prod`; do not kill processes just because the service is running.
+- Only if tracked runtime files are the blocker, restore them even if they are
+  hidden by `skip-worktree`:
 
 ```powershell
 git -C workflow restore --worktree --ignore-skip-worktree-bits -- .running/prod
