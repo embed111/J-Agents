@@ -1,6 +1,6 @@
 # Session Snapshot
 
-- last_update: 2026-04-03 00:44:48+0800
+- last_update: 2026-04-03 10:36:18+0800
 - current_track: runtime-baseline
 - current_focus: Workflow baseline: minimal web chat page + closed loop ops
 
@@ -10,17 +10,17 @@
 3. Largest blocker: none
 
 ## Key Metrics
-1. new_sessions: 0
-2. pending_analysis: 0
+1. new_sessions: 1
+2. pending_analysis: 10
 3. pending_training: 0
 4. ab_switch_count: 0
 5. critical_failures: 0
-6. latest_decision: none
+6. latest_decision: ana-sess-web-20260330-180626-b3a7cc:skip(decided_skip)
 7. latest_training: none
 
 ## Next Start
-1. First log to check: D:/code/AI/J-Agents/.output-test/records/system/workflow-events.jsonl
+1. First log to check: C:/work/J-Agents/.output-test/records/system/workflow-events.jsonl
 2. First action: continue chat rounds and keep logs complete.
 
 ## Session
-- latest_session_id: 
+- latest_session_id: sess-reconcile

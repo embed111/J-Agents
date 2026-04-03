@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-04-03T00:44:49+08:00",
-  "structure_file": "D:/code/AI/J-Agents/.output-test/WORKFLOW_RECORDS_STRUCTURE.md",
-  "sessions_index": "D:/code/AI/J-Agents/.output-test/records/sessions/index.json",
-  "analysis_index": "D:/code/AI/J-Agents/.output-test/records/analysis/index.json",
-  "runs_index": "D:/code/AI/J-Agents/.output-test/records/runs/index.json",
-  "policy_patch_index": "D:/code/AI/J-Agents/.output-test/records/audit/policy-patch-tasks/index.json",
-  "sqlite_index": "D:/code/AI/J-Agents/.output-test/.index/index.db"
+  "generated_at": "2026-04-03T10:36:21+08:00",
+  "structure_file": "C:/work/J-Agents/.output-test/WORKFLOW_RECORDS_STRUCTURE.md",
+  "sessions_index": "C:/work/J-Agents/.output-test/records/sessions/index.json",
+  "analysis_index": "C:/work/J-Agents/.output-test/records/analysis/index.json",
+  "runs_index": "C:/work/J-Agents/.output-test/records/runs/index.json",
+  "policy_patch_index": "C:/work/J-Agents/.output-test/records/audit/policy-patch-tasks/index.json",
+  "sqlite_index": "C:/work/J-Agents/.output-test/.index/index.db"
 }

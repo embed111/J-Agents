@@ -4,13 +4,13 @@
 任务中心之外的会话、分析、运行、审计和系统级工作记录统一落在本目录契约中。
 
 ## 当前配置
-- 任务产物路径: D:/code/AI/J-Agents/.output-test
-- 工作记录根目录: D:/code/AI/J-Agents/.output-test/records
-- 顶层入口索引: D:/code/AI/J-Agents/.output-test/records/index.json
-- 会话索引: D:/code/AI/J-Agents/.output-test/records/sessions/index.json
-- 分析索引: D:/code/AI/J-Agents/.output-test/records/analysis/index.json
-- 运行索引: D:/code/AI/J-Agents/.output-test/records/runs/index.json
-- SQLite 辅助索引: D:/code/AI/J-Agents/.output-test/.index/index.db
+- 任务产物路径: C:/work/J-Agents/.output-test
+- 工作记录根目录: C:/work/J-Agents/.output-test/records
+- 顶层入口索引: C:/work/J-Agents/.output-test/records/index.json
+- 会话索引: C:/work/J-Agents/.output-test/records/sessions/index.json
+- 分析索引: C:/work/J-Agents/.output-test/records/analysis/index.json
+- 运行索引: C:/work/J-Agents/.output-test/records/runs/index.json
+- SQLite 辅助索引: C:/work/J-Agents/.output-test/.index/index.db
 
 ## 稳定目录契约
 - `<任务产物路径>/tasks/<ticket_id>/...`: 任务中心任务图、节点、执行链路与产物。

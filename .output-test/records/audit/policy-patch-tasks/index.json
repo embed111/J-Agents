@@ -1,6 +1,160 @@
 {
-  "generated_at": "2026-04-03T00:44:49+08:00",
+  "generated_at": "2026-04-03T10:36:21+08:00",
   "items": [
+    {
+      "patch_task_id": "appt-20260330-180850-bdb62f",
+      "status": "pending",
+      "source_session_id": "sess-web-20260330-180849-60e0bc",
+      "agent_name": "trainer",
+      "created_at": "2026-03-30T18:08:50+08:00",
+      "updated_at": "2026-03-30T18:08:50+08:00",
+      "completed_at": "",
+      "confirmation_audit_id": 0,
+      "agents_version": ""
+    },
+    {
+      "patch_task_id": "appt-20260330-180721-dd245b",
+      "status": "pending",
+      "source_session_id": "sess-web-20260330-180721-eca567",
+      "agent_name": "trainer",
+      "created_at": "2026-03-30T18:07:21+08:00",
+      "updated_at": "2026-03-30T18:07:21+08:00",
+      "completed_at": "",
+      "confirmation_audit_id": 0,
+      "agents_version": ""
+    },
+    {
+      "patch_task_id": "appt-20260330-180636-872b6c",
+      "status": "pending",
+      "source_session_id": "sess-web-20260330-180635-d719d8",
+      "agent_name": "trainer",
+      "created_at": "2026-03-30T18:06:36+08:00",
+      "updated_at": "2026-03-30T18:06:36+08:00",
+      "completed_at": "",
+      "confirmation_audit_id": 0,
+      "agents_version": ""
+    },
+    {
+      "patch_task_id": "appt-20260330-180634-24f363",
+      "status": "pending",
+      "source_session_id": "sess-web-20260330-180633-5ae48f",
+      "agent_name": "trainer",
+      "created_at": "2026-03-30T18:06:34+08:00",
+      "updated_at": "2026-03-30T18:06:34+08:00",
+      "completed_at": "",
+      "confirmation_audit_id": 0,
+      "agents_version": ""
+    },
+    {
+      "patch_task_id": "appt-20260330-180631-3ba99f",
+      "status": "pending",
+      "source_session_id": "sess-web-20260330-180630-6cd12d",
+      "agent_name": "trainer",
+      "created_at": "2026-03-30T18:06:31+08:00",
+      "updated_at": "2026-03-30T18:06:31+08:00",
+      "completed_at": "",
+      "confirmation_audit_id": 0,
+      "agents_version": ""
+    },
+    {
+      "patch_task_id": "appt-20260330-180629-343c89",
+      "status": "pending",
+      "source_session_id": "sess-web-20260330-180628-e33bad",
+      "agent_name": "trainer",
+      "created_at": "2026-03-30T18:06:29+08:00",
+      "updated_at": "2026-03-30T18:06:29+08:00",
+      "completed_at": "",
+      "confirmation_audit_id": 0,
+      "agents_version": ""
+    },
+    {
+      "patch_task_id": "appt-20260330-180627-a0fdce",
+      "status": "pending",
+      "source_session_id": "sess-web-20260330-180626-b3a7cc",
+      "agent_name": "trainer",
+      "created_at": "2026-03-30T18:06:27+08:00",
+      "updated_at": "2026-03-30T18:06:27+08:00",
+      "completed_at": "",
+      "confirmation_audit_id": 0,
+      "agents_version": ""
+    },
+    {
+      "patch_task_id": "appt-20260330-162422-eacb0b",
+      "status": "pending",
+      "source_session_id": "sess-web-20260330-162421-547fda",
+      "agent_name": "trainer",
+      "created_at": "2026-03-30T16:24:22+08:00",
+      "updated_at": "2026-03-30T16:24:22+08:00",
+      "completed_at": "",
+      "confirmation_audit_id": 0,
+      "agents_version": ""
+    },
+    {
+      "patch_task_id": "appt-20260330-162302-f273a2",
+      "status": "pending",
+      "source_session_id": "sess-web-20260330-162302-11ae57",
+      "agent_name": "trainer",
+      "created_at": "2026-03-30T16:23:02+08:00",
+      "updated_at": "2026-03-30T16:23:02+08:00",
+      "completed_at": "",
+      "confirmation_audit_id": 0,
+      "agents_version": ""
+    },
+    {
+      "patch_task_id": "appt-20260330-162222-77adb9",
+      "status": "pending",
+      "source_session_id": "sess-web-20260330-162221-7b83ae",
+      "agent_name": "trainer",
+      "created_at": "2026-03-30T16:22:22+08:00",
+      "updated_at": "2026-03-30T16:22:22+08:00",
+      "completed_at": "",
+      "confirmation_audit_id": 0,
+      "agents_version": ""
+    },
+    {
+      "patch_task_id": "appt-20260330-162220-a5ac93",
+      "status": "pending",
+      "source_session_id": "sess-web-20260330-162220-b236d3",
+      "agent_name": "trainer",
+      "created_at": "2026-03-30T16:22:20+08:00",
+      "updated_at": "2026-03-30T16:22:20+08:00",
+      "completed_at": "",
+      "confirmation_audit_id": 0,
+      "agents_version": ""
+    },
+    {
+      "patch_task_id": "appt-20260330-162219-fb6440",
+      "status": "pending",
+      "source_session_id": "sess-web-20260330-162218-d3e7b0",
+      "agent_name": "trainer",
+      "created_at": "2026-03-30T16:22:19+08:00",
+      "updated_at": "2026-03-30T16:22:19+08:00",
+      "completed_at": "",
+      "confirmation_audit_id": 0,
+      "agents_version": ""
+    },
+    {
+      "patch_task_id": "appt-20260330-162217-b0a0b1",
+      "status": "pending",
+      "source_session_id": "sess-web-20260330-162216-6ccf06",
+      "agent_name": "trainer",
+      "created_at": "2026-03-30T16:22:17+08:00",
+      "updated_at": "2026-03-30T16:22:17+08:00",
+      "completed_at": "",
+      "confirmation_audit_id": 0,
+      "agents_version": ""
+    },
+    {
+      "patch_task_id": "appt-20260330-162215-89e97b",
+      "status": "pending",
+      "source_session_id": "sess-web-20260330-162215-d81d00",
+      "agent_name": "trainer",
+      "created_at": "2026-03-30T16:22:15+08:00",
+      "updated_at": "2026-03-30T16:22:15+08:00",
+      "completed_at": "",
+      "confirmation_audit_id": 0,
+      "agents_version": ""
+    },
     {
       "patch_task_id": "index",
       "status": "",

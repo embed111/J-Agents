@@ -19,3 +19,6 @@
 [submodule "workflow"]
 	path = workflow
 	url = https://github.com/embed111/workflow.git
+[submodule "workflow_code"]
+	path = workflow_code
+	url = https://github.com/embed111/workflow_code.git

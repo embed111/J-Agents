@@ -1,4 +1,173 @@
 {
-  "generated_at": "2026-04-03T00:44:49+08:00",
-  "items": []
+  "generated_at": "2026-04-03T10:36:21+08:00",
+  "items": [
+    {
+      "session_id": "sess-web-20260330-180721-eca567",
+      "status": "closed",
+      "agent_name": "trainer",
+      "is_test_data": 1,
+      "created_at": "2026-03-30T18:07:21+08:00",
+      "updated_at": "2026-03-30T18:08:50+08:00",
+      "last_message_at": "2026-03-30T18:07:55+08:00",
+      "message_count": 3,
+      "work_record_count": 3,
+      "last_message_preview": "这是一段用于中断测试的稍长文本。它的目标不是传递复杂信息，而是提供一段连续、稳定、节奏均匀的输出内容，以便观察前端界面、任务调度器、消息流转链路以及中断信号在执行过程中的表现是否符合预期。你可以在任意一句话输出到一半时触发中断，重点查看系统是否能够及时停止后续内容生成，是否会残留多余片段，是否会出现状态延迟更新，是否会在消息列表中留下不完整但可识别的响应，以及中断后的下一次请求是否还能正常进入新..."
+    },
+    {
+      "session_id": "sess-web-20260330-180633-5ae48f",
+      "status": "closed",
+      "agent_name": "trainer",
+      "is_test_data": 1,
+      "created_at": "2026-03-30T18:06:33+08:00",
+      "updated_at": "2026-03-30T18:08:50+08:00",
+      "last_message_at": "2026-03-30T18:07:20+08:00",
+      "message_count": 2,
+      "work_record_count": 2,
+      "last_message_preview": "无法仅回复标签；按冻结策略，输出需包含验证步骤。标签：GATE1-S3。验证步骤：1. 确认回复包含标签 GATE1-S3。2. 确认标签内容与请求一致。"
+    },
+    {
+      "session_id": "sess-web-20260330-180635-d719d8",
+      "status": "closed",
+      "agent_name": "trainer",
+      "is_test_data": 1,
+      "created_at": "2026-03-30T18:06:35+08:00",
+      "updated_at": "2026-03-30T18:08:50+08:00",
+      "last_message_at": "2026-03-30T18:06:54+08:00",
+      "message_count": 2,
+      "work_record_count": 2,
+      "last_message_preview": "无法仅回复标签；冻结策略要求包含验证步骤。标签：GATE1-S4。验证步骤：确认返回文本包含“GATE1-S4”。"
+    },
+    {
+      "session_id": "sess-web-20260330-180628-e33bad",
+      "status": "closed",
+      "agent_name": "trainer",
+      "is_test_data": 1,
+      "created_at": "2026-03-30T18:06:28+08:00",
+      "updated_at": "2026-03-30T18:08:50+08:00",
+      "last_message_at": "2026-03-30T18:06:46+08:00",
+      "message_count": 2,
+      "work_record_count": 2,
+      "last_message_preview": "无法仅回复标签；按冻结会话策略，输出必须包含验证步骤。标签：GATE1-S1。验证步骤：检查本回复中是否包含且仅指定了标签 GATE1-S1。"
+    },
+    {
+      "session_id": "sess-web-20260330-180630-6cd12d",
+      "status": "closed",
+      "agent_name": "trainer",
+      "is_test_data": 1,
+      "created_at": "2026-03-30T18:06:30+08:00",
+      "updated_at": "2026-03-30T18:08:50+08:00",
+      "last_message_at": "2026-03-30T18:06:44+08:00",
+      "message_count": 2,
+      "work_record_count": 2,
+      "last_message_preview": "GATE1-S2"
+    },
+    {
+      "session_id": "sess-web-20260330-180626-b3a7cc",
+      "status": "closed",
+      "agent_name": "trainer",
+      "is_test_data": 1,
+      "created_at": "2026-03-30T18:06:26+08:00",
+      "updated_at": "2026-03-30T18:08:50+08:00",
+      "last_message_at": "2026-03-30T18:06:36+08:00",
+      "message_count": 2,
+      "work_record_count": 2,
+      "last_message_preview": "GATE1-S0"
+    },
+    {
+      "session_id": "sess-web-20260330-162302-11ae57",
+      "status": "closed",
+      "agent_name": "trainer",
+      "is_test_data": 1,
+      "created_at": "2026-03-30T16:23:02+08:00",
+      "updated_at": "2026-03-30T16:24:22+08:00",
+      "last_message_at": "2026-03-30T16:23:47+08:00",
+      "message_count": 3,
+      "work_record_count": 3,
+      "last_message_preview": "这是一段用于中断测试的稍长文本。它的目的不是传递复杂信息，而是提供一段足够连续、足够自然、并且长度适中的输出，方便你在消息生成过程中主动触发中断，观察前端界面、后端状态、事件记录以及会话控制逻辑是否符合预期。为了让测试更接近真实场景，这段文字会保持正常叙述节奏，而不是简单重复同一句话，因为真实用户输入和真实助手输出往往包含连贯的说明、补充、转折和收束。如果系统的中断机制设计合理，那么无论中断发生..."
+    },
+    {
+      "session_id": "sess-web-20260330-162220-b236d3",
+      "status": "closed",
+      "agent_name": "trainer",
+      "is_test_data": 1,
+      "created_at": "2026-03-30T16:22:20+08:00",
+      "updated_at": "2026-03-30T16:24:22+08:00",
+      "last_message_at": "2026-03-30T16:23:01+08:00",
+      "message_count": 2,
+      "work_record_count": 2,
+      "last_message_preview": "GATE1-S3"
+    },
+    {
+      "session_id": "sess-web-20260330-162216-6ccf06",
+      "status": "closed",
+      "agent_name": "trainer",
+      "is_test_data": 1,
+      "created_at": "2026-03-30T16:22:16+08:00",
+      "updated_at": "2026-03-30T16:24:22+08:00",
+      "last_message_at": "2026-03-30T16:22:58+08:00",
+      "message_count": 2,
+      "work_record_count": 2,
+      "last_message_preview": "无法仅回复标签；冻结策略要求输出包含验证步骤。标签：GATE1-S1。验证：检查本回复中是否出现 GATE1-S1。"
+    },
+    {
+      "session_id": "sess-web-20260330-162221-7b83ae",
+      "status": "closed",
+      "agent_name": "trainer",
+      "is_test_data": 1,
+      "created_at": "2026-03-30T16:22:21+08:00",
+      "updated_at": "2026-03-30T16:24:22+08:00",
+      "last_message_at": "2026-03-30T16:22:47+08:00",
+      "message_count": 2,
+      "work_record_count": 2,
+      "last_message_preview": "无法仅回复标签；冻结策略要求输出包含验证步骤。标签：GATE1-S4；验证：检查回复中是否包含 GATE1-S4。"
+    },
+    {
+      "session_id": "sess-web-20260330-162218-d3e7b0",
+      "status": "closed",
+      "agent_name": "trainer",
+      "is_test_data": 1,
+      "created_at": "2026-03-30T16:22:18+08:00",
+      "updated_at": "2026-03-30T16:24:22+08:00",
+      "last_message_at": "2026-03-30T16:22:36+08:00",
+      "message_count": 2,
+      "work_record_count": 2,
+      "last_message_preview": "GATE1-S2"
+    },
+    {
+      "session_id": "sess-web-20260330-162215-d81d00",
+      "status": "closed",
+      "agent_name": "trainer",
+      "is_test_data": 1,
+      "created_at": "2026-03-30T16:22:15+08:00",
+      "updated_at": "2026-03-30T16:24:22+08:00",
+      "last_message_at": "2026-03-30T16:22:36+08:00",
+      "message_count": 2,
+      "work_record_count": 2,
+      "last_message_preview": "GATE1-S0"
+    },
+    {
+      "session_id": "sess-web-20260330-180849-60e0bc",
+      "status": "closed",
+      "agent_name": "trainer",
+      "is_test_data": 1,
+      "created_at": "2026-03-30T18:08:49+08:00",
+      "updated_at": "2026-03-30T18:08:50+08:00",
+      "last_message_at": "",
+      "message_count": 0,
+      "work_record_count": 0,
+      "last_message_preview": ""
+    },
+    {
+      "session_id": "sess-web-20260330-162421-547fda",
+      "status": "closed",
+      "agent_name": "trainer",
+      "is_test_data": 1,
+      "created_at": "2026-03-30T16:24:21+08:00",
+      "updated_at": "2026-03-30T16:24:22+08:00",
+      "last_message_at": "",
+      "message_count": 0,
+      "work_record_count": 0,
+      "last_message_preview": ""
+    }
+  ]
 }
