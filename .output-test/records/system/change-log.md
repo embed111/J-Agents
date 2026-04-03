@@ -228,3 +228,9 @@
 ## 2026-03-27T11:52:50+08:00 - reconcile run
 - reason=startup, ingress=0, before=0, after=0, gap_after=0
 
+## 2026-04-03T00:44:49+08:00 - startup_work_records_migrated
+- roots=D:/code/AI/J-Agents/workflow/.running/control/runtime/test,D:/code/AI/J-Agents/workflow/.running/control/runtime/test/.runtime, sessions=0, analyses=0, runs=0
+
+## 2026-04-03T00:44:49+08:00 - reconcile run
+- reason=startup, ingress=0, before=0, after=0, gap_after=0
+

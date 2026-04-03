@@ -1,6 +1,6 @@
 # Session Snapshot
 
-- last_update: 2026-03-27 11:52:48+0800
+- last_update: 2026-04-03 00:44:48+0800
 - current_track: runtime-baseline
 - current_focus: Workflow baseline: minimal web chat page + closed loop ops
 
@@ -10,7 +10,7 @@
 3. Largest blocker: none
 
 ## Key Metrics
-1. new_sessions: 1
+1. new_sessions: 0
 2. pending_analysis: 0
 3. pending_training: 0
 4. ab_switch_count: 0
@@ -19,8 +19,8 @@
 7. latest_training: none
 
 ## Next Start
-1. First log to check: C:/work/J-Agents/.output-test/records/system/workflow-events.jsonl
+1. First log to check: D:/code/AI/J-Agents/.output-test/records/system/workflow-events.jsonl
 2. First action: continue chat rounds and keep logs complete.
 
 ## Session
-- latest_session_id: sess-reconcile
+- latest_session_id: 

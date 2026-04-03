@@ -4,7 +4,7 @@
 
 ## 当前任务
 - ticket_id: asg-20260318-133700-1756fe
-- 任务目录: C:/work/J-Agents/.output-test/tasks/asg-20260318-133700-1756fe
+- 任务目录: D:/code/AI/J-Agents/.output-test/tasks/asg-20260318-133700-1756fe
 - graph_name: 任务中心原型测试图
 - source_workflow: assignment-prototype-test-data
 - scheduler_state: running
