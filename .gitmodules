@@ -22,3 +22,16 @@
 [submodule "workflow_code"]
 	path = workflow_code
 	url = https://github.com/embed111/workflow_code.git
+	branch = main
+[submodule "workflow_bugmate"]
+	path = workflow_bugmate
+	url = https://github.com/embed111/workflow_bugmate.git
+[submodule "workflow_devmate"]
+	path = workflow_devmate
+	url = https://github.com/embed111/workflow_devmate.git
+[submodule "workflow_qualitymate"]
+	path = workflow_qualitymate
+	url = https://github.com/embed111/workflow_qualitymate.git
+[submodule "workflow_testmate"]
+	path = workflow_testmate
+	url = https://github.com/embed111/workflow_testmate.git

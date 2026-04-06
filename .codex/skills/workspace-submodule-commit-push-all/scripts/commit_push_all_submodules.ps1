@@ -763,7 +763,7 @@ function Invoke-RepoCommitAndPush {
     $stagedChanges = Test-StagedChanges -RepoRoot $RepoRoot
     if ((-not $hasHead) -or $stagedChanges) {
         Ensure-CommitIdentity -RepoRoot $RepoRoot -Label $Label -FallbackRepoRoot $FallbackIdentityRepoRoot -DryRun:$DryRun
-        Invoke-Git -RepoRoot $RepoRoot -Arguments @("commit", "-m", $CommitMessage) -Quiet | Out-Null
+        Invoke-Git -RepoRoot $RepoRoot -Arguments @("-c", "commit.gpgsign=false", "commit", "--no-gpg-sign", "-m", $CommitMessage) -Quiet | Out-Null
         $commitCreated = $true
         $commitHash = ((Invoke-Git -RepoRoot $RepoRoot -Arguments @("rev-parse", "--short", "HEAD") -Quiet).Output | Select-Object -First 1).Trim()
         Write-Host "[OK] Committed $Label -> $commitHash"

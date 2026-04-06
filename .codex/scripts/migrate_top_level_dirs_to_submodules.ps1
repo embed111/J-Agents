@@ -118,7 +118,7 @@ function Ensure-DirectoryCommitted {
     $hasStagedChanges = (Invoke-Git -RepoRoot $DirectoryPath -Arguments @("diff", "--cached", "--quiet", "--exit-code") -AllowFailure -Quiet).ExitCode -eq 1
 
     if ((-not $hasHead) -or $hasStagedChanges) {
-        Invoke-Git -RepoRoot $DirectoryPath -Arguments @("commit", "-m", $CommitMessage) -Quiet | Out-Null
+        Invoke-Git -RepoRoot $DirectoryPath -Arguments @("-c", "commit.gpgsign=false", "commit", "--no-gpg-sign", "-m", $CommitMessage) -Quiet | Out-Null
         $head = ((Invoke-Git -RepoRoot $DirectoryPath -Arguments @("rev-parse", "--short", "HEAD") -Quiet).Output | Select-Object -First 1).Trim()
         Write-Host "[COMMIT] $DirectoryPath -> $head"
     } else {
