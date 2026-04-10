@@ -1,6 +1,6 @@
 # Session Snapshot
 
-- last_update: 2026-04-03 10:36:18+0800
+- last_update: 2026-04-10 15:52:57+0800
 - current_track: runtime-baseline
 - current_focus: Workflow baseline: minimal web chat page + closed loop ops
 
@@ -11,11 +11,11 @@
 
 ## Key Metrics
 1. new_sessions: 1
-2. pending_analysis: 10
+2. pending_analysis: 0
 3. pending_training: 0
 4. ab_switch_count: 0
 5. critical_failures: 0
-6. latest_decision: ana-sess-web-20260330-180626-b3a7cc:skip(decided_skip)
+6. latest_decision: none
 7. latest_training: none
 
 ## Next Start
